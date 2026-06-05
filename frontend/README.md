@@ -27,17 +27,27 @@ npm run preview    # serve the built dist/ locally
 
 ```
 src/
-  main.ts                  app entry
-  App.vue                  shell (join flow → PlayerView; future: Vue Router)
+  main.ts                  app entry (installs the router)
+  App.vue                  shell: header + <RouterView>
+  router/index.ts          routes (home, /play/:cardId, /raffles, /raffles/:id)
   api/client.ts            typed fetch wrapper (replaces app.js `api()`)
   types/models.ts          TS mirror of the Go internal/model package
+  lib/
+    markdown.ts            marked + DOMPurify (sanitized markdown → v-html)
+    assets.ts              prize-image URL resolver
   composables/
     useGameSocket.ts       WebSocket connect / reconnect / keepalive
   components/
     BingoBoard.vue         presentational 5×5 board
   views/
-    PlayerView.vue         migrated player experience (the POC slice)
+    HomeView.vue           landing: bingo join + raffles card
+    PlayerView.vue         player experience (board, stamps, live draws)
+    RafflesListView.vue    public open/closed raffle listing
+    RaffleDetailView.vue   public raffle detail + sign-up form
 ```
+
+Non-home views are lazy-loaded (each is its own chunk). Migrated so far:
+**player** and **public raffles**. Admin dashboard is still on the legacy app.
 
 ## How dev mode talks to the backend
 
@@ -51,6 +61,18 @@ SPA and reverse-proxies `/api` to the Go binary. No CORS, no env juggling.
 copy `dist/*` into the Apache web root that currently serves `index.html` +
 `assets/`. The Go backend is unchanged. Until then, the legacy SPA stays live.
 
+The router uses HTML5 history mode (clean URLs), so deep links like `/raffles/1`
+must fall back to `index.html`. Add to the SPA vhost (keep `/api` proxied to Go):
+
+```apache
+<Directory /var/www/www.yoursite.com>
+    FallbackResource /index.html
+</Directory>
+```
+
+Uploaded prize images keep their existing path (`assets/images/raffles/...`) and
+are still served by Apache from the web root.
+
 ## Migration notes / open items
 
 - **Type generation:** `types/models.ts` is hand-maintained. Consider generating
@@ -58,8 +80,9 @@ copy `dist/*` into the Apache web root that currently serves `index.html` +
 - **Themes coupling:** the custom-CSS themes feature targets specific class names
   in the legacy markup. Porting each view's markup must preserve (or deliberately
   migrate) those class names, or existing user themes will break.
-- **Pin third-party libs:** the legacy app loads `marked` from a CDN with no
-  version pin. When the markdown-rendering views are migrated, add `marked`
-  (and a sanitizer such as DOMPurify) as pinned dependencies here.
-- **Next views to migrate:** home → raffles (public, low coupling) are good
-  follow-ups; the admin dashboard is the largest and should come last.
+- **Markdown is now sanitized:** `marked` + `DOMPurify` are pinned deps and all
+  admin-authored markdown is sanitized in `lib/markdown.ts` before `v-html`,
+  closing the stored-XSS hardening gap the legacy CDN `marked` left open.
+- **Next views to migrate:** the admin dashboard (game, cards, patterns, winners
+  log, raffle admin, themes) — the largest surface — should come last. It needs
+  session-aware fetches (already cookie-based) and the themes/CodeMirror editor.

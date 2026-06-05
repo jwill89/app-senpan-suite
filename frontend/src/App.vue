@@ -1,82 +1,51 @@
 <script setup lang="ts">
 /**
- * App shell for the POC. In the full migration this is where Vue Router lives
- * and where the home / player / admin / raffles routes are mounted. For now it
- * hosts a minimal join flow into the migrated PlayerView.
+ * App shell: a persistent header and the router outlet. Individual screens
+ * live in src/views and are mounted by Vue Router.
  */
-import { ref } from 'vue'
-import PlayerView from '@/views/PlayerView.vue'
-
-const joinId = ref('')
-const activeCardId = ref<string | null>(null)
-
-function join() {
-  const id = joinId.value.trim().toUpperCase()
-  if (id) activeCardId.value = id
-}
-
-function leave() {
-  activeCardId.value = null
-  joinId.value = ''
-}
+import { RouterLink, RouterView } from 'vue-router'
 </script>
 
 <template>
-  <main class="shell">
-    <h1>Bingo</h1>
-    <p class="poc-note">Vite + TypeScript migration · player view proof-of-concept</p>
+  <div class="app">
+    <header class="topbar">
+      <RouterLink to="/" class="brand">Bingo</RouterLink>
+      <nav>
+        <RouterLink to="/raffles">Raffles</RouterLink>
+      </nav>
+    </header>
 
-    <form v-if="!activeCardId" class="join" @submit.prevent="join">
-      <label for="join-id">Enter your card ID</label>
-      <div class="join-row">
-        <input
-          id="join-id"
-          v-model="joinId"
-          autocomplete="off"
-          autocapitalize="characters"
-          placeholder="e.g. A2B3C4"
-          maxlength="6"
-        />
-        <button type="submit" :disabled="!joinId.trim()">Join</button>
-      </div>
-    </form>
-
-    <PlayerView
-      v-else
-      :key="activeCardId"
-      :card-id="activeCardId"
-      @leave="leave"
-      @deleted="leave"
-    />
-  </main>
+    <main class="content">
+      <RouterView />
+    </main>
+  </div>
 </template>
 
 <style scoped>
-.shell {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 32px 20px;
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #26263a;
 }
-h1 {
-  margin: 0;
+.brand {
+  font-size: 1.4rem;
+  font-weight: 700;
   color: var(--accent, #e53170);
+  text-decoration: none;
 }
-.poc-note {
-  margin: 4px 0 28px;
-  color: #9a9ab0;
-  font-size: 0.9rem;
+.topbar nav a {
+  color: #c4c4d4;
+  text-decoration: none;
+  font-size: 0.95rem;
 }
-.join {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+.topbar nav a:hover {
+  color: #fff;
 }
-.join-row {
-  display: flex;
-  gap: 8px;
-}
-.join input {
-  flex: 1;
-  text-transform: uppercase;
+.content {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 28px 20px;
 }
 </style>

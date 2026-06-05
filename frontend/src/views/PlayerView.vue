@@ -9,13 +9,18 @@
  * component; as an isolated SFC it is independently readable and testable.
  */
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import BingoBoard from '@/components/BingoBoard.vue'
 import { apiGet } from '@/api/client'
 import { useGameSocket } from '@/composables/useGameSocket'
 import type { BingoGameState, BoardResponse, Card, WSMessage } from '@/types/models'
 
 const props = defineProps<{ cardId: string }>()
-const emit = defineEmits<{ leave: []; deleted: [] }>()
+const router = useRouter()
+
+function leave() {
+  void router.push('/')
+}
 
 const card = ref<Card | null>(null)
 const game = ref<BingoGameState | null>(null)
@@ -108,7 +113,7 @@ function onMessage(msg: WSMessage) {
       break
     case 'card_deleted':
       socket.close()
-      emit('deleted')
+      void router.push('/')
       break
     // style_update / halftime are out of scope for this POC slice.
   }
@@ -140,7 +145,7 @@ onBeforeUnmount(() => socket.close())
         <span class="conn" :class="{ on: socket.connected.value }">
           {{ socket.connected.value ? 'live' : 'offline' }}
         </span>
-        <button type="button" @click="emit('leave')">Leave</button>
+        <button type="button" @click="leave">Leave</button>
       </div>
     </header>
 

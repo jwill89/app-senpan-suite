@@ -116,6 +116,26 @@ export interface BoardResponse {
   game_details?: string
 }
 
+export interface RafflesListResponse {
+  raffles: Raffle[]
+}
+
+export interface RaffleDetailResponse {
+  raffle: Raffle
+  total_entries?: number
+  /** Present for the public view of a closed raffle that has a winner. */
+  winner_entry?: RaffleEntry
+  /** Present only for admins. */
+  entries?: RaffleEntry[]
+}
+
+export interface RaffleEnterResponse {
+  message: string
+  total_entries: number
+  total_cost: number
+  signup_instructions: string
+}
+
 // ── WebSocket message types ─────────────────────────────────────────────────
 
 export interface WSGameUpdate {
