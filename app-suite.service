@@ -1,0 +1,39 @@
+[Unit]
+Description=App Suite Service
+Documentation=https://github.com/youruser/app-suite
+After=network.target
+StartLimitBurst=5
+StartLimitIntervalSec=60
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/app-suite
+ExecStart=/opt/app-suite/app-suite -addr :8080 -db /opt/app-suite/data/database.sqlite -webroot /var/www/www.yoursite.com
+
+# Auto-restart on failure, with increasing back-off
+Restart=on-failure
+RestartSec=5
+
+# Credentials (admin password, session secret) are loaded from an untracked
+# env file — never commit them. Copy app-suite.env.example to
+# /opt/app-suite/app-suite.env (chmod 600) and fill in real values.
+# The leading '-' makes the file optional so the unit still starts if absent.
+EnvironmentFile=-/opt/app-suite/app-suite.env
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/opt/app-suite
+
+# Logging (stdout/stderr → journalctl)
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=app-suite
+
+[Install]
+WantedBy=default.target
+
