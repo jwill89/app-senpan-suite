@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
+import { useAuth } from '@/composables/useAuth'
 
 /**
  * Client-side routes. Non-home views are lazy-loaded so each becomes its own
@@ -30,12 +31,52 @@ const router = createRouter({
       component: () => import('@/views/RaffleDetailView.vue'),
       props: true,
     },
+
+    // ── Admin ──
+    {
+      path: '/admin/login',
+      name: 'admin-login',
+      component: () => import('@/views/admin/AdminLoginView.vue'),
+    },
+    {
+      path: '/admin',
+      component: () => import('@/views/admin/AdminLayout.vue'),
+      meta: { requiresAuth: true },
+      redirect: { name: 'admin-cards' },
+      children: [
+        {
+          path: 'cards',
+          name: 'admin-cards',
+          component: () => import('@/views/admin/AdminCardsView.vue'),
+        },
+        {
+          path: 'winners',
+          name: 'admin-winners',
+          component: () => import('@/views/admin/AdminWinnersLogView.vue'),
+        },
+        {
+          path: 'settings',
+          name: 'admin-settings',
+          component: () => import('@/views/admin/AdminSettingsView.vue'),
+        },
+      ],
+    },
+
     // Unknown paths → home.
     { path: '/:pathMatch(.*)*', redirect: '/' },
   ],
   scrollBehavior() {
     return { top: 0 }
   },
+})
+
+// Guard admin routes: confirm an authenticated session (cookie-based) before
+// entry, redirecting to the login page with a return path otherwise.
+router.beforeEach(async (to) => {
+  if (!to.meta.requiresAuth) return true
+  const { ensure } = useAuth()
+  if (await ensure()) return true
+  return { name: 'admin-login', query: { redirect: to.fullPath } }
 })
 
 export default router

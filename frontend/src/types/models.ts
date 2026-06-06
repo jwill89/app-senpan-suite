@@ -12,7 +12,14 @@
  */
 export * from './generated'
 
-import type { BingoDrawnNumber, BingoGameState, Card, Raffle, RaffleEntry } from './generated'
+import type {
+  BingoDrawnNumber,
+  BingoGameState,
+  Card,
+  Raffle,
+  RaffleEntry,
+  WinnersLogEntry,
+} from './generated'
 
 // ── API response envelopes ──────────────────────────────────────────────────
 
@@ -40,6 +47,45 @@ export interface RaffleEnterResponse {
   total_entries: number
   total_cost: number
   signup_instructions: string
+}
+
+// ── Admin endpoints ─────────────────────────────────────────────────────────
+
+export interface AuthCheckResponse {
+  authenticated: boolean
+}
+
+/** Editable app settings (all values are strings; see internal/server/settings.go). */
+export interface AppSettings {
+  app_title: string
+  default_draw_delay: string
+  frequent_winner_threshold: string
+  frequent_winner_hours: string
+  header_font: string
+  google_fonts_api_key: string
+}
+
+export interface SettingsResponse {
+  settings: AppSettings
+}
+
+/** GET /api/cards returns IDs + names only (no board data). */
+export type AdminCardSummary = Pick<Card, 'id' | 'player_name' | 'details'>
+
+export interface AdminCardsResponse {
+  cards: AdminCardSummary[]
+}
+
+export interface GenerateCardsResponse {
+  cards: Array<Pick<Card, 'id' | 'board_data'>>
+  count: number
+}
+
+export interface WinnersLogResponse {
+  entries: WinnersLogEntry[]
+  total: number
+  page: number
+  per_page: number
 }
 
 // ── WebSocket message types ─────────────────────────────────────────────────

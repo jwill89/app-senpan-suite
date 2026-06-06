@@ -39,17 +39,31 @@ src/
     assets.ts              prize-image URL resolver
   composables/
     useGameSocket.ts       WebSocket connect / reconnect / keepalive
+    useAuth.ts             admin session state + router-guard helper
+    useToast.ts            toast notifications (singleton)
   components/
     BingoBoard.vue         presentational 5×5 board
+    ToastHost.vue          renders active toasts (mounted in App.vue)
   views/
     HomeView.vue           landing: bingo join + raffles card
     PlayerView.vue         player experience (board, stamps, live draws)
     RafflesListView.vue    public open/closed raffle listing
     RaffleDetailView.vue   public raffle detail + sign-up form
+    admin/
+      AdminLoginView.vue   password login
+      AdminLayout.vue      tab bar + nested <RouterView> (guarded)
+      AdminCardsView.vue   generate / search / preview / edit / delete cards
+      AdminWinnersLogView.vue  paginated, sortable winners log
+      AdminSettingsView.vue    app settings editor
 ```
 
 Non-home views are lazy-loaded (each is its own chunk). Migrated so far:
-**player** and **public raffles**. Admin dashboard is still on the legacy app.
+**player**, **public raffles**, and the **admin foundation** (cookie-based auth +
+route guard) with the **Cards**, **Winners Log**, and **Settings** tabs.
+
+Still on the legacy app (next up): admin **Game** (live draw + WebSocket),
+**Patterns** (drag-drop grid editor), **Themes** (CodeMirror), and **raffle
+admin** (entries, winner pick, open/close).
 
 ## How dev mode talks to the backend
 

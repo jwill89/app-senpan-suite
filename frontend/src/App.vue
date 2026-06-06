@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * App shell: a persistent header and the router outlet. Individual screens
- * live in src/views and are mounted by Vue Router.
+ * App shell: a persistent header, the router outlet, and the toast host.
+ * Individual screens live in src/views and are mounted by Vue Router.
  */
 import { RouterLink, RouterView } from 'vue-router'
+import ToastHost from '@/components/ToastHost.vue'
 </script>
 
 <template>
@@ -12,12 +13,15 @@ import { RouterLink, RouterView } from 'vue-router'
       <RouterLink to="/" class="brand">Bingo</RouterLink>
       <nav>
         <RouterLink to="/raffles">Raffles</RouterLink>
+        <RouterLink to="/admin">Admin</RouterLink>
       </nav>
     </header>
 
     <main class="content">
       <RouterView />
     </main>
+
+    <ToastHost />
   </div>
 </template>
 
@@ -34,6 +38,10 @@ import { RouterLink, RouterView } from 'vue-router'
   font-weight: 700;
   color: var(--accent, #e53170);
   text-decoration: none;
+}
+.topbar nav {
+  display: flex;
+  gap: 16px;
 }
 .topbar nav a {
   color: #c4c4d4;
