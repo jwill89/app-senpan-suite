@@ -31,7 +31,9 @@ src/
   App.vue                  shell: header + <RouterView>
   router/index.ts          routes (home, /play/:cardId, /raffles, /raffles/:id)
   api/client.ts            typed fetch wrapper (replaces app.js `api()`)
-  types/models.ts          TS mirror of the Go internal/model package
+  types/
+    generated.ts           GENERATED from Go internal/model — do not edit
+    models.ts              re-exports generated + API envelopes & WS messages
   lib/
     markdown.ts            marked + DOMPurify (sanitized markdown → v-html)
     assets.ts              prize-image URL resolver
@@ -73,10 +75,24 @@ must fall back to `index.html`. Add to the SPA vhost (keep `/api` proxied to Go)
 Uploaded prize images keep their existing path (`assets/images/raffles/...`) and
 are still served by Apache from the web root.
 
+## Type generation
+
+`src/types/generated.ts` is generated from the Go `internal/model` package with
+[tygo](https://github.com/gzuidhof/tygo), so the domain types can't drift from
+the backend. Regenerate after changing a model struct:
+
+```powershell
+go install github.com/gzuidhof/tygo@latest   # once; ensure $(go env GOPATH)/bin is on PATH
+cd ..\src; go generate ./...                 # emits frontend/src/types/generated.ts
+```
+
+Config lives in `src/tygo.yaml`. The API response envelopes and WebSocket
+message types have no Go struct counterpart (the handlers build them inline),
+so they stay hand-written in `src/types/models.ts`, which re-exports the
+generated types alongside them.
+
 ## Migration notes / open items
 
-- **Type generation:** `types/models.ts` is hand-maintained. Consider generating
-  it from the Go `internal/model` package (e.g. `tygo`) so they can't drift.
 - **Themes coupling:** the custom-CSS themes feature targets specific class names
   in the legacy markup. Porting each view's markup must preserve (or deliberately
   migrate) those class names, or existing user themes will break.

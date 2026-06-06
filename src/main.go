@@ -3,6 +3,11 @@
 // creates the WebSocket hub, and starts the HTTP server.
 package main
 
+// Generate the frontend's TypeScript domain types from internal/model.
+// Requires tygo on PATH (go install github.com/gzuidhof/tygo@latest).
+//
+//go:generate tygo generate
+
 import (
 	"context"
 	"crypto/rand"

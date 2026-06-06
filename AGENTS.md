@@ -197,7 +197,8 @@ cd src; go build -ldflags="-s -w" -o app-suite .
 ## Extending the project
 
 - **New API endpoint**: add a handler method on `*Server` in `internal/server/`, register the route in `routes()`.
-- **New domain type**: add to `internal/model/model.go`.
+- **New domain type**: add to `internal/model/model.go`, then regenerate the
+  frontend TypeScript types: `cd src && go generate ./...` (tygo → `frontend/src/types/generated.ts`).
 - **New store method**: add to `internal/store/store.go`, returning typed structs.
 - **New migration**: bump `schemaVersion` in `store/migrate.go`, add an `if version < N` block in `ensureSchema()`.
 - **New admin tab**: add tab ID to `adminNav()` in `app.js`, add template section in `index.html`, wrap in `.admin-panel` for consistent styling.

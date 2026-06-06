@@ -1,0 +1,6 @@
+packages:
+  - path: "app-suite/internal/model"
+    output_path: "../frontend/src/types/generated.ts"
+    frontmatter: |
+      // Source of truth: src/internal/model/model.go
+      // Regenerate with:  cd src && go generate ./...   (or: tygo generate)
