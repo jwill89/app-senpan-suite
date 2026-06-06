@@ -13,6 +13,8 @@ const props = defineProps<{
   stamps: Record<string, boolean>
   /** When false, cells are display-only (e.g. admin preview). */
   interactive?: boolean
+  /** Cells (keyed "row-col") to highlight, e.g. a winning pattern. */
+  highlight?: Set<string>
 }>()
 
 const emit = defineEmits<{ toggle: [row: number, col: number] }>()
@@ -44,6 +46,7 @@ function onCell(r: number, c: number) {
           free: cell === 0,
           called: cell !== 0 && calledSet.has(cell),
           stamped: isStamped(r, c),
+          matched: highlight?.has(`${r}-${c}`),
         }"
         :disabled="interactive === false"
         @click="onCell(r, c)"
@@ -96,6 +99,11 @@ function onCell(r: number, c: number) {
 .board-cell.free {
   color: var(--accent, #e53170);
   font-size: 0.85rem;
+}
+.board-cell.matched {
+  border-color: #2cb67d;
+  background: #1f3a30;
+  box-shadow: inset 0 0 0 2px #2cb67d;
 }
 .board-cell-stamp {
   position: absolute;

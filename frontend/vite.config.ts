@@ -19,7 +19,12 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
-        changeOrigin: true,
+        // Keep the original Host (localhost:5173) so it matches the browser's
+        // Origin. The backend's WebSocket upgrade (coder/websocket) enforces a
+        // same-origin check (Origin host must equal Host); rewriting the origin
+        // would make it reject the upgrade with a 403. In production Apache
+        // preserves Host (ProxyPreserveHost On), so this mirrors prod.
+        changeOrigin: false,
         ws: true,
       },
     },

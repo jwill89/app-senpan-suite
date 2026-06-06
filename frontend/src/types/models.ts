@@ -16,6 +16,9 @@ import type {
   BingoDrawnNumber,
   BingoGameState,
   Card,
+  FrequentWinner,
+  Pattern,
+  PatternCategory,
   Raffle,
   RaffleEntry,
   WinnersLogEntry,
@@ -86,6 +89,29 @@ export interface WinnersLogResponse {
   total: number
   page: number
   per_page: number
+}
+
+/** GET /api/game and the "start" action response. */
+export interface GameStateResponse {
+  game: BingoGameState | null
+  winners: string[]
+  game_details: string
+}
+
+/** POST /api/game {action:"draw"} response (DrawResult). */
+export interface DrawResultResponse {
+  drawn: BingoDrawnNumber
+  game: BingoGameState
+  winners: string[]
+}
+
+export interface PatternsListResponse {
+  patterns: Pattern[]
+  categories: PatternCategory[]
+}
+
+export interface FrequentWinnersResponse {
+  winners: FrequentWinner[]
 }
 
 // ── WebSocket message types ─────────────────────────────────────────────────

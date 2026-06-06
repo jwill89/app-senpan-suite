@@ -42,8 +42,13 @@ const router = createRouter({
       path: '/admin',
       component: () => import('@/views/admin/AdminLayout.vue'),
       meta: { requiresAuth: true },
-      redirect: { name: 'admin-cards' },
+      redirect: { name: 'admin-game' },
       children: [
+        {
+          path: 'game',
+          name: 'admin-game',
+          component: () => import('@/views/admin/AdminGameView.vue'),
+        },
         {
           path: 'cards',
           name: 'admin-cards',

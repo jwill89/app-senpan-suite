@@ -42,7 +42,8 @@ src/
     useAuth.ts             admin session state + router-guard helper
     useToast.ts            toast notifications (singleton)
   components/
-    BingoBoard.vue         presentational 5×5 board
+    BingoBoard.vue         presentational 5×5 board (+ winner highlight)
+    PatternPreview.vue     small read-only 5×5 win-pattern grid
     ToastHost.vue          renders active toasts (mounted in App.vue)
   views/
     HomeView.vue           landing: bingo join + raffles card
@@ -52,24 +53,29 @@ src/
     admin/
       AdminLoginView.vue   password login
       AdminLayout.vue      tab bar + nested <RouterView> (guarded)
+      AdminGameView.vue    start / draw / winners / verify / end / halftime
       AdminCardsView.vue   generate / search / preview / edit / delete cards
       AdminWinnersLogView.vue  paginated, sortable winners log
       AdminSettingsView.vue    app settings editor
 ```
 
 Non-home views are lazy-loaded (each is its own chunk). Migrated so far:
-**player**, **public raffles**, and the **admin foundation** (cookie-based auth +
-route guard) with the **Cards**, **Winners Log**, and **Settings** tabs.
+**player**, **public raffles**, and the **admin** section's **Game**, **Cards**,
+**Winners Log**, and **Settings** tabs (cookie auth + route guard).
 
-Still on the legacy app (next up): admin **Game** (live draw + WebSocket),
-**Patterns** (drag-drop grid editor), **Themes** (CodeMirror), and **raffle
-admin** (entries, winner pick, open/close).
+Still on the legacy app (next up): admin **Patterns** (drag-drop grid editor),
+**Themes** (CodeMirror), and **raffle admin** (entries, winner pick, open/close).
 
 ## How dev mode talks to the backend
 
 `vite.config.ts` proxies `/api` (HTTP **and** WebSocket) to `http://localhost:8080`,
 so the frontend behaves exactly as it does in production, where Apache serves the
 SPA and reverse-proxies `/api` to the Go binary. No CORS, no env juggling.
+
+The proxy uses `changeOrigin: false` deliberately: the backend's WebSocket
+upgrade enforces a same-origin check (Origin host must equal Host), so the proxy
+must preserve the original Host (`localhost:5173`) to match the browser's Origin.
+In production this maps to Apache's `ProxyPreserveHost On`.
 
 ## Production cutover (later, not yet done)
 

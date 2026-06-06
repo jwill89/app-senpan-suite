@@ -13,12 +13,13 @@ const { logout } = useAuth()
 const { show } = useToast()
 
 const tabs = [
+  { to: { name: 'admin-game' }, label: 'Game' },
   { to: { name: 'admin-cards' }, label: 'Cards' },
   { to: { name: 'admin-winners' }, label: 'Winners Log' },
   { to: { name: 'admin-settings' }, label: 'Settings' },
 ]
 
-const pending = ['Game', 'Patterns', 'Themes', 'Raffle admin']
+const pending = ['Patterns', 'Themes', 'Raffle admin']
 
 async function doLogout() {
   await logout()
