@@ -22,7 +22,7 @@ jobs:
   # are the committed ones, which the generated job checks. The build is uploaded for
   # the backend job, since the binary embeds it.
   frontend:
-    uses: jwill89/shared-tooling/.github/workflows/web.yml@v2.8.0
+    uses: jwill89/shared-tooling/.github/workflows/web.yml@v2.15.0
     with:
       dir: frontend
       fontawesome: true
@@ -37,7 +37,8 @@ jobs:
   # plugin's client from it (NSwag, plugins/SenpanCompanion/Api).
   generated:
     needs: frontend
-    runs-on: ubuntu-24.04
+    # A pull request from a fork runs on GitHub's runners, never on a self-hosted one.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-24.04' || vars.CI_RUNNER || 'ubuntu-24.04' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -52,6 +53,7 @@ jobs:
         with:
           go-version-file: backend/go.mod
           cache-dependency-path: backend/go.sum
+          cache: ${{ runner.environment == 'github-hosted' }} # a self-hosted runner keeps Go's caches itself
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -86,7 +88,7 @@ jobs:
   # frontend job's build, which the binary embeds, so every Go step compiles with it.
   backend:
     needs: frontend
-    uses: jwill89/shared-tooling/.github/workflows/go.yml@v2.8.0
+    uses: jwill89/shared-tooling/.github/workflows/go.yml@v2.15.0
     with:
       dir: backend
       download-artifact: web-dist
@@ -105,7 +107,7 @@ jobs:
   # plugins/Directory.Build.props), dotnet format, and the tests of everything that
   # doesn't touch the game (the client, the live stream's reader, the pricing).
   plugin:
-    uses: jwill89/shared-tooling/.github/workflows/dotnet.yml@v2.8.0
+    uses: jwill89/shared-tooling/.github/workflows/dotnet.yml@v2.15.0
     with:
       projects: plugins/SenpanCompanion
       test-project: plugins/SenpanCompanion.Tests
@@ -118,7 +120,7 @@ jobs:
   # board, see a draw arrive live and keep a stamp across a reload.
   e2e:
     needs: [frontend, backend]
-    uses: jwill89/shared-tooling/.github/workflows/e2e.yml@v2.8.0
+    uses: jwill89/shared-tooling/.github/workflows/e2e.yml@v2.15.0
     with:
       dir: frontend
       go-version-file: backend/go.mod
@@ -128,19 +130,15 @@ jobs:
       FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_NPM_TOKEN }}
 
   scripts:
-    uses: jwill89/shared-tooling/.github/workflows/pwsh.yml@v2.8.0
+    uses: jwill89/shared-tooling/.github/workflows/pwsh.yml@v2.15.0
 
   docs:
-    uses: jwill89/shared-tooling/.github/workflows/docs.yml@v2.8.0
+    uses: jwill89/shared-tooling/.github/workflows/docs.yml@v2.15.0
 
   # OSV-Scanner over every lockfile. An osv-scanner.toml beside a lockfile passes over the
   # advisories that reach only lint, test or build tooling.
   osv:
-    uses: jwill89/shared-tooling/.github/workflows/osv.yml@v2.8.0
-    permissions:
-      contents: read
-      actions: read
-      security-events: write
+    uses: jwill89/shared-tooling/.github/workflows/osv.yml@v2.15.0
 
   # On a push to main, AFTER the whole gate passes, tag + release a version with no
   # release yet: the app as v<version> (which the deploy ships) and the plugin as
@@ -151,7 +149,8 @@ jobs:
     name: Tag + release (main, on version bump)
     needs: [frontend, generated, backend, e2e, plugin, scripts, docs, osv]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    # A pull request from a fork runs on GitHub's runners, never on a self-hosted one.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-24.04' || vars.CI_RUNNER || 'ubuntu-24.04' }}
     permissions:
       contents: write
     steps:
