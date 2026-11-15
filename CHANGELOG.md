@@ -1373,3 +1373,5 @@ The server's own history from before 4.0.0, when it was released on its own.
 - Token-based theming: themes are stored as a structured set of design tokens, and the stylesheet is generated server-side from an allowlist of tokens.
 - Live admin updates: after an admin change, open admin pages are told to refresh, including garapon draws and raffle entries.
 - Garapon, the festival lottery drum, with admin management and a tokenized public draw.
+
+[Unreleased]: https://github.com/jwill89/app-senpan-suite/commits/HEAD
