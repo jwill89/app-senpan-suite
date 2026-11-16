@@ -232,7 +232,7 @@ onBeforeUnmount(onModalDragEnd)
  * The usage hint: a wash over the whole plan, the way a web map explains itself,
  * rather than a line in the corner - which is exactly the place an eye skips.
  *
- * It never intercepts anything (see .map-hint's pointer-events), so the first
+ * It never intercepts anything (see .festival-map-widget__hint's pointer-events), so the first
  * drag both clears this AND moves the map instead of being spent on the overlay.
  * It goes on any real interaction - the visitor has evidently got it - or after
  * seven seconds if they never touch the map at all.
@@ -267,13 +267,13 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
 </script>
 
 <template>
-  <div class="map-embed" :class="{ 'is-framed': embedded }" :style="frameStyle">
+  <div class="festival-map-widget" :class="{ 'is-framed': embedded }" :style="frameStyle">
     <!-- Any interaction at all clears the hint, the toolbar's own buttons
          included: zooming from the bar is using the map. Capture, so it counts
          even though the controls below stop the event for their own purposes. -->
     <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- the listeners only observe events on the controls inside (capture phase) to clear the hint; the bar itself is not a control -->
     <div
-      class="map-toolbar"
+      class="festival-map-widget__toolbar"
       @pointerdown.capture="dismissHint"
       @wheel.capture="dismissHint"
       @keydown.capture="dismissHint"
@@ -299,7 +299,7 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
       </button>
       <!-- Day switcher: only worth offering when the festival runs across more
            than one, since some stalls change hands from one day to the next. -->
-      <span v-if="days.length > 1" class="map-day-picker">
+      <span v-if="days.length > 1" class="festival-map-widget__day-picker">
         <button
           type="button"
           class="btn-neutral btn-sm"
@@ -331,7 +331,7 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
     <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- the listeners only observe events on the map inside (capture phase) to clear the hint; the stage itself is not a control -->
     <div
       ref="stageRef"
-      class="map-embed-stage"
+      class="festival-map-widget__stage"
       @pointerdown.capture="dismissHint"
       @wheel.capture="dismissHint"
       @keydown.capture="dismissHint"
@@ -353,9 +353,16 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
 
       <!-- Covers the plan and dims it for a moment, then clears itself. Inert:
            it is told about, never touched. -->
-      <div class="map-hint" :class="{ 'is-dismissed': hintDismissed }" aria-hidden="true">
-        <p class="map-hint-text">
-          <font-awesome-icon :icon="['fad', 'hand-pointer']" class="map-hint-icon" />
+      <div
+        class="festival-map-widget__hint"
+        :class="{ 'is-dismissed': hintDismissed }"
+        aria-hidden="true"
+      >
+        <p class="festival-map-widget__hint-text">
+          <font-awesome-icon
+            :icon="['fad', 'hand-pointer']"
+            class="festival-map-widget__hint-icon"
+          />
           <span>
             Drag to move around the map - scroll or pinch to zoom - tap a stall for its details.
           </span>
@@ -368,7 +375,7 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
       <div
         v-if="selected"
         ref="modalRef"
-        class="map-stall-modal"
+        class="festival-map-widget__stall-modal"
         :style="modalStyle"
         role="dialog"
         aria-modal="false"
@@ -376,27 +383,30 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
       >
         <!-- The grip. Dragging anywhere on the panel would fight text selection
              and the links inside it, so only this bar moves it. -->
-        <div class="map-stall-modal-grip" @pointerdown="onModalDragStart">
-          <font-awesome-icon :icon="['fad', 'bars']" class="map-stall-modal-grip-icon" />
+        <div class="festival-map-widget__stall-modal-grip" @pointerdown="onModalDragStart">
+          <font-awesome-icon
+            :icon="['fad', 'bars']"
+            class="festival-map-widget__stall-modal-grip-icon"
+          />
           <button
             type="button"
-            class="map-stall-modal-close"
+            class="festival-map-widget__stall-modal-close"
             aria-label="Close details"
             @click="selected = null"
           >
             <font-awesome-icon :icon="['fas', 'circle-xmark']" />
           </button>
         </div>
-        <div class="map-stall-modal-body">
+        <div class="festival-map-widget__stall-modal-body">
           <p v-if="!selectedOccupants.length" class="text-muted text-sm">
             Nobody is at this stall on the day you're viewing.
           </p>
           <div
             v-for="occupant in selectedOccupants"
             :key="occupant.id"
-            class="map-stall-occupant-panel"
+            class="festival-map-widget__stall-occupant-panel"
           >
-            <div class="map-stall-panel-head">
+            <div class="festival-map-widget__stall-panel-head">
               <div>
                 <!-- The affiliate leads, because that is who the visitor is
                      looking for; a stall title is optional and only ADDS to it. -->
@@ -408,7 +418,7 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
                      stall is open right now is the first thing a visitor wants,
                      and inline it is easy to miss at the end of a long name that
                      has already wrapped. -->
-                <p class="map-stall-status">
+                <p class="festival-map-widget__stall-status">
                   <span
                     class="status-badge"
                     :class="occupant.isOpen ? 'status-badge-open' : 'status-badge-closed'"
@@ -417,7 +427,7 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
                   </span>
                 </p>
                 <!-- The type alone: the affiliate already heads the name above. -->
-                <p v-if="stallCaption(occupant)" class="map-stall-type">
+                <p v-if="stallCaption(occupant)" class="festival-map-widget__stall-type">
                   <font-awesome-icon :icon="['fad', 'store']" />
                   <span>{{ stallCaption(occupant) }}</span>
                 </p>
@@ -425,7 +435,7 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
               <img
                 v-if="occupant.affiliate?.logo"
                 :src="assetUrl(occupant.affiliate.logo)"
-                class="map-stall-logo"
+                class="festival-map-widget__stall-logo"
                 :alt="occupant.affiliate.name"
               />
             </div>
@@ -433,7 +443,7 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
             <!-- Order matters here: what a visitor standing in front of the stall
                  needs first is whether it is open and when - so the hours come
                  straight after the type, ahead of the prose. -->
-            <ul v-if="hoursFor(occupant).length" class="map-stall-hours">
+            <ul v-if="hoursFor(occupant).length" class="festival-map-widget__stall-hours">
               <li v-for="(t, i) in hoursFor(occupant)" :key="i">
                 <font-awesome-icon :icon="['fad', 'clock']" />
                 <!-- The label is the part a visitor scans for ("Day 1"), so it
@@ -456,7 +466,7 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
                 occupant.affiliate?.carrdLink ||
                 occupant.affiliate?.discordLink
               "
-              class="map-stall-links"
+              class="festival-map-widget__stall-links"
             >
               <!-- All three sit together at the left, under the text they belong
                    to. The booth page leads them: it is about THIS stall on THIS
@@ -492,13 +502,13 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
 
             <!-- Raffle running at this stall right now (the server leaves off any
                  that is closed or outside its dates). -->
-            <div v-if="occupant.raffle" class="map-stall-rally">
+            <div v-if="occupant.raffle" class="festival-map-widget__stall-rally">
               <img
                 v-if="occupant.raffle.prizeImage"
                 :src="assetUrl(occupant.raffle.prizeImage)"
                 alt=""
               />
-              <div class="map-stall-rally-body">
+              <div class="festival-map-widget__stall-rally-body">
                 <strong>{{ occupant.raffle.title }}</strong>
                 <p class="text-sm text-muted">
                   A raffle is running at this stall.
@@ -522,11 +532,11 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
             <!-- Stamp rally badge: this occupant carries a stamp on the open rally. -->
             <div
               v-if="occupant.inStampRally"
-              class="map-stall-rally"
+              class="festival-map-widget__stall-rally"
               :class="{ 'is-collected': isCollected(occupant) }"
             >
               <img v-if="occupant.stampImage" :src="assetUrl(occupant.stampImage)" alt="" />
-              <div class="map-stall-rally-body">
+              <div class="festival-map-widget__stall-rally-body">
                 <strong>Part of {{ occupant.rallyTitle }}</strong>
                 <p class="text-sm text-muted">
                   <template v-if="isCollected(occupant)">

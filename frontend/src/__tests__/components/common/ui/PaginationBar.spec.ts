@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PaginationBar from '@/components/common/ui/PaginationBar.vue'
+import { axeFindings } from '@/__tests__/axe'
 
 describe('PaginationBar', () => {
   it('renders nothing when there is a single page', () => {
@@ -34,5 +35,10 @@ describe('PaginationBar', () => {
   it('shows the current page indicator', () => {
     const wrapper = mount(PaginationBar, { props: { page: 2, totalPages: 4 } })
     expect(wrapper.text()).toContain('Page 2 / 4')
+  })
+
+  it('has nothing axe flags', async () => {
+    const wrapper = mount(PaginationBar, { props: { page: 2, totalPages: 4 } })
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"app-suite/internal/auth"
 	"app-suite/internal/db"
 	"app-suite/internal/live"
 	"app-suite/internal/store"
@@ -44,23 +43,22 @@ func postFrom(t *testing.T, ts *httptest.Server, path string, body any) (int, st
 }
 
 // TestRegisterNoEnumeration: a sign-up answers identically - status and body -
-// whether the name is new, already taken, or the reserved bootstrap "admin", so it
-// can't be used to find out which accounts exist. The eligible account is still made.
+// whether the name is new or already taken, so it can't be used to find out which
+// accounts exist. The eligible account is still made.
 func TestRegisterNoEnumeration(t *testing.T) {
 	_, st, ts := newInternalServer(t)
 	post := func(username string) (int, string) {
 		return postFrom(t, ts, "/api/v1/auth/register", map[string]string{"username": username, "password": "password123"})
 	}
 
-	newCode, newBody := post("brandnew")            // made
-	dupCode, dupBody := post("brandnew")            // now taken
-	resCode, resBody := post(auth.ReservedUsername) // the bootstrap account
+	newCode, newBody := post("brandnew") // made
+	dupCode, dupBody := post("brandnew") // now taken
 
-	if newCode != http.StatusAccepted || dupCode != http.StatusAccepted || resCode != http.StatusAccepted {
-		t.Fatalf("every sign-up must answer 202; got new=%d taken=%d reserved=%d", newCode, dupCode, resCode)
+	if newCode != http.StatusAccepted || dupCode != http.StatusAccepted {
+		t.Fatalf("every sign-up must answer 202; got new=%d taken=%d", newCode, dupCode)
 	}
-	if newBody != dupBody || newBody != resBody {
-		t.Errorf("the answers must be identical:\n new=%q\n taken=%q\n reserved=%q", newBody, dupBody, resBody)
+	if newBody != dupBody {
+		t.Errorf("the answers must be identical:\n new=%q\n taken=%q", newBody, dupBody)
 	}
 	row, err := db.New(st.ReadDB()).GetUserByUsername(t.Context(), "brandnew")
 	if err != nil {
@@ -68,5 +66,21 @@ func TestRegisterNoEnumeration(t *testing.T) {
 	}
 	if row.IsActive != 0 {
 		t.Error("a new account must wait for an admin to activate it")
+	}
+}
+
+// Nothing is special about the name admin: signing up with it makes an account like
+// any other, inactive, with no admin role.
+func TestRegisterTakesTheNameAdmin(t *testing.T) {
+	_, st, ts := newInternalServer(t)
+	if code, _ := postFrom(t, ts, "/api/v1/auth/register", map[string]string{"username": "admin", "password": "password123"}); code != http.StatusAccepted {
+		t.Fatalf("sign-up as admin: %d; want 202", code)
+	}
+	row, err := db.New(st.ReadDB()).GetUserByUsername(t.Context(), "admin")
+	if err != nil {
+		t.Fatalf("signing up as admin made no account: %v", err)
+	}
+	if row.IsActive != 0 || row.IsAdmin != 0 {
+		t.Errorf("the account signed up as admin is active=%d admin=%d; want neither", row.IsActive, row.IsAdmin)
 	}
 }

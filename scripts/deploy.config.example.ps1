@@ -21,9 +21,9 @@ $DeployServiceName = "<systemd-service-name>"          # e.g. myapp; its env fil
 $DeployServiceUser = "<service-account>"               # the account the unit runs as, never root; owns the binary
 $DeployRemoteOptDir = "<dir-holding-the-app-binary>"   # e.g. /opt/myapp (its data folder is <this>/data)
 $DeployCertName = "<certificate-name>"                 # the vhost's certificate: its folder under /etc/letsencrypt/live, e.g. example.com
-# Optional: the port the app listens on, on the loopback address (the unit's -addr, the
-# vhost's proxy and the health check). Unset, it is 8080, the app's own default.
-# $DeployAppPort = 8080
+# The port the app listens on, on the loopback address (the unit's -addr, the vhost's
+# proxy and the health check): one no other site on the host uses.
+$DeployAppPort = "<loopback-port>"
 # Optional: the env file with the service's secrets, root's alone, which the unit loads.
 # Unset, it is /etc/<service name>/<service name>.env.
 # $DeployEnvFile = "<env-file-path>"                   # e.g. /etc/myapp/myapp.env

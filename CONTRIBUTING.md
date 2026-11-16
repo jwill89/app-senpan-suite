@@ -15,5 +15,5 @@ Open an issue first for anything beyond a small, obvious fix, so the change is a
 ## Submitting a change
 
 - Work lands on `main`, with no feature branches.
-- CI on GitHub is the gate: run `task check` (or `scripts/check.ps1`) before you push, and the change is done when CI passes on `main`. No git hook runs the checks.
+- CI on GitHub is the gate: run `task check` before you push, and the change is done when CI passes on `main`. No git hook runs the checks.
 - Commits, versions and the changelog follow the shared rules in [`shared/standards/docs-and-agents.md`](shared/standards/docs-and-agents.md); AGENTS.md says which version and which changelog section a change bumps.

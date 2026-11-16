@@ -98,7 +98,7 @@ func (h handlers) signIn(ctx context.Context, in *signInInput) (*meOutput, error
 	if err := h.startSession(ctx, u, ip); err != nil {
 		return nil, h.fail("sign in", err)
 	}
-	return &meOutput{Body: Me{Account: accountOf(u)}}, nil
+	return &meOutput{Body: Me{Account: h.accountOf(u)}}, nil
 }
 
 func (h handlers) signOut(ctx context.Context, _ *struct{}) (*struct{}, error) {
@@ -124,13 +124,9 @@ func (h handlers) signUp(ctx context.Context, in *signUpInput) (*struct{}, error
 		h.Logger.Warn("turnstile check failed", "ip", ip)
 		return nil, huma.Error403Forbidden("The bot check didn't pass. Complete it and try again.")
 	}
-	// The reserved name and a taken one answer like a new account (202), so this
-	// can't be used to find out who has an account.
+	// A taken name answers like a new account (202), so this can't be used to find
+	// out who has an account.
 	username := strings.TrimSpace(in.Body.Username)
-	if strings.EqualFold(username, auth.ReservedUsername) {
-		h.Logger.Warn("sign-up asked for the reserved name", "ip", ip)
-		return nil, nil
-	}
 	hash, err := auth.Hash(in.Body.Password)
 	if err != nil {
 		return nil, h.fail("hash a password", err)

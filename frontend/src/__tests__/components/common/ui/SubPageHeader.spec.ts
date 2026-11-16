@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SubPageHeader from '@/components/common/ui/SubPageHeader.vue'
+import { axeFindings } from '@/__tests__/axe'
 
 describe('SubPageHeader', () => {
   it('renders the title and a Back button', () => {
@@ -18,5 +19,10 @@ describe('SubPageHeader', () => {
   it('renders a custom title via the default slot', () => {
     const wrapper = mount(SubPageHeader, { slots: { default: '<span class="c">Edit</span>' } })
     expect(wrapper.find('h3 .c').text()).toBe('Edit')
+  })
+
+  it('has nothing axe flags', async () => {
+    const wrapper = mount(SubPageHeader, { props: { title: 'New Pattern', icon: ['fad', 'grid'] } })
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

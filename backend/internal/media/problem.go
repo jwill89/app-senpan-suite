@@ -1,6 +1,7 @@
-// Package media does the file work behind the image library, the Carrd projects and
-// the uploaded fonts, over the data folder, and serves the parts of it that are public:
-// the image library, the Carrd projects and the plugin repository (serve.go). Its
+// Package media does the file work behind the image library, the Carrd projects, the
+// uploaded fonts and the Google Fonts families the server keeps (googlefonts.go), over
+// the data folder, and serves the parts of it that are public: the image library, the
+// Carrd projects and the plugin repository (serve.go). Its
 // rules about names and bytes are in internal/uploads and internal/fonts; this
 // package decides what to do with a folder.
 package media

@@ -43,19 +43,8 @@ indent_size = 4
 trim_trailing_whitespace = false
 
 # ---- project: lines below this one are this repo's own ----
-# Senpan Companion's own C# exceptions; the shared style itself is
-# shared/lint/dotnet/.globalconfig, imported by plugins/Directory.Build.props.
-[plugins/SenpanCompanion/**.cs]
-# Braced `case` blocks keep their `{` aligned with the `case` label, as the plugin's
-# switches are written (LiveConnection.Dispatch); `dotnet format`'s default would
-# indent every such block one level deeper.
-csharp_indent_case_contents_when_block = false
-
-# The P/Invokes (winmm PlaySound in Chime, DPAPI in TokenProtector) stay classic
-# [DllImport]: [LibraryImport] would mean partial methods and explicit marshalling for a
-# one-shot chime and two small DPAPI calls.
-dotnet_diagnostic.SYSLIB1054.severity = none
-
+# The plugin's tests follow the shared C# style (shared/lint/dotnet/.globalconfig,
+# imported by plugins/Directory.Build.props) but for this one exception.
 # A test's name is a sentence, its words joined by underscores.
 [plugins/SenpanCompanion.Tests/**.cs]
 dotnet_diagnostic.CA1707.severity = none

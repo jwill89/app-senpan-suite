@@ -376,8 +376,8 @@ function copyDashboardLink(): void {
               alt=""
             />
           </template>
-          <div class="list-row-title">{{ b.title || 'Ema Plaques' }}</div>
-          <div class="list-row-meta">
+          <div class="list-row__title">{{ b.title || 'Ema Plaques' }}</div>
+          <div class="list-row__meta">
             {{ b.festivalMapName }}
             <span v-if="b.status !== 'open'" class="badge badge--muted">closed</span>
             <span v-if="b.pendingCount" class="badge badge--warning">

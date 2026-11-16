@@ -27,7 +27,7 @@ const logs = useLogsStore()
 const fieldId = useId()
 
 const columns: DataColumn[] = [
-  { key: '_expand', label: '', width: '24px' },
+  { key: '_expand', label: '', srLabel: 'Details', width: '24px' },
   { key: 'time', label: 'Time', width: '108px' },
   { key: 'level', label: 'Level', width: '56px' },
   { key: 'method', label: 'Method', width: '58px' },

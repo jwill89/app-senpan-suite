@@ -3,7 +3,14 @@
  *
  * `applyHeaderFont` loads a Google Font and sets the --header-font CSS variable
  * used by headings and the bingo board; `applyCustomCSS` injects/updates the
- * active theme's <style> element.
+ * active theme's <style> element. Each <style> element made here carries the
+ * page's nonce, which the Content-Security-Policy requires of it; the Google Fonts
+ * <link> needs none, as its stylesheet is the site's own.
+ *
+ * A Google Fonts family is served by this site, never by Google: the server
+ * fetches the family's stylesheet and files once, keeps them, and answers
+ * `/api/v1/google-fonts/css?family=<name>` with sources under its own
+ * `/api/v1/google-fonts/files/`, so the browser never contacts Google.
  *
  * A theme is a generated `:root{...}` block that overrides the design tokens, so
  * it is injected into <head> verbatim.
@@ -19,10 +26,16 @@
  */
 import type { UploadedFont } from '@/api/client'
 import { assetCssUrl } from '@/lib/assets'
+import { cspNonce } from '@/lib/csp'
+
+/** Same-origin address of a Google Fonts family's stylesheet, which the server keeps. */
+export function googleFontCssUrl(fontFamily: string): string {
+  return `/api/v1/google-fonts/css?family=${encodeURIComponent(fontFamily)}`
+}
 
 /**
- * Injects a Google Fonts <link> stylesheet for the given font family.
- * Tracks loaded fonts by element id to avoid duplicates.
+ * Injects the <link> stylesheet of the given Google Fonts family, served by this
+ * site. Tracks loaded fonts by element id to avoid duplicates.
  */
 export function loadGoogleFont(fontFamily: string): void {
   if (!fontFamily) {
@@ -35,9 +48,7 @@ export function loadGoogleFont(fontFamily: string): void {
   const link = document.createElement('link')
   link.id = id
   link.rel = 'stylesheet'
-  link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(
-    fontFamily,
-  )}:ital,wght@0,400;0,700;0,800;1,400&display=swap`
+  link.href = googleFontCssUrl(fontFamily)
   document.head.appendChild(link)
 }
 
@@ -173,6 +184,7 @@ function writeUploadedFontStyle(fonts: UploadedFont[]): void {
   if (!el) {
     el = document.createElement('style')
     el.id = 'uploaded-fonts'
+    el.nonce = cspNonce
     document.head.appendChild(el)
   }
   el.textContent = rules
@@ -263,7 +275,7 @@ export function applyUploadedFonts(fonts: UploadedFont[]): void {
 /**
  * Sets the --header-font CSS variable and loads the font. Uploaded fonts are
  * already registered via applyUploadedFonts(), so only non-uploaded families
- * are fetched from Google Fonts. Defaults to 'Arapey' when no font is given.
+ * are loaded as Google Fonts families. Defaults to 'Arapey' when no font is given.
  */
 export function applyHeaderFont(fontFamily: string | null | undefined): void {
   // Fall back to the default when the configured family carries CSS-breaking
@@ -300,6 +312,7 @@ export function applyCustomCSS(css: string): void {
   if (!el) {
     el = document.createElement('style')
     el.id = 'bingo-custom-theme'
+    el.nonce = cspNonce
     document.head.appendChild(el)
   }
   el.textContent = css

@@ -27,6 +27,7 @@ func newTestEnvWithDataDir(t *testing.T, dataDir string) *testEnv {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { st.Close() })
+	makeAdmin(t, st)
 
 	srv := server.New(t.Context(), st, live.New(), dataDir, nil)
 	ts := httptest.NewTLSServer(srv)
@@ -48,6 +49,7 @@ func newTestEnvWithStore(t *testing.T, dataDir string, seed func(set func(key, v
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { st.Close() })
+	makeAdmin(t, st)
 	seed(func(key, value string) {
 		if err := st.SetSetting(t.Context(), key, value); err != nil {
 			t.Fatal(err)

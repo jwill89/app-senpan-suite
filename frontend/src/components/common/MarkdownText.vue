@@ -17,9 +17,9 @@ const { render } = props.flow ? useMarkdownFlow() : useMarkdown()
 </script>
 
 <template>
-  <!-- `md-body` marks this as prose rather than app chrome: the global heading
+  <!-- `markdown-text` marks this as prose rather than app chrome: the global heading
        register (base.css) opts out inside it, so an admin's `## Heading`
        stays readable body copy instead of picking up the uppercase display face. -->
   <!-- eslint-disable-next-line vue/no-v-html -- markdown-it runs with html: false, so raw HTML in the source is escaped -->
-  <div class="md-body" v-html="render(source)"></div>
+  <div class="markdown-text" v-html="render(source)"></div>
 </template>

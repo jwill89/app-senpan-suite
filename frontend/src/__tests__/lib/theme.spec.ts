@@ -4,6 +4,8 @@ import {
   fontFamilyFromFile,
   applyNumberFlourish,
   cssNameSafe,
+  googleFontCssUrl,
+  loadGoogleFont,
   uploadedFontUrl,
 } from '@/lib/theme'
 
@@ -98,5 +100,36 @@ describe('uploadedFontUrl', () => {
 
   it('encodes what could change the path', () => {
     expect(uploadedFontUrl('a/b?c.ttf')).toBe('/api/v1/fonts/pub/f/a%2Fb%3Fc.ttf')
+  })
+})
+
+describe('googleFontCssUrl', () => {
+  it("is the same-origin address of the family's stylesheet, which the server keeps", () => {
+    expect(googleFontCssUrl('Noto Sans JP')).toBe(
+      '/api/v1/google-fonts/css?family=Noto%20Sans%20JP',
+    )
+  })
+
+  it('encodes what could change the query', () => {
+    expect(googleFontCssUrl('a&b=c#d')).toBe('/api/v1/google-fonts/css?family=a%26b%3Dc%23d')
+  })
+})
+
+describe('loadGoogleFont', () => {
+  afterEach(() => document.head.querySelectorAll('link[id^="gfont-"]').forEach((el) => el.remove()))
+
+  it("adds the family's stylesheet from this site, never from Google", () => {
+    loadGoogleFont('Playfair Display')
+    const link = document.getElementById('gfont-playfair-display') as HTMLLinkElement | null
+    expect(link?.rel).toBe('stylesheet')
+    expect(link?.getAttribute('href')).toBe('/api/v1/google-fonts/css?family=Playfair%20Display')
+    expect(document.head.innerHTML).not.toMatch(/fonts\.(googleapis|gstatic)\.com/)
+  })
+
+  it('adds a family once, and nothing for no family', () => {
+    loadGoogleFont('Arapey')
+    loadGoogleFont('Arapey')
+    loadGoogleFont('')
+    expect(document.head.querySelectorAll('link[id^="gfont-"]')).toHaveLength(1)
   })
 })

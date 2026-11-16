@@ -1,5 +1,5 @@
 {
-  "total": 2372,
+  "total": 2330,
   "cap": 120,
   "files": {
     "frontend/src/components/admin/AffiliateFormTab.vue": 20,
@@ -30,7 +30,6 @@
     "frontend/src/components/common/AppFooter.vue": 5,
     "frontend/src/components/common/BingoCardEditor.vue": 41,
     "frontend/src/components/common/EmojiPickerModal.vue": 19,
-    "frontend/src/components/common/MarkdownEditor.vue": 42,
     "frontend/src/components/common/ThemePicker.vue": 12,
     "frontend/src/components/common/TurnstileWidget.vue": 5,
     "frontend/src/components/common/YoeverOverlay.vue": 111,

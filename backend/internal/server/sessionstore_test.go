@@ -33,6 +33,7 @@ func TestSessionsOutliveARestartAndAreStoredHashed(t *testing.T) {
 	}
 
 	first := start()
+	makeAdmin(t, first.store)
 	first.loginAdmin(t)
 	at, _ := url.Parse(first.ts.URL)
 	cookies := first.client.Jar.Cookies(at)
@@ -78,7 +79,7 @@ func TestSessionsOutliveARestartAndAreStoredHashed(t *testing.T) {
 	t.Cleanup(func() { second.ts.Close(); second.store.Close() })
 	again, _ := url.Parse(second.ts.URL)
 	second.client.Jar.SetCookies(again, cookies)
-	if name := second.signedInAs(t); name != seedAdminUser {
+	if name := second.signedInAs(t); name != adminUser {
 		t.Fatalf("the sign-in did not survive the restart (who am I = %q)", name)
 	}
 }

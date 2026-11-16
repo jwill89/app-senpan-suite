@@ -905,7 +905,7 @@ export interface paths {
     put?: never
     /**
      * Make a link to sign up or link a Discord account
-     * @description The answer is the only time the link is shown. Only the admin account itself may make a link to it (403). 503 when the server has no Discord application.
+     * @description The answer is the only time the link is shown. A link to an owner is made only by the owner itself (403). 503 when the server has no Discord application.
      */
     post: operations['create-discord-invite']
     delete?: never
@@ -1686,6 +1686,46 @@ export interface paths {
      * @description For the plaque designer's font picker. The server reads the list with its own key, which stays secret, and keeps it for twelve hours.
      */
     get: operations['list-google-fonts']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/google-fonts/css': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * A Google Fonts family's stylesheet
+     * @description @font-face rules for the family's regular, bold, extra bold and italic faces, with every source a file of this server's (google-fonts/files/<name>). A family the server doesn't keep yet is fetched from Google once and kept; those requests are limited to 30 from one address in ten minutes (429, with Retry-After), and a family not on the Google Fonts list the server's key reads is a 404. Cached publicly for a day; If-None-Match and If-Modified-Since are answered.
+     */
+    get: operations['get-google-font-css']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/google-fonts/files/{name}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * A Google Fonts file
+     * @description A WOFF2 file a kept family's stylesheet names. Its name is the hash of its bytes, so it is cached publicly for a year as immutable. A name that isn't one, or a file no longer kept, is a 404.
+     */
+    get: operations['get-google-font-file']
     put?: never
     post?: never
     delete?: never
@@ -3034,13 +3074,16 @@ export interface paths {
     get?: never
     put?: never
     post?: never
-    /** Delete an account */
+    /**
+     * Delete an account
+     * @description An owner, or the admin's own account, is never deleted (403).
+     */
     delete: operations['delete-user']
     options?: never
     head?: never
     /**
      * Change an account
-     * @description A username another account has, or the admin account's, is refused (409).
+     * @description A username another account has, or an owner's, is refused (409). An owner's username, active flag, admin role and password aren't changed here (403), nor does an admin deactivate or demote itself (403).
      */
     patch: operations['update-user']
     trace?: never
@@ -3057,7 +3100,7 @@ export interface paths {
     post?: never
     /**
      * Unlink an account's Discord account
-     * @description Only the admin account itself may unlink its own (403). Refused (409) when Discord is the account's only way to sign in: set a password for it first.
+     * @description An owner's is unlinked only by the owner itself (403). Refused (409) when Discord is the account's only way to sign in: set a password for it first.
      */
     delete: operations['unlink-discord']
     options?: never
@@ -3170,6 +3213,8 @@ export interface components {
       id: number
       /** @description Whether it is an admin, who holds every permission and alone manages accounts and the integrations. */
       isAdmin: boolean
+      /** @description Whether it is one of the owners the server's config names. Nobody deactivates, demotes, renames or deletes an owner (403), and only the owner itself sets its password or makes or removes its Discord link. */
+      owner: boolean
       /** @description The page permissions it has been granted. An admin holds every one, listed here or not. */
       permissions: string[]
       /** @description Its username. */
@@ -6339,6 +6384,8 @@ export interface components {
        * @description Seconds a drawn number waits before players see it, so the caller can announce it first.
        */
       defaultDrawDelay: number
+      /** @description The sites whose pages may show a festival map in a frame (/embed/festival-maps/...), each as an origin such as https://senpan.cafe. https://*.example.com covers every subdomain of example.com. Empty for none. */
+      embedOrigins: string[]
       /**
        * Format: int64
        * @description The hours a frequent winner's wins are counted over.
@@ -6408,6 +6455,8 @@ export interface components {
        * @description Seconds a drawn number waits before players see it, so the caller can announce it first.
        */
       defaultDrawDelay: number
+      /** @description The sites whose pages may show a festival map in a frame (/embed/festival-maps/...), each as an origin such as https://senpan.cafe. https://*.example.com covers every subdomain of example.com. Empty for none. */
+      embedOrigins: string[]
       /**
        * Format: int64
        * @description The hours a frequent winner's wins are counted over.
@@ -7138,6 +7187,8 @@ export interface components {
       isAdmin: boolean
       /** @description When it last signed in, RFC 3339 in UTC, or null for never. */
       lastLoginAt: string | null
+      /** @description Whether it is one of the owners the server's config names. Nobody deactivates, demotes, renames or deletes an owner (403), and only the owner itself sets its password or makes or removes its Discord link. */
+      owner: boolean
       /** @description The page permissions it has been granted. An admin holds every one, listed here or not. */
       permissions: string[]
       /** @description Its username. */
@@ -15511,6 +15562,138 @@ export interface operations {
       }
       /** @description Error */
       default: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'get-google-font-css': {
+    parameters: {
+      query: {
+        /** @description The family as Google Fonts names it ("Noto Sans JP"). It may not hold quotes, backslashes, control characters, or any of { } ; < >. */
+        family: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The stylesheet. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'text/css': string
+        }
+      }
+      /** @description The stylesheet is unchanged since the If-None-Match tag or If-Modified-Since date. */
+      304: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'get-google-font-file': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description A file's name, as a family's stylesheet gives it: the SHA-256 of its bytes in hex, then .woff2. */
+        name: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The font. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'font/woff2': string
+        }
+      }
+      /** @description The file is unchanged since the If-None-Match tag. */
+      304: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
         headers: {
           [name: string]: unknown
         }

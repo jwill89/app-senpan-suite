@@ -115,7 +115,8 @@
   gap: 10px;
 }
 
-/* Outranks `.modal-box h3`, whose bottom margin is meant for a dialog's title. */
+/* Outranks `.modal-overlay__box h3`, whose bottom margin is meant for a dialog's
+   title. */
 .ema-panel .ema-panel-title {
   display: flex;
   align-items: center;

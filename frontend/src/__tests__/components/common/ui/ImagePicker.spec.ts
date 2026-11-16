@@ -26,6 +26,7 @@ function listedDirs(): string[] {
 
 import ImagePicker from '@/components/common/ui/ImagePicker.vue'
 import { useAuthStore } from '@/stores/auth'
+import { axeFindings } from '@/__tests__/axe'
 import type { Account } from '@/api/client'
 
 function cat(name: string, dir: string): ImageCategory {
@@ -79,20 +80,20 @@ describe('ImagePicker', () => {
     await flushPromises()
     const select = wrapper.find('select').element
     expect(select.value).toBe('raffles')
-    expect(wrapper.find('.img-thumb.is-active').exists()).toBe(true)
+    expect(wrapper.find('.image-picker__thumb.is-active').exists()).toBe(true)
   })
 
   it('emits the path by default when an image is clicked', async () => {
     const wrapper = mountPicker('images/raffles/other.png')
     await flushPromises()
-    await wrapper.find('.img-thumb').trigger('click')
+    await wrapper.find('.image-picker__thumb').trigger('click')
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['images/raffles/prize.png'])
   })
 
   it('emits the absolute URL with value-key="url"', async () => {
     const wrapper = mountPicker('https://h/images/raffles/other.png', { valueKey: 'url' })
     await flushPromises()
-    await wrapper.find('.img-thumb').trigger('click')
+    await wrapper.find('.image-picker__thumb').trigger('click')
     expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([
       'https://h/images/raffles/prize.png',
     ])
@@ -104,13 +105,13 @@ describe('ImagePicker', () => {
     await wrapper.find('select').setValue('flourishes')
     await flushPromises()
     expect(listedDirs()).toContain('flourishes')
-    expect(wrapper.findAll('.img-thumb')).toHaveLength(2)
+    expect(wrapper.findAll('.image-picker__thumb')).toHaveLength(2)
   })
 
   it('filters the grid by the extensions prop', async () => {
     const wrapper = mountPicker('images/flourishes/swirl.svg', { extensions: ['.svg'] })
     await flushPromises()
-    const thumbs = wrapper.findAll('.img-thumb')
+    const thumbs = wrapper.findAll('.image-picker__thumb')
     expect(thumbs).toHaveLength(1)
     expect(thumbs[0]!.attributes('title')).toBe('swirl.svg')
   })
@@ -136,12 +137,22 @@ describe('ImagePicker', () => {
     )
     const wrapper = mountPicker('images/raffles/apple.png')
     await flushPromises()
-    expect(wrapper.findAll('.img-thumb').map((t) => t.attributes('title'))).toEqual([
+    expect(wrapper.findAll('.image-picker__thumb').map((t) => t.attributes('title'))).toEqual([
       'apple.png',
       'img2.png',
       'img10.png',
       'Zebra.png',
     ])
+  })
+
+  it('has nothing axe flags, empty or holding an image', async () => {
+    const empty = mountPicker()
+    await flushPromises()
+    expect(await axeFindings(empty.element)).toEqual([])
+
+    const chosen = mountPicker('images/raffles/prize.png')
+    await flushPromises()
+    expect(await axeFindings(chosen.element)).toEqual([])
   })
 
   describe('upload control', () => {
@@ -153,6 +164,7 @@ describe('ImagePicker', () => {
         isAdmin: false,
         permissions,
         hasPassword: true,
+        owner: false,
       } satisfies Account
     }
 
@@ -160,7 +172,7 @@ describe('ImagePicker', () => {
       signIn('teahouse-affiliates')
       const wrapper = mountPicker()
       await flushPromises()
-      expect(wrapper.find('.image-picker-upload').exists()).toBe(false)
+      expect(wrapper.find('.image-picker__upload').exists()).toBe(false)
       expect(wrapper.find('input[type="file"]').exists()).toBe(false)
     })
 
@@ -168,7 +180,7 @@ describe('ImagePicker', () => {
       signIn('system-images')
       const wrapper = mountPicker()
       await flushPromises()
-      expect(wrapper.find('.image-picker-upload').exists()).toBe(true)
+      expect(wrapper.find('.image-picker__upload').exists()).toBe(true)
     })
 
     it('uploads dropped files into the category being browsed', async () => {
@@ -176,7 +188,7 @@ describe('ImagePicker', () => {
       const wrapper = mountPicker('images/raffles/prize.png')
       await flushPromises()
       const file = new File(['x'], 'new.png', { type: 'image/png' })
-      await wrapper.find('.image-picker-drop').trigger('drop', { dataTransfer: { files: [file] } })
+      await wrapper.find('.image-picker__drop').trigger('drop', { dataTransfer: { files: [file] } })
       await flushPromises()
 
       expect(apiUpload).toHaveBeenCalledTimes(1)
@@ -191,9 +203,16 @@ describe('ImagePicker', () => {
       const wrapper = mountPicker('images/raffles/prize.png')
       await flushPromises()
       const file = new File(['x'], 'new.png', { type: 'image/png' })
-      await wrapper.find('.image-picker-drop').trigger('drop', { dataTransfer: { files: [file] } })
+      await wrapper.find('.image-picker__drop').trigger('drop', { dataTransfer: { files: [file] } })
       await flushPromises()
       expect(apiUpload).not.toHaveBeenCalled()
+    })
+
+    it('has nothing axe flags with the upload control shown', async () => {
+      signIn('system-images')
+      const wrapper = mountPicker('images/raffles/prize.png')
+      await flushPromises()
+      expect(await axeFindings(wrapper.element)).toEqual([])
     })
   })
 })

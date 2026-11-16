@@ -127,7 +127,11 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  /** Fetches the Google Fonts list if an API key is configured (cached). */
+  /**
+   * Fetches the Google Fonts list if an API key is configured (cached per key). The
+   * server reads it with the saved key (GET /google-fonts), so the browser never
+   * calls Google's API.
+   */
   async function loadGoogleFontsList(): Promise<void> {
     const key = integrations.value.googleFontsApiKey.trim()
     if (!key) {
@@ -139,15 +143,7 @@ export const useAppStore = defineStore('app', () => {
       return
     }
     try {
-      const resp = await fetch(
-        `https://www.googleapis.com/webfonts/v1/webfonts?key=${encodeURIComponent(key)}&sort=popularity`,
-      )
-      if (!resp.ok) {
-        googleFontsList.value = []
-        return
-      }
-      const data = await resp.json()
-      googleFontsList.value = (data.items || []).map((f: { family: string }) => f.family)
+      googleFontsList.value = (await unwrap(api.GET('/google-fonts'))).families
       googleFontsCacheKey = key
     } catch {
       googleFontsList.value = []

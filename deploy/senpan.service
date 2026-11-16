@@ -30,11 +30,17 @@ EnvironmentFile=__ENVFILE__
 # -data is the data folder: the uploads (images/, fonts/, carrd/), the plugin repository
 # (plugin/) and the sounds (sounds/), beside the database. The app serves its public files
 # itself; nothing of it is under a web server's document root.
-ExecStart=__OPT__/app-suite -addr __ADDR__ -db __OPT__/data/database.sqlite -data __OPT__/data
+ExecStart=__OPT__/app-suite -addr __ADDR__ -db __OPT__/data/database.sqlite -data __OPT__/data -log-file /var/log/__SERVICE__/__SERVICE__.log
 
 # Restart on failure after 5 seconds; five starts within 60 seconds stop the retries.
 Restart=on-failure
 RestartSec=5
+
+# The memory cap, and the Go collector's soft limit under it, so the heap is collected
+# hard before the cap is reached instead of the kernel killing the service. Checking a
+# 40-megapixel picture holds about 160 MiB at once beside the service's own use.
+MemoryMax=384M
+Environment=GOMEMLIMIT=320MiB
 
 # Hardening. These sandbox the service so a compromise of the process has minimal reach:
 # no privilege escalation, a read-only filesystem except ReadWritePaths below, no access
@@ -70,10 +76,10 @@ MemoryDenyWriteExecute=yes
 # it stays read-only to the service, so a compromised process cannot replace its own code.
 # A path written outside this list fails with EACCES under ProtectSystem=strict.
 ReadWritePaths=__OPT__/data
-# Creates /var/log/senpan (owned by the service user) and keeps it writable under
-# ProtectSystem=strict: the folder of the app's default -log-file. journald still gets
-# stdout and stderr below.
-LogsDirectory=senpan
+# Creates /var/log/<service> (owned by the service user) and keeps it writable under
+# ProtectSystem=strict: the folder of -log-file above. journald still gets stdout and
+# stderr below.
+LogsDirectory=__SERVICE__
 
 # Logging (stdout and stderr go to journalctl)
 StandardOutput=journal

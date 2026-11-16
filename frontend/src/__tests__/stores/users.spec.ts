@@ -24,6 +24,7 @@ function user(overrides: Partial<User> = {}): User {
     createdAt: '2026-11-09T10:00:00Z',
     lastLoginAt: null,
     hasPassword: true,
+    owner: false,
     discord: null,
     ...overrides,
   }

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PlacementEditor, { type PlaceItem } from '@/components/admin/PlacementEditor.vue'
+import { axeFindings } from '@/__tests__/axe'
 
 /**
  * The placement editors (stamp rally cards and, in their twin MapStallEditor,
@@ -74,5 +75,12 @@ describe('PlacementEditor accessibility', () => {
     const els = wrapper.findAll('.placement-item')
     expect(els[0]!.attributes('aria-pressed')).toBe('false')
     expect(els[1]!.attributes('aria-pressed')).toBe('true')
+  })
+
+  it('has nothing axe flags, with an item selected', async () => {
+    const wrapper = mount(PlacementEditor, {
+      props: { cardImage: 'card.png', items: items(), selectedKey: 'p1' },
+    })
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

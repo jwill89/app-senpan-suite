@@ -12,8 +12,8 @@ declare module '*.vue' {
 // map (a bare specifier, not a `.css` path, so vite/client's glob doesn't cover it).
 declare module 'vue3-emoji-picker/css'
 
-// Parsed CHANGELOG.md, provided at build/dev time by config/changelog-plugin.ts
-// (registered in vite.config.ts, which the specs use too). Read it via lib/changelog.ts.
+// The parsed CHANGELOG.md files, provided at build/dev time by config/changelog-plugin.ts
+// (registered in vite.config.ts, which the specs use too). Read them via lib/changelog.ts.
 declare module 'virtual:changelog' {
   /** One labelled change-group (Added / Fixed / ...); `body` is its bullet markdown. */
   export interface ChangelogGroup {
@@ -28,18 +28,18 @@ declare module 'virtual:changelog' {
     groups: ChangelogGroup[]
   }
   export interface ChangelogSection {
-    /** The section's newest version, e.g. "3.7.0" (its first `### [version]`). */
+    /** The file's newest released version, e.g. "5.4.0" (its first `## [version]`). */
     latest: string
-    /** Version entries, newest first. */
+    /** Released version entries, newest first (`## [Unreleased]` is left out). */
     entries: ChangelogEntry[]
   }
   export const changelog: {
-    /** The app's releases, followed by the frontend's. */
+    /** The app's releases, from the root CHANGELOG.md; before 4.0.0, the SPA's own. */
     app: ChangelogSection
-    /** The `## Frontend` and `## Backend` sections, closed histories that take no new entries. */
-    frontend: ChangelogSection
-    backend: ChangelogSection
+    /** The plugin's releases, from plugins/CHANGELOG.md. */
     plugin: ChangelogSection
+    /** The backend's history before 4.0.0, from backend/CHANGELOG.md; it takes no new entries. */
+    backend: ChangelogSection
   }
 }
 

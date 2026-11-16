@@ -2,8 +2,9 @@
  * Builds the end-to-end run's API and its throwaway folder before the API starts
  * (playwright.config.ts): a fresh run folder, the binary built from this checkout into
  * it, and the server's data folder in it holding the persistent images/, as a host's
- * does. The API makes and migrates its database on start, seeding the bootstrap admin
- * the run's staff sign in with; the tests seed the rest through the API.
+ * does. The staff account the run signs in with is made on the run's new database with
+ * the binary's own `admin` command, as a host's first admin is; the tests seed the rest
+ * through the API.
  *
  * It refuses to run unless the run folder lies outside the checkout (and does not hold
  * it, since it is emptied first) and every path the API is given is inside that folder:
@@ -12,7 +13,7 @@
 import { execFileSync } from 'node:child_process'
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { isAbsolute, join, relative, resolve } from 'node:path'
-import { DATA_DIR, ROOT, SERVER, SERVER_DATA, serverFlags } from '../env.ts'
+import { DATABASE, DATA_DIR, ROOT, SERVER, SERVER_DATA, STAFF, serverFlags } from '../env.ts'
 
 function inside(folder: string, path: string): boolean {
   const rel = relative(folder, path)
@@ -50,3 +51,10 @@ if (!existsSync(join(ROOT, 'backend', 'internal', 'web', 'dist', 'index.html')))
   )
 }
 execFileSync('go', ['build', '-o', SERVER, '.'], { cwd: join(ROOT, 'backend'), stdio: 'inherit' })
+
+// The staff account, made the way a host makes its first admin: the command makes and
+// migrates the database, and takes the password on stdin, so it is never on a command line.
+execFileSync(SERVER, ['admin', '-db', DATABASE, '-password-stdin', STAFF.username], {
+  input: `${STAFF.password}\n`,
+  stdio: ['pipe', 'inherit', 'inherit'],
+})

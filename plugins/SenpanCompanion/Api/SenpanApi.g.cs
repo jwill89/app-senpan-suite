@@ -5095,6 +5095,12 @@ namespace SenpanCompanion.Api
         public bool IsAdmin { get; set; } = default!;
 
         /// <summary>
+        /// Whether it is one of the owners the server's config names. Nobody deactivates, demotes, renames or deletes an owner (403), and only the owner itself sets its password or makes or removes its Discord link.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("owner", Required = Newtonsoft.Json.Required.Always)]
+        public bool Owner { get; set; } = default!;
+
+        /// <summary>
         /// The page permissions it has been granted. An admin holds every one, listed here or not.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("permissions", Required = Newtonsoft.Json.Required.Always)]
@@ -11917,6 +11923,12 @@ namespace SenpanCompanion.Api
         public long DefaultDrawDelay { get; set; } = default!;
 
         /// <summary>
+        /// The sites whose pages may show a festival map in a frame (/embed/festival-maps/...), each as an origin such as https://senpan.cafe. https://*.example.com covers every subdomain of example.com. Empty for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("embedOrigins", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<string> EmbedOrigins { get; set; } = new System.Collections.Generic.List<string>();
+
+        /// <summary>
         /// The hours a frequent winner's wins are counted over.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("frequentWinnerHours", Required = Newtonsoft.Json.Required.Always)]
@@ -12042,6 +12054,12 @@ namespace SenpanCompanion.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("defaultDrawDelay", Required = Newtonsoft.Json.Required.Always)]
         public long DefaultDrawDelay { get; set; } = default!;
+
+        /// <summary>
+        /// The sites whose pages may show a festival map in a frame (/embed/festival-maps/...), each as an origin such as https://senpan.cafe. https://*.example.com covers every subdomain of example.com. Empty for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("embedOrigins", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<string> EmbedOrigins { get; set; } = new System.Collections.Generic.List<string>();
 
         /// <summary>
         /// The hours a frequent winner's wins are counted over.
@@ -13670,6 +13688,12 @@ namespace SenpanCompanion.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("lastLoginAt", Required = Newtonsoft.Json.Required.AllowNull)]
         public string? LastLoginAt { get; set; } = default!;
+
+        /// <summary>
+        /// Whether it is one of the owners the server's config names. Nobody deactivates, demotes, renames or deletes an owner (403), and only the owner itself sets its password or makes or removes its Discord link.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("owner", Required = Newtonsoft.Json.Required.Always)]
+        public bool Owner { get; set; } = default!;
 
         /// <summary>
         /// The page permissions it has been granted. An admin holds every one, listed here or not.

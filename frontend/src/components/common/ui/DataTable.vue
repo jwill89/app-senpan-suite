@@ -6,7 +6,10 @@
  */
 export interface DataColumn {
   key: string
+  /** The header text; '' draws none, as the trailing row-actions column does. */
   label: string
+  /** What a screen reader hears for a column whose `label` is '': 'Actions' unless set. */
+  srLabel?: string
   sortable?: boolean
   align?: 'left' | 'center' | 'right'
   width?: string
@@ -503,11 +506,11 @@ function rowClassFor(row: T): string | Record<string, boolean> | undefined {
 </script>
 
 <template>
-  <div class="data-table-wrap">
+  <div class="data-table__wrap">
     <table class="data-table" :class="{ 'is-resizable': resizable }">
       <thead>
         <tr>
-          <th v-if="selectable" class="dt-select-col">
+          <th v-if="selectable" class="data-table__select-col">
             <input
               type="checkbox"
               :checked="allMatchedSelected"
@@ -524,16 +527,17 @@ function rowClassFor(row: T): string | Record<string, boolean> | undefined {
             @click="onHeaderClick(col)"
           >
             {{ col.label }}
+            <span v-if="!col.label" class="sr-only">{{ col.srLabel ?? 'Actions' }}</span>
             <font-awesome-icon
               v-if="sortIcon(col)"
               :icon="sortIcon(col)!"
-              class="dt-sort-icon"
+              class="data-table__sort-icon"
               aria-hidden="true"
             />
             <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a pointer-only drag handle: click.stop keeps a resize drag from sorting the column, and keyboard resizing is not offered -->
             <span
               v-if="resizable"
-              class="dt-resizer"
+              class="data-table__resizer"
               role="separator"
               aria-orientation="vertical"
               :aria-label="`Resize ${col.label} column`"
@@ -550,7 +554,7 @@ function rowClassFor(row: T): string | Record<string, boolean> | undefined {
             :class="[
               rowClassFor(row),
               {
-                'dt-expandable': hasDetail,
+                'data-table__expandable': hasDetail,
                 'is-selected': selectable && selectedSet.has(keyFor(row)),
               },
             ]"
@@ -560,7 +564,7 @@ function rowClassFor(row: T): string | Record<string, boolean> | undefined {
             @click="onRowClick(row, $event)"
             @keydown="onRowKeydown(row, $event)"
           >
-            <td v-if="selectable" class="dt-select-col">
+            <td v-if="selectable" class="data-table__select-col">
               <input
                 type="checkbox"
                 :checked="selectedSet.has(keyFor(row))"
@@ -574,7 +578,7 @@ function rowClassFor(row: T): string | Record<string, boolean> | undefined {
               }}</slot>
             </td>
           </tr>
-          <tr v-if="hasDetail && isExpanded(row)" class="dt-detail-row">
+          <tr v-if="hasDetail && isExpanded(row)" class="data-table__detail-row">
             <td :colspan="columns.length + (selectable ? 1 : 0)">
               <slot name="detail" :row="row" />
             </td>
@@ -589,7 +593,7 @@ function rowClassFor(row: T): string | Record<string, boolean> | undefined {
 <style scoped>
 /* Sort chevron: smaller than the label and dimmed, so it marks the active column
    without competing with the header text. */
-.dt-sort-icon {
+.data-table__sort-icon {
   margin-left: 0.35em;
   font-size: 0.72em;
   color: var(--highlight);

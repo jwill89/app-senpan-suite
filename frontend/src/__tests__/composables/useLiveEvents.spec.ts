@@ -109,6 +109,7 @@ function signIn(account: Partial<Account>) {
     isAdmin: false,
     permissions: [],
     hasPassword: true,
+    owner: false,
     ...account,
   }
   auth.user = user

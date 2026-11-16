@@ -1,5 +1,7 @@
 # shared-tooling rollout
 
+Rollout complete, 2026-11-15.
+
 The passages of shared-tooling's cross-project plan (`PLAN.md` at v2.6.0) that name this project, moved here word for word on 2026-11-10 when shared-tooling became project-agnostic. The portfolio-wide rest is in `PLAN.md` beside the project folders.
 
 ## Decisions so far
@@ -46,7 +48,7 @@ Decided 2026-11-07, where the projects' own docs disagreed (55 questions, now ru
 
 | Project | Today | Best fit | Why |
 | --- | --- | --- | --- |
-| Senpan App Suite | WebSockets | SSE, as Kindred's feed (moving in its release C) | Calls flow one way; claims and every other write go over REST, and the server discards what a socket sends (found 2026-11-09) |
+| Senpan App Suite | WebSockets (SSE since 5.0.0) | SSE, as Kindred's feed (moved in its release C) | Calls flow one way; claims and every other write go over REST, and the server discards what a socket sends (found 2026-11-09) |
 
 ## Shared packages
 
@@ -70,7 +72,7 @@ Most gaps are missing CI, Dependabot and post-deploy checks. The riskiest were t
 
 | Project | Missing | Note |
 | --- | --- | --- |
-| Senpan App Suite | None once its 2026-11-06 changes land | Rolled out first after the pilots |
+| Senpan App Suite | None: its compliance pass on shared-tooling 2.15.1 closed the last gaps (2026-11-15) | Rolled out first after the pilots |
 
 ## Where to start
 
@@ -110,8 +112,8 @@ Do what's urgent first, settle the decisions, build the tooling, and only then m
       - **B, the data layer (4.1.0):** goose from a baseline at v71, a write pool and a read pool, RFC 3339 timestamps (production's drifted tables rebuilt to match a fresh build, checked on a copy of the live data first), sessions in SQLite under hashed tokens, and draws from crypto/rand (the owner took both, 2026-11-09). sqlc waits for C, domain by domain. Deployed 2026-11-09.
       - **Before C, a small front-end fix** (found 2026-11-09, npm's deprecation warning on glob 11.1.0): Workbox's build (through vite-plugin-pwa) requires glob ^11 and js-beautify (through @vue/test-utils) ^13, both at their newest releases, and the advisory GHSA-3g3m-2fjr-6pw4 is fixed only in glob 14.0.2. Both call only `globSync`, which glob 14 still ships for CommonJS, so an npm override of glob ^14.0.2 for each should hold; check that the PWA build's precache list is unchanged and the tests pass, then drop the advisory's entry from `frontend/osv-scanner.toml`. Done 2026-11-09: the service worker built byte for byte the same, the tests passed, and OSV-Scanner reports nothing.
       - **C, the API to huma (5.0.0):** domain packages with thin handlers, RFC 9457 errors, 422 for validation, camelCase JSON with openapi-typescript, and the plugin's API models moving with it. Decided 2026-11-09: the plugin moves in the same release and deploys the same day, no endpoint keeps snake_case, and the public tea-room API changes too (the Carrd pages' scripts with it); the live feed moves from WebSockets to SSE, as Kindred's, since its traffic is one-way; 502s give way to the standard's 503/500/429, public reads take the caching baseline, and the tea-room API's `*` gives way to an allowlist setting. Its plan, domain by domain, is Senpan's `plans/release-c.md`.
-      - **D, front-end cleanup:** specs in `src/__tests__/` with the config in `vite.config.ts`, and the static inline styles into CSS so the shared rule comes back on. It touches no backend, so it can come at any point.
-      - **E, nothing served from `/var/www`, the goal (decided 2026-11-09):** the app serves everything, as Home Library and Kindred Nights do, with its vhost proxying `/` to it and its data under `/opt/senpan`. The uploads (`images/`, `fonts/`), the Carrd sites and the plugin repository leave the document root: the app serves `/images/`, `/plugin/` (as Kindred serves its own) and the Carrd sites, the `carrd.senpan.cafe` vhost proxies to it, `-webroot` gives way to a data folder, and the deploy ships the vhost, as Home Library's does. It comes after C, so the file serving is written once, into C's domain packages. The fonts need the most care. They are licensed, so they must not be reachable as plain files at any point in the move. `fonts.senpan.cafe/kit.css` and its token URLs, which external Carrd sites embed, must stay as they are through C and E. The live `fonts.senpan.cafe` vhost is read first, since the repo can't see whether it still names the folder. The folder moves whole, with its hidden `.woff2/` copies, while the service is stopped, and is checked afterwards from an allowed site and from Safari, which sends a `Referer` in place of an `Origin`.
+      - **D, front-end cleanup:** specs in `src/__tests__/` with the config in `vite.config.ts`, and the static inline styles into CSS so the shared rule comes back on. It touches no backend, so it can come at any point. Done 2026-11-10, in 5.1.0.
+      - **E, nothing served from `/var/www`, the goal (decided 2026-11-09):** the app serves everything, as Home Library and Kindred Nights do, with its vhost proxying `/` to it and its data under `/opt/senpan`. The uploads (`images/`, `fonts/`), the Carrd sites and the plugin repository leave the document root: the app serves `/images/`, `/plugin/` (as Kindred serves its own) and the Carrd sites, the `carrd.senpan.cafe` vhost proxies to it, `-webroot` gives way to a data folder, and the deploy ships the vhost, as Home Library's does. It comes after C, so the file serving is written once, into C's domain packages. The fonts need the most care. They are licensed, so they must not be reachable as plain files at any point in the move. `fonts.senpan.cafe/kit.css` and its token URLs, which external Carrd sites embed, must stay as they are through C and E. The live `fonts.senpan.cafe` vhost is read first, since the repo can't see whether it still names the folder. The folder moves whole, with its hidden `.woff2/` copies, while the service is stopped, and is checked afterwards from an allowed site and from Safari, which sends a `Referer` in place of an `Origin`. Deployed 2026-11-10, in 5.2.0.
    2. Sign-in inside huma in Home Library, then Kindred Nights (decided 2026-11-09, as Senpan's release C does it). Both sign in and out through plain handlers under `/auth/*`, outside huma and the API document; huma doesn't ask for that, and the standard puts these endpoints inside the API. They become operations under `/api/v1/auth/*`, called through the typed client, as Senpan's are. Kindred's Discord start and callback become operations that answer 302. Home Library's share links and calendar feed stay outside, being addresses already handed out. The standard's line 24 then names `/api/v1/auth/*` and gains a rule for operations a browser navigates to. The plan, project by project, is this repo's `plans/sign-in-on-huma.md`. It also covers what adding Discord sign-in to Senpan or Home Library later would take: it argues for an identities table, not for keeping sign-in outside huma.
 
 <!-- markdownlint-enable MD029 -->

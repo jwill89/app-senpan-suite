@@ -16,7 +16,7 @@ defineEmits<{ back: [] }>()
 </script>
 
 <template>
-  <div class="subpage-header">
+  <div class="sub-page-header">
     <h3 v-if="title || $slots.default">
       <slot><font-awesome-icon v-if="icon" :icon="icon" />{{ title }}</slot>
     </h3>

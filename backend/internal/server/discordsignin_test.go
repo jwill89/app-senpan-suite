@@ -30,7 +30,7 @@ type grant struct{ challenge, redirect, account string }
 const (
 	lune  = `{"id":"80351110224678912","username":"lune","global_name":"Lune"}`
 	mirai = `{"id":"90351110224678913","username":"mirai","global_name":null}`
-	// adminish is a Discord account whose username is the reserved admin's.
+	// adminish is a Discord account named admin, which is nobody's name in particular.
 	adminish = `{"id":"70351110224678914","username":"admin","global_name":"Not The Admin"}`
 )
 
@@ -299,8 +299,9 @@ func TestDiscordSignUpLink(t *testing.T) {
 	}
 }
 
-// A sign-up takes the next free name when the Discord username is taken or is the
-// admin account's.
+// A sign-up takes the next free name when the Discord username is taken. No name is
+// held back otherwise: with no account named admin, a Discord account named admin
+// signs up as admin.
 func TestDiscordSignUpNames(t *testing.T) {
 	e := newTestEnv(t)
 	d := newStandIn(t, e)
@@ -311,10 +312,16 @@ func TestDiscordSignUpNames(t *testing.T) {
 	if name, _ := me(t, c, e)["username"].(string); name != "lune-2" {
 		t.Errorf("signed up as %q; want lune-2", name)
 	}
+
+	resp := e.patchJSON(t, "/api/v1/users/"+strconv.FormatInt(findUserID(t, e, adminUser), 10), map[string]any{"username": "boss"})
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("rename the admin account: %d", resp.StatusCode)
+	}
 	c = browser(t, e)
 	d.signIn(t, c, e, discordInvite(t, e, 0), adminish)
-	if name, _ := me(t, c, e)["username"].(string); name != "admin-2" {
-		t.Errorf("signed up as %q; want admin-2", name)
+	if name, _ := me(t, c, e)["username"].(string); name != "admin" {
+		t.Errorf("signed up as %q; want admin", name)
 	}
 }
 
@@ -448,10 +455,12 @@ func TestDiscordLinkToAccount(t *testing.T) {
 	}
 }
 
-// Only the admin account makes a link to itself or unlinks its own Discord account;
-// another admin may not, nor may anyone but an admin, nor an access token.
+// Only an owner makes a link to itself or unlinks its own Discord account; another
+// admin may not, nor may anyone but an admin, nor an access token. An admin that isn't
+// an owner may be linked by another admin.
 func TestDiscordLinkGuards(t *testing.T) {
 	e := newTestEnv(t)
+	e.srv.SetOwners([]string{adminUser})
 	d := newStandIn(t, e)
 	adminID := findUserIDAsAdmin(t, e)
 
@@ -463,7 +472,12 @@ func TestDiscordLinkGuards(t *testing.T) {
 	resp = postAs(t, other, e, "/api/v1/discord-invites", map[string]any{"userId": adminID})
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("another admin's link to the admin account: %d; want 403", resp.StatusCode)
+		t.Errorf("another admin's link to the owner: %d; want 403", resp.StatusCode)
+	}
+	resp = postAs(t, other, e, "/api/v1/discord-invites", map[string]any{"userId": otherID})
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusCreated {
+		t.Errorf("an admin's link to itself, not an owner: %d; want 201", resp.StatusCode)
 	}
 	resp = postAs(t, other, e, "/api/v1/discord-invites", map[string]any{"userId": 999999})
 	resp.Body.Close()
@@ -471,15 +485,20 @@ func TestDiscordLinkGuards(t *testing.T) {
 		t.Errorf("link to no account: %d; want 404", resp.StatusCode)
 	}
 
-	// The admin account links itself.
+	// The owner links itself; another admin can't unlink it, and the owner can.
 	c := browser(t, e)
 	if got := d.signIn(t, c, e, discordInvite(t, e, adminID), lune); got != "/admin" {
-		t.Errorf("admin's own link sent to %q", got)
+		t.Errorf("the owner's own link sent to %q", got)
 	}
 	resp = reqAs(t, other, e, http.MethodDelete, "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/discord", nil)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("another admin unlinking the admin account: %d; want 403", resp.StatusCode)
+		t.Errorf("another admin unlinking the owner: %d; want 403", resp.StatusCode)
+	}
+	resp = e.del(t, "/api/v1/users/"+strconv.FormatInt(adminID, 10)+"/discord")
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		t.Errorf("the owner unlinking its own: %d; want 204", resp.StatusCode)
 	}
 
 	// Not an admin.
@@ -508,15 +527,20 @@ func TestDiscordLinkGuards(t *testing.T) {
 	}
 }
 
-// A username another account has, or the admin account's, is refused; the admin
-// account isn't renamed.
+// A username another account has, or an owner's, is refused; an owner isn't renamed.
 func TestRenameAccount(t *testing.T) {
 	e := newTestEnv(t)
+	e.srv.SetOwners([]string{adminUser, "ghost"})
 	e.loginAdmin(t)
 	id := addAccount(t, e, "kiri", "password-1", nil)
 	addAccount(t, e, "sora", "password-2", nil)
 	path := "/api/v1/users/" + strconv.FormatInt(id, 10)
-	for name, want := range map[string]int{"sora": http.StatusConflict, "ADMIN": http.StatusConflict, "   ": http.StatusUnprocessableEntity} {
+	for name, want := range map[string]int{
+		"sora":    http.StatusConflict,
+		adminUser: http.StatusConflict,
+		"ghost":   http.StatusConflict, // an owner the config names that has no account yet
+		"   ":     http.StatusUnprocessableEntity,
+	} {
 		resp := e.patchJSON(t, path, map[string]any{"username": name})
 		resp.Body.Close()
 		if resp.StatusCode != want {
@@ -531,11 +555,12 @@ func TestRenameAccount(t *testing.T) {
 	resp = e.patchJSON(t, "/api/v1/users/"+strconv.FormatInt(findUserIDAsAdmin(t, e), 10), map[string]any{"username": "root"})
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusForbidden {
-		t.Errorf("rename the admin account: %d; want 403", resp.StatusCode)
+		t.Errorf("rename an owner: %d; want 403", resp.StatusCode)
 	}
 }
 
-// findUserIDAsAdmin signs e.client in as the admin account and answers its id.
+// findUserIDAsAdmin signs e.client in as the admin account newTestEnv makes and
+// answers its id.
 func findUserIDAsAdmin(t *testing.T, e *testEnv) int64 {
 	t.Helper()
 	e.loginAdmin(t)

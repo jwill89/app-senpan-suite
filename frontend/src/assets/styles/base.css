@@ -52,7 +52,7 @@ button:has(> .svg-inline--fa):not(.admin-nav-items button) > .svg-inline--fa {
   padding: 0;
 }
 
-/* Montserrat is the body face (loaded statically in index.html) - it pairs with
+/* Montserrat is the body face (bundled, fonts.css) - it pairs with
    the Bulgari display face. Set from --body-font so small chrome nested inside
    a heading can name the same face instead of inheriting the display one (see
    tokens.css). */
@@ -167,7 +167,7 @@ h4 {
 h1,
 .topbar h2,
 .manager-header > h3,
-.subpage-header > h3,
+.sub-page-header > h3,
 .admin-panel > h3:first-child,
 .admin-login .box h2,
 .home-card--primary h2 {
@@ -179,7 +179,7 @@ h1,
 /* Markdown bodies are prose, not chrome. An admin writing `## Heading` in a
    join prompt or raffle description gets a readable heading in the body face,
    not an uppercase display-face title. */
-.md-body :is(h1, h2, h3, h4, h5, h6) {
+.markdown-text :is(h1, h2, h3, h4, h5, h6) {
   font-family: inherit;
   text-transform: none;
   letter-spacing: normal;
@@ -295,8 +295,8 @@ h1,
 
   /* Icon-only buttons also need the horizontal target. */
   .row-actions button,
-  .list-row-actions button,
-  .manager-actions button {
+  .list-row__actions button,
+  .manager-view__actions button {
     min-width: 44px;
   }
 }

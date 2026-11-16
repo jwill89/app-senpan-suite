@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { nextTick } from 'vue'
 import FestivalMapCanvas from '@/components/common/ui/FestivalMapCanvas.vue'
+import { axeFindings } from '@/__tests__/axe'
 import type { PublicFestivalStall, PublicStallOccupant } from '@/api/client'
 
 /**
@@ -16,7 +17,7 @@ import type { PublicFestivalStall, PublicStallOccupant } from '@/api/client'
 const PLAN_W = 1200
 const PLAN_H = 800 // a 3:2 plan
 const FRAME_W = 1152 // the column the map is drawn in
-/** .map-viewport's shape before the plan has told it what to be (see the CSS). */
+/** .festival-map-canvas's shape before the plan has told it what to be (see the CSS). */
 const FALLBACK_ASPECT = 1.6
 
 function rect(width: number, height: number): DOMRect {
@@ -37,12 +38,12 @@ function stubLayout(): () => void {
   const original = Element.prototype.getBoundingClientRect
   Element.prototype.getBoundingClientRect = function (this: Element): DOMRect {
     const el = this as HTMLElement
-    if (el.classList.contains('map-viewport')) {
+    if (el.classList.contains('festival-map-canvas')) {
       const aspect = Number(el.style.getPropertyValue('--map-aspect')) || FALLBACK_ASPECT
       return rect(FRAME_W, FRAME_W / aspect)
     }
     if (el.classList.contains('map-canvas')) {
-      const pan = el.closest<HTMLElement>('.map-pan')
+      const pan = el.closest<HTMLElement>('.festival-map-canvas__pan')
       const scale = Number(/scale\(([\d.]+)\)/.exec(pan?.style.transform ?? '')?.[1] ?? 1)
       return rect(FRAME_W * scale, (FRAME_W / (PLAN_W / PLAN_H)) * scale)
     }
@@ -156,11 +157,11 @@ describe('festival map canvas: the stamp rally mark', () => {
         stalls: [stall({ inStampRally: true, stampImage: '/images/onigiri.png' })],
       },
     })
-    const badge = wrapper.find('.map-stall-stamp')
+    const badge = wrapper.find('.festival-map-canvas__stamp')
     expect(badge.exists()).toBe(true)
     expect(badge.find('[data-icon="stamp"]').exists()).toBe(true)
     // The artwork must not reach the plan in any form.
-    expect(wrapper.find('.map-canvas img.map-stall-stamp').exists()).toBe(false)
+    expect(wrapper.find('.map-canvas img.festival-map-canvas__stamp').exists()).toBe(false)
     expect(wrapper.html()).not.toContain('onigiri')
   })
 
@@ -173,14 +174,14 @@ describe('festival map canvas: the stamp rally mark', () => {
     const wrapper = mount(FestivalMapCanvas, {
       props: { mapImage: '/images/plan.png', stalls: [stall({ inStampRally: true })] },
     })
-    expect(wrapper.find('.map-stall-stamp').exists()).toBe(true)
+    expect(wrapper.find('.festival-map-canvas__stamp').exists()).toBe(true)
   })
 
   it('leaves a stall that is not on the rally unmarked', () => {
     const wrapper = mount(FestivalMapCanvas, {
       props: { mapImage: '/images/plan.png', stalls: [stall()] },
     })
-    expect(wrapper.find('.map-stall-stamp').exists()).toBe(false)
+    expect(wrapper.find('.festival-map-canvas__stamp').exists()).toBe(false)
   })
 
   /**
@@ -193,5 +194,23 @@ describe('festival map canvas: the stamp rally mark', () => {
       props: { mapImage: '/images/plan.png', stalls: [stall({ inStampRally: true })] },
     })
     expect(wrapper.find('.map-stall').attributes('style')).toContain('--stall-text: #2d1b12')
+  })
+})
+
+describe('festival map canvas: accessibility', () => {
+  it('has nothing axe flags, with a rally stall and a dimmed one selected', async () => {
+    const wrapper = mount(FestivalMapCanvas, {
+      props: {
+        mapImage: '/images/plan.png',
+        stalls: [
+          stall({ inStampRally: true }, 1),
+          stall({ title: 'Ring Toss', stallType: 'game' }, 2),
+        ],
+        selectedId: 2,
+        rallyIds: new Set([1]),
+        dimmedIds: new Set([2]),
+      },
+    })
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

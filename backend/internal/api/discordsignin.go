@@ -158,15 +158,15 @@ func (h handlers) registerDiscordSignIn(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "create-discord-invite", Method: http.MethodPost, Path: "/discord-invites",
 		Summary: "Make a link to sign up or link a Discord account", Tags: userTags, DefaultStatus: http.StatusCreated,
-		Description: "The answer is the only time the link is shown. Only the admin account itself may make a link " +
-			"to it (403). 503 when the server has no Discord application.",
+		Description: "The answer is the only time the link is shown. A link to an owner is made only by the " +
+			"owner itself (403). 503 when the server has no Discord application.",
 		Security: secured, Middlewares: adminSession,
 		Errors: []int{http.StatusForbidden, http.StatusNotFound, http.StatusServiceUnavailable},
 	}, h.createDiscordInvite)
 	huma.Register(api, huma.Operation{
 		OperationID: "unlink-discord", Method: http.MethodDelete, Path: "/users/{id}/discord",
 		Summary: "Unlink an account's Discord account", Tags: userTags, DefaultStatus: http.StatusNoContent,
-		Description: "Only the admin account itself may unlink its own (403). Refused (409) when Discord is the " +
+		Description: "An owner's is unlinked only by the owner itself (403). Refused (409) when Discord is the " +
 			"account's only way to sign in: set a password for it first.",
 		Security: secured, Middlewares: adminSession,
 		Errors: []int{http.StatusForbidden, http.StatusNotFound, http.StatusConflict},
@@ -421,8 +421,7 @@ func (h handlers) linkDiscord(ctx context.Context, inviteID, id int64, who disco
 const maxNameTries = 50
 
 // createDiscordUser makes the account for a Discord sign-up, named after its Discord
-// username, or that name with -2, -3 and so on when it is taken or reserved, and
-// answers its id.
+// username, or that name with -2, -3 and so on when it is taken, and answers its id.
 func createDiscordUser(ctx context.Context, q *db.Queries, discordName string) (int64, error) {
 	base := cutName(strings.TrimSpace(discordName), auth.MaxUsernameLength)
 	if base == "" {
@@ -433,9 +432,6 @@ func createDiscordUser(ctx context.Context, q *db.Queries, discordName string) (
 		if i > 1 {
 			suffix := "-" + strconv.Itoa(i)
 			name = cutName(base, auth.MaxUsernameLength-len(suffix)) + suffix
-		}
-		if strings.EqualFold(name, auth.ReservedUsername) {
-			continue
 		}
 		id, err := q.CreateDiscordUser(ctx, name)
 		if uniqueViolation(err) {
@@ -458,8 +454,8 @@ func (h handlers) createDiscordInvite(ctx context.Context, in *createDiscordInvi
 		if err != nil {
 			return nil, err
 		}
-		if target.Username == auth.ReservedUsername && me.ID != target.ID {
-			return nil, huma.Error403Forbidden("Only the admin account can make a link to itself.")
+		if h.isOwner(target) && me.ID != target.ID {
+			return nil, huma.Error403Forbidden("A link to an owner is made only by the owner itself.")
 		}
 		kind, lifetime = inviteLink, linkLinkLifetime
 		forID = sql.NullInt64{Int64: target.ID, Valid: true}
@@ -512,8 +508,8 @@ func (h handlers) unlinkDiscord(ctx context.Context, in *userIDInput) (*struct{}
 	if err != nil {
 		return nil, err
 	}
-	if target.Username == auth.ReservedUsername && Who(ctx).ID != target.ID {
-		return nil, huma.Error403Forbidden("Only the admin account can unlink its own Discord account.")
+	if h.isOwner(target) && Who(ctx).ID != target.ID {
+		return nil, huma.Error403Forbidden("An owner's Discord account is unlinked only by the owner itself.")
 	}
 	tx, q, err := h.begin(ctx)
 	if err != nil {

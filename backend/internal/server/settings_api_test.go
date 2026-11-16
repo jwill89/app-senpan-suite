@@ -9,6 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"testing/fstest"
+
+	"app-suite/internal/web"
 )
 
 // decodeInto reads a JSON body into v, failing the test on a bad status or body.
@@ -121,6 +124,48 @@ func TestSettingsTeaRoomOrigins(t *testing.T) {
 	decodeInto(t, saveSettings(t, env, map[string]any{"teaRoomOrigins": []string{}}), http.StatusOK, &saved)
 	if got := fmt.Sprint(saved["teaRoomOrigins"]); got != "[]" {
 		t.Errorf("an emptied list = %s; want it to stay empty", got)
+	}
+}
+
+// The embed origins start as a copy of the tea-room origins, are saved normalized,
+// an entry that isn't an origin is a 422 at its place, and an embed's page names the
+// saved sites as the ones that may frame it.
+func TestSettingsEmbedOrigins(t *testing.T) {
+	env := newTestEnv(t)
+	env.loginAdmin(t)
+
+	if got := siteSettings(t, env)["embedOrigins"]; fmt.Sprint(got) != "[https://senpan.cafe https://*.senpan.cafe]" {
+		t.Errorf("seeded embed origins = %v", got)
+	}
+
+	var saved map[string]any
+	decodeInto(t, saveSettings(t, env, map[string]any{"embedOrigins": []string{"HTTPS://Maps.Example.com/", "https://maps.example.com"}}), http.StatusOK, &saved)
+	if got := fmt.Sprint(saved["embedOrigins"]); got != "[https://maps.example.com]" {
+		t.Errorf("saved embed origins = %s; want normalized and de-duplicated", got)
+	}
+	if got := fmt.Sprint(saved["teaRoomOrigins"]); got != "[https://senpan.cafe https://*.senpan.cafe]" {
+		t.Errorf("saving the embed origins changed the tea-room origins: %s", got)
+	}
+
+	resp := saveSettings(t, env, map[string]any{"embedOrigins": []string{"https://ok.example.com", "https://x.example.com/path"}})
+	body, _ := io.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(string(body), "body.embedOrigins[1]") {
+		t.Errorf("bad embed origin: status %d, %s", resp.StatusCode, body)
+	}
+
+	site, err := web.New(fstest.MapFS{"index.html": {Data: []byte(`<div id="app"></div>`)}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	env.srv.SetSite(site)
+	page := env.get(t, "/embed/festival-maps/1")
+	_ = page.Body.Close()
+	if csp := page.Header.Get("Content-Security-Policy"); !strings.Contains(csp, "frame-ancestors 'self' https://maps.example.com;") {
+		t.Errorf("embed page policy = %s", csp)
+	}
+	if xfo := page.Header.Get("X-Frame-Options"); xfo != "" {
+		t.Errorf("embed page X-Frame-Options = %q", xfo)
 	}
 }
 

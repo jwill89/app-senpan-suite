@@ -6,6 +6,7 @@ const versionFn = vi.fn()
 vi.mock('@/api/client', () => ({ api: { GET: () => versionFn() } }))
 
 import AppVersions from '@/components/admin/AppVersions.vue'
+import { axeFindings } from '@/__tests__/axe'
 import { APP_VERSION } from '@/lib/version'
 
 describe('AppVersions', () => {
@@ -40,5 +41,12 @@ describe('AppVersions', () => {
 
     expect(wrapper.find('.app-versions-flag').exists()).toBe(false)
     expect(wrapper.classes()).toContain('app-versions--warn')
+  })
+
+  it('has nothing axe flags, with the version flag shown', async () => {
+    versionFn.mockResolvedValue({ data: { version: '999.0.0' } })
+    const wrapper = mount(AppVersions)
+    await flushPromises()
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

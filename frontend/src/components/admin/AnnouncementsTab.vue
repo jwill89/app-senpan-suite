@@ -313,7 +313,7 @@ async function submitRole(): Promise<void> {
                 <font-awesome-icon :icon="['fad', 'bars']" />
               </span>
               <span
-                class="list-row-swatch"
+                class="list-row__swatch"
                 :style="{ background: a.color || '#ff3131' }"
                 aria-hidden="true"
               ></span>
@@ -328,17 +328,17 @@ async function submitRole(): Promise<void> {
               </div>
             </template>
 
-            <h4 class="list-row-title">{{ a.title }}</h4>
-            <p class="text-sm text-muted list-row-meta">
+            <h4 class="list-row__title">{{ a.title }}</h4>
+            <p class="text-sm text-muted list-row__meta">
               <font-awesome-icon :icon="['fad', 'folder-open']" /> {{ typeName(a) }}
             </p>
-            <p v-if="a.startAt" class="text-sm list-row-meta">
+            <p v-if="a.startAt" class="text-sm list-row__meta">
               <font-awesome-icon :icon="['fad', 'calendar-days']" />
               {{ inZone(a.startAt, a.timezone) }}
               <span v-if="a.endAt">- {{ inZone(a.endAt, a.timezone) }}</span>
               <span v-if="a.timezone" class="text-muted">({{ a.timezone }})</span>
             </p>
-            <p class="text-sm list-row-meta">
+            <p class="text-sm list-row__meta">
               <span v-if="a.scheduleKind" class="badge badge--accent announcement-badge">
                 {{ scheduleLabel(a) }}
                 <template v-if="a.nextPostAt">
@@ -732,7 +732,7 @@ async function submitRole(): Promise<void> {
 
       <div v-if="store.types.length" class="list-rows">
         <ListRow v-for="t in store.sortedTypes" :key="t.id">
-          <h4 class="list-row-title">{{ t.name }}</h4>
+          <h4 class="list-row__title">{{ t.name }}</h4>
           <p class="text-sm text-muted">
             <font-awesome-icon :icon="['fab', 'discord']" /> {{ maskWebhook(t.webhookUrl) }}
           </p>
@@ -813,7 +813,7 @@ async function submitRole(): Promise<void> {
 
       <div v-if="store.roles.length" class="list-rows">
         <ListRow v-for="r in store.roles" :key="r.id">
-          <h4 class="list-row-title">{{ r.name }}</h4>
+          <h4 class="list-row__title">{{ r.name }}</h4>
           <p class="text-sm text-muted">
             <font-awesome-icon :icon="['fad', 'at']" /> {{ r.roleId }}
           </p>

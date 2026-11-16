@@ -9,11 +9,6 @@ import (
 	"app-suite/internal/model"
 )
 
-// ReservedUsername is the bootstrap admin every new database is seeded with. Signing up
-// can't take its name, and nobody deactivates, demotes or deletes it, or sets its
-// password but the account itself.
-const ReservedUsername = "admin"
-
 // The limits on what an account is made of.
 const (
 	MinPasswordLength = 8

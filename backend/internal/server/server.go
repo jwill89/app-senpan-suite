@@ -81,6 +81,10 @@ type Server struct {
 	// state in the session store until it expires, so every one counts; a person who
 	// cancels at Discord and tries again a few times stays well under it.
 	discordLimiter *rateLimiter
+	// Requests for a Google Fonts family the server doesn't keep yet, each of which
+	// fetches the family from Google. A visitor trying fonts in the plaque designer
+	// asks for a few; a family kept already is never counted.
+	googleFontLimiter *rateLimiter
 	// discordOAuth signs people in with Discord; off until SetDiscordSignIn gives it
 	// the application's credentials.
 	discordOAuth *discord.OAuth
@@ -97,6 +101,9 @@ type Server struct {
 	// logFile is the path to the rotating JSON log file the admin log viewer
 	// (GET /api/v1/logs) tails. Empty disables the viewer. Injected via SetLogFile.
 	logFile string
+	// owners are the usernames of the owner accounts, which nobody deactivates,
+	// demotes, renames or deletes (SetOwners). Empty names none.
+	owners map[string]bool
 	// images, carrd and fonts are the uploads under dataDir, plugin the plugin
 	// repository and sounds the game's sound effects beside them. The operations in
 	// internal/api and the startup migrations below share the uploads; site.go serves
@@ -107,6 +114,9 @@ type Server struct {
 	fonts  *media.Fonts
 	plugin *media.Plugin
 	sounds *media.Sounds
+	// googleFonts is the Google Fonts families kept under dataDir, which the API
+	// serves in Google's place.
+	googleFonts *media.GoogleFonts
 
 	// Consecutive failed Discord posts per announcement id, used to stop the
 	// scheduler retrying a permanently-broken webhook every 30 seconds forever (see
@@ -152,6 +162,20 @@ func (s *Server) SetDiscordSignIn(clientID, clientSecret string) {
 func (s *Server) SetWebhookPolicy(override string, dryRun bool) {
 	s.discord.Override = strings.TrimSpace(override)
 	s.discord.DryRun = dryRun
+}
+
+// SetOwners names the owner accounts by username, exactly as each is spelled: nobody
+// deactivates, demotes, renames or deletes an owner, and only the owner itself sets its
+// password or links its Discord account. Blank names are skipped. Called before the
+// server serves.
+func (s *Server) SetOwners(usernames []string) {
+	owners := make(map[string]bool, len(usernames))
+	for _, name := range usernames {
+		if name = strings.TrimSpace(name); name != "" {
+			owners[name] = true
+		}
+	}
+	s.owners = owners
 }
 
 // SetLogFile tells the admin log viewer (GET /api/v1/logs) which rotating JSON log
@@ -201,6 +225,7 @@ func New(ctx context.Context, st *store.Store, hub *live.Hub, dataDir string, al
 		fonts:          media.NewFonts(dataDir, media.StoreSettings(st)),
 		plugin:         media.NewPlugin(dataDir),
 		sounds:         media.NewSounds(dataDir),
+		googleFonts:    media.NewGoogleFonts(dataDir, api.Prefix+"/google-fonts/files/"),
 		allowedOrigins: origins,
 		mux:            http.NewServeMux(),
 		limiter:        newRateLimiter(5, 15*time.Minute),  // 5 failed logins per 15 minutes
@@ -226,6 +251,7 @@ func New(ctx context.Context, st *store.Store, hub *live.Hub, dataDir string, al
 		dashboardLimiter:    newRateLimiter(120, 10*time.Minute),
 		emaLimiter:          newRateLimiter(10, 10*time.Minute),
 		discordLimiter:      newRateLimiter(30, 10*time.Minute),
+		googleFontLimiter:   newRateLimiter(30, 10*time.Minute),
 		discordOAuth:        &discord.OAuth{},
 	}
 
@@ -257,11 +283,14 @@ func New(ctx context.Context, st *store.Store, hub *live.Hub, dataDir string, al
 		Images:            s.images,
 		Carrd:             s.carrd,
 		Fonts:             s.fonts,
+		GoogleFonts:       s.googleFonts,
+		GoogleFontLimit:   s.googleFontLimiter,
 		Turnstile: func(ctx context.Context, response, ip string) bool {
 			return !s.turnstileEnabled() || s.verifyTurnstile(ctx, response, ip)
 		},
 		Game:         s.game,
 		CardsChanged: s.game.CardsChanged,
+		Owner:        func(username string) bool { return s.owners[username] },
 	})
 	// Everything outside /api/: GET /healthz and the SPA (site.go).
 	s.siteRoutes()
@@ -326,6 +355,11 @@ func (s *Server) withUserCache(next http.Handler) http.Handler {
 
 // ServeHTTP applies CORS middleware, logs the request, then dispatches to the router.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Every answer, the API's, the page's and the data folder's alike: no type is
+	// guessed from a body, and no address of this site goes to another in a Referer.
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.Header().Set("Referrer-Policy", "same-origin")
+
 	// CORS: only echo the Origin (and allow credentials) for explicitly
 	// allow-listed cross-origin sites. The SPA and API are same-origin in both
 	// prod (one server behind the proxy) and dev (Vite proxies /api), so the

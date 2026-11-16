@@ -1,7 +1,7 @@
 /**
  * Changelog access for the admin dashboard.
  *
- * Re-exports the parsed CHANGELOG.md (provided by the `virtual:changelog` build
+ * Re-exports the parsed CHANGELOG.md files (provided by the `virtual:changelog` build
  * plugin - see config/changelog-plugin.ts) and adds the Dalamud install steps
  * shown for the plugin. The admin sidebar shows the app's and the plugin's version
  * and opens its changelog on click (see AppVersions.vue / ChangelogModal.vue).
@@ -16,15 +16,14 @@ import {
 export { changelog }
 export type { ChangelogSection, ChangelogEntry, ChangelogGroup }
 
-/** The changelog's sections: the app and the plugin, versioned apart, and the
- * frontend's and backend's own separate histories. */
-export type ChangelogComponent = 'app' | 'plugin' | 'frontend' | 'backend'
+/** The changelogs: the app's and the plugin's, versioned apart, and the backend's
+ * separate history from before 4.0.0. */
+export type ChangelogComponent = 'app' | 'plugin' | 'backend'
 
-/** Human labels for each section (modal titles, etc.). */
+/** Human labels for each changelog (modal titles, etc.). */
 export const CHANGELOG_LABELS: Record<ChangelogComponent, string> = {
   app: 'App',
   plugin: 'Plugin',
-  frontend: 'Frontend',
   backend: 'Backend',
 }
 

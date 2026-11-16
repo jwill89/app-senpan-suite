@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import BingoBoard from '@/components/common/BingoBoard.vue'
+import { axeFindings } from '@/__tests__/axe'
 
 // BingoBoard renders CornerFlourish (player mode), which reads the app store, so
 // a Pinia instance must be active for those mounts.
@@ -21,27 +22,27 @@ function sampleBoard(): number[][] {
 describe('BingoBoard', () => {
   it('renders the B-I-N-G-O header', () => {
     const wrapper = mount(BingoBoard, { props: { board: sampleBoard(), mode: 'preview' } })
-    const letters = wrapper.findAll('.board-header span').map((s) => s.text())
+    const letters = wrapper.findAll('.bingo-board__header span').map((s) => s.text())
     expect(letters).toEqual(['B', 'I', 'N', 'G', 'O'])
   })
 
   it('renders all 25 cells with FREE in the center', () => {
     const wrapper = mount(BingoBoard, { props: { board: sampleBoard(), mode: 'preview' } })
-    const cells = wrapper.findAll('.board-cell')
+    const cells = wrapper.findAll('.bingo-board__cell')
     expect(cells).toHaveLength(25)
-    expect(wrapper.find('.board-cell.is-free .cell-num').text()).toBe('FREE')
+    expect(wrapper.find('.bingo-board__cell.is-free .bingo-board__cell-num').text()).toBe('FREE')
   })
 
-  it('applies the board-preview modifier when preview is set', () => {
+  it('applies the bingo-board--preview modifier when preview is set', () => {
     const wrapper = mount(BingoBoard, { props: { board: sampleBoard(), preview: true } })
-    expect(wrapper.find('.board-wrap').classes()).toContain('board-preview')
+    expect(wrapper.find('.bingo-board').classes()).toContain('bingo-board--preview')
   })
 
   it('emits cellClick with coordinates in player mode', async () => {
     const wrapper = mount(BingoBoard, {
-      props: { board: sampleBoard(), mode: 'player', cellClass: () => ['board-cell'] },
+      props: { board: sampleBoard(), mode: 'player', cellClass: () => ['bingo-board__cell'] },
     })
-    await wrapper.findAll('.board-cell')[0]!.trigger('click')
+    await wrapper.findAll('.bingo-board__cell')[0]!.trigger('click')
     expect(wrapper.emitted('cellClick')?.[0]).toEqual([0, 0, 1])
   })
 
@@ -52,14 +53,14 @@ describe('BingoBoard', () => {
         mode: 'player',
         isStamped: (ri: number, ci: number) => ri === 0 && ci === 0,
         cellClass: (ri: number, ci: number) =>
-          ri === 0 && ci === 0 ? ['board-cell', 'is-stamped'] : ['board-cell'],
+          ri === 0 && ci === 0 ? ['bingo-board__cell', 'is-stamped'] : ['bingo-board__cell'],
         stampEmoji: '⭐',
         stampShape: 'star',
       },
     })
-    const first = wrapper.findAll('.board-cell')[0]!
+    const first = wrapper.findAll('.bingo-board__cell')[0]!
     expect(first.classes()).toContain('is-stamped')
-    expect(first.find('.stamp-mark').text()).toBe('⭐')
+    expect(first.find('.bingo-board__stamp-mark').text()).toBe('⭐')
   })
 
   it('renders a custom stamp image when the shape is custom', () => {
@@ -69,12 +70,12 @@ describe('BingoBoard', () => {
         board: sampleBoard(),
         mode: 'player',
         isStamped: () => true,
-        cellClass: () => ['board-cell', 'is-stamped'],
+        cellClass: () => ['bingo-board__cell', 'is-stamped'],
         stampShape: 'custom',
         customStampImage: dataUrl,
       },
     })
-    const img = wrapper.find('.stamp-custom-img')
+    const img = wrapper.find('.bingo-board__stamp-custom-img')
     expect(img.exists()).toBe(true)
     expect(img.attributes('src')).toBe(dataUrl)
   })
@@ -85,7 +86,7 @@ describe('BingoBoard', () => {
         board: sampleBoard(),
         mode: 'player',
         isStamped: () => true, // every cell stamped
-        cellClass: () => ['board-cell', 'is-stamped'],
+        cellClass: () => ['bingo-board__cell', 'is-stamped'],
         stampEmoji: '⭐',
         stampShape: 'star',
         stampMarkStyle: { background: 'pink' },
@@ -94,7 +95,7 @@ describe('BingoBoard', () => {
         isWinningPatternCell: (ri: number, ci: number) => ri === 0 && ci === 0,
       },
     })
-    const marks = wrapper.findAll('.stamp-mark')
+    const marks = wrapper.findAll('.bingo-board__stamp-mark')
     // Pattern cell (0,0): primary stamp -> shows the emoji.
     expect(marks[0]!.text()).toBe('⭐')
     expect(marks[0]!.attributes('style')).toContain('background: pink')
@@ -109,12 +110,46 @@ describe('BingoBoard', () => {
         board: sampleBoard(),
         mode: 'player',
         isStamped: () => true,
-        cellClass: () => ['board-cell', 'is-stamped'],
+        cellClass: () => ['bingo-board__cell', 'is-stamped'],
         stampEmoji: '⭐',
         isWinningPatternCell: () => false, // would be "non-pattern" everywhere
       },
     })
     // Without secondaryStampStyle, every stamped cell keeps the primary emoji.
-    expect(wrapper.findAll('.stamp-mark')[1]!.text()).toBe('⭐')
+    expect(wrapper.findAll('.bingo-board__stamp-mark')[1]!.text()).toBe('⭐')
+  })
+
+  it('has nothing axe flags as a preview', async () => {
+    const wrapper = mount(BingoBoard, { props: { board: sampleBoard(), mode: 'preview' } })
+    expect(await axeFindings(wrapper.element)).toEqual([])
+  })
+
+  it('has nothing axe flags as a player board with stamps', async () => {
+    const wrapper = mount(BingoBoard, {
+      props: {
+        board: sampleBoard(),
+        mode: 'player',
+        isStamped: (ri: number) => ri === 0,
+        cellClass: (ri: number) =>
+          ri === 0 ? ['bingo-board__cell', 'is-stamped'] : ['bingo-board__cell'],
+        stampEmoji: '⭐',
+        stampShape: 'star',
+      },
+    })
+    expect(await axeFindings(wrapper.element)).toEqual([])
+  })
+
+  it('has nothing axe flags with a custom stamp image', async () => {
+    const wrapper = mount(BingoBoard, {
+      props: {
+        board: sampleBoard(),
+        mode: 'player',
+        isStamped: () => true,
+        cellClass: () => ['bingo-board__cell', 'is-stamped'],
+        stampShape: 'custom',
+        customStampImage: 'data:image/png;base64,AAAA',
+      },
+    })
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

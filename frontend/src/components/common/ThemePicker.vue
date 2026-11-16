@@ -30,7 +30,7 @@ function onChange(e: Event): void {
 <template>
   <label v-if="publicThemes.length" class="theme-picker">
     <font-awesome-icon :icon="['fad', 'palette']" />
-    <span class="theme-picker-label">Theme</span>
+    <span class="theme-picker__label">Theme</span>
     <select :value="app.themePreference" aria-label="Choose a theme" @change="onChange">
       <option value="default">Default</option>
       <option v-for="t in publicThemes" :key="t.id" :value="String(t.id)">{{ t.name }}</option>
@@ -46,7 +46,7 @@ function onChange(e: Event): void {
   font-size: 0.9rem;
 }
 
-.theme-picker-label {
+.theme-picker__label {
   font-weight: 600;
 }
 

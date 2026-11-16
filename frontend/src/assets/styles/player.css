@@ -146,7 +146,7 @@
 /* The topbar IS the page-level heading on every public view and on the admin
    shell - its centre slot holds the page title, so its bottom border is the
    page-level rule: 2px `--highlight`, the same weight `.manager-header` and
-   `.subpage-header` take in utilities.css section 3. A panel title one level down keeps
+   `.sub-page-header` take in utilities.css section 3. A panel title one level down keeps
    the quiet 1px muted hairline. */
 .topbar {
   display: flex;
@@ -206,7 +206,7 @@
 
 /* Outer wrapper - a flat square frame around the cells, with no halo; the
    gradient separates it from the page. */
-.board-wrap {
+.bingo-board {
   position: relative;
   background: linear-gradient(145deg, var(--board-gradient-start), var(--board-gradient-end));
 
@@ -234,7 +234,7 @@
   z-index: 2;
 }
 
-.corner-flourish .corner-flourish-svg {
+.corner-flourish .corner-flourish__svg {
   display: block;
   width: 100%;
   height: 100%;
@@ -272,7 +272,7 @@
    minimum cell size enforced by the column's min-width. Cells become fluid
    squares (aspect-ratio) that stretch the 5 equal grid tracks instead of being
    pinned to a fixed 68px. Preview/admin boards keep the fixed-size cells. */
-.player-col-board .board-wrap {
+.player-col-board .bingo-board {
   display: block;
   width: 100%;
 
@@ -285,13 +285,13 @@
   padding: 18px 20px 24px;
 }
 
-.player-col-board .board-cell {
+.player-col-board .bingo-board__cell {
   width: auto;
   height: auto;
   aspect-ratio: 1 / 1;
 
   /* Allow the cell to shrink below its text's intrinsic width so a narrow
-     column can't push the grid wider than its container (see board-grid). */
+     column can't push the grid wider than its container (see .bingo-board__grid). */
   min-width: 0;
 
   /* The player board fills its (wider) column, so the number type scales up to
@@ -304,24 +304,24 @@
    cell's content (the larger player-board font, esp. "FREE") sets a floor that
    forces the 5 tracks wider than the column on narrow viewports, overflowing the
    card. The 0 floor lets the tracks shrink to fit the column. */
-.player-col-board .board-grid {
+.player-col-board .bingo-board__grid {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 /* ...and the B-I-N-G-O header with it. */
-.player-col-board .board-header span {
+.player-col-board .bingo-board__header span {
   font-size: 3.5rem;
 }
 
 /* B-I-N-G-O column header labels */
-.board-header {
+.bingo-board__header {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 5px;
   margin-bottom: 5px;
 }
 
-.board-header span {
+.bingo-board__header span {
   text-align: center;
   font-family: var(--header-font);
   font-size: 1.6rem;
@@ -332,7 +332,7 @@
 }
 
 /* 5x5 cell grid */
-.board-grid {
+.bingo-board__grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 5px;
@@ -343,13 +343,14 @@
    viewport-derived value keeps the 5-cell board (cells + gaps + wrapper padding)
    from overflowing small phones, while staying exactly 68px on any width where
    that fits. Self-limiting, so no extra breakpoint is needed for the board. */
-.board-cell {
+.bingo-board__cell {
   --cell-size: min(68px, calc((100vw - 100px) / 5));
 
   position: relative;
 
   /* Inline-size container so the FREE label can be sized to the cell's width
-     (see `.board-cell.is-free .cell-num`) without affecting the cell's layout. */
+     (see `.bingo-board__cell.is-free .bingo-board__cell-num`) without affecting
+     the cell's layout. */
   container-type: inline-size;
   width: var(--cell-size);
   height: var(--cell-size);
@@ -367,19 +368,19 @@
   transition: all 0.12s;
 }
 
-.board-cell:hover {
+.bingo-board__cell:hover {
   background: var(--board-cell-hover-bg);
 }
 
 /* Center FREE space with distinct background */
-.board-cell.is-free {
+.bingo-board__cell.is-free {
   background: var(--board-free-bg);
   cursor: pointer;
 }
 
 /* Modifier: a cell that only shows (the card preview), so it does not invite a tap. */
-.board-cell--static,
-.board-cell--static.is-free {
+.bingo-board__cell--static,
+.bingo-board__cell--static.is-free {
   cursor: default;
 }
 
@@ -388,13 +389,13 @@
    FREE label relative to the cell's own width (container query units) so it
    always shrinks to fit; the `min()` caps it at the inherited number size so it
    never renders larger than a number on wide boards. Numbers are untouched. */
-.board-cell.is-free .cell-num {
+.bingo-board__cell.is-free .bingo-board__cell-num {
   font-size: min(1em, 34cqw);
   white-space: nowrap;
 }
 
 /* Show stamp overlay only when cell is stamped */
-.board-cell.is-stamped .stamp-mark {
+.bingo-board__cell.is-stamped .bingo-board__stamp-mark {
   display: flex;
 }
 
@@ -403,7 +404,7 @@
    ================================================================ */
 
 /* Stamp overlay circle positioned inside each board cell */
-.stamp-mark {
+.bingo-board__stamp-mark {
   display: none;
   position: absolute;
   inset: 6%;
@@ -416,7 +417,7 @@
 }
 
 /* Dim the number text when a stamp is applied */
-.board-cell.is-stamped .cell-num {
+.bingo-board__cell.is-stamped .bingo-board__cell-num {
   opacity: 0.45;
 }
 
@@ -471,7 +472,7 @@
 }
 
 /* Custom user-uploaded stamp image rendered inside a board cell */
-.stamp-custom-img {
+.bingo-board__stamp-custom-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -833,20 +834,20 @@
    ================================================================ */
 
 /* Container panel for the called numbers grid */
-.numbers-panel {
+.called-numbers {
   background: var(--panel-bg);
   border-radius: var(--radius);
   padding: 16px;
 }
 
-.numbers-panel h3 {
+.called-numbers h3 {
   margin-bottom: 10px;
   font-size: 1rem;
   color: var(--text-muted);
 }
 
 /* 5-column grid (one per B-I-N-G-O letter) */
-.numbers-cols {
+.called-numbers__cols {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
@@ -854,13 +855,13 @@
 
 /* One B-I-N-G-O column. The wrapper is shared, not scoped to CalledNumbers.vue,
    so the tracker can be reused elsewhere (the theme preview needs it). */
-.numbers-col {
+.called-numbers__col {
   position: relative;
 }
 
 /* A column whose numbers won't be drawn this game (no pattern uses it): a simple
    ~45% dark block over the whole column so it clearly reads as "not in play". */
-.numbers-col--unused::after {
+.called-numbers__col--unused::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -869,7 +870,7 @@
 }
 
 /* B/I/N/G/O column header */
-.numbers-col-header {
+.called-numbers__col-header {
   text-align: center;
   font-weight: 800;
   font-size: 1rem;
@@ -878,7 +879,7 @@
 }
 
 /* Individual number cell (1-75) in the tracker */
-.num-cell {
+.called-numbers__num-cell {
   text-align: center;
   padding: 4px 0;
   font-size: 0.85rem;
@@ -887,7 +888,7 @@
 }
 
 /* Highlighted state when a number has been called */
-.num-cell.is-called {
+.called-numbers__num-cell.is-called {
   background: var(--highlight);
   color: var(--text-on-accent);
   font-weight: 700;
@@ -896,11 +897,11 @@
 /* Larger called-numbers type in the player's middle column for readability at a
    glance (the last-called banner is unaffected). Scoped to the player view so
    the admin tracker keeps its compact sizing. */
-.player-col-called .numbers-col-header {
+.player-col-called .called-numbers__col-header {
   font-size: 1.3rem;
 }
 
-.player-col-called .num-cell {
+.player-col-called .called-numbers__num-cell {
   font-size: 1.05rem;
   padding: 6px 0;
 }
@@ -967,7 +968,7 @@ span.pattern-mini {
 }
 
 /* Single cell in a mini pattern grid */
-.pattern-mini-cell {
+.pattern-mini__cell {
   width: 16px;
   height: 16px;
   border-radius: 0;
@@ -975,7 +976,7 @@ span.pattern-mini {
 }
 
 /* Active/required cell in a pattern (highlight) */
-.pattern-mini-cell.is-on {
+.pattern-mini__cell.is-on {
   background: var(--highlight);
 }
 
@@ -989,7 +990,7 @@ span.pattern-mini {
   width: 66px;
 }
 
-.player-col-info .pattern-mini-cell {
+.player-col-info .pattern-mini__cell {
   width: 11px;
   height: 11px;
 }
@@ -1091,14 +1092,14 @@ span.pattern-mini {
    ================================================================ */
 
 /* Board cell that matches the winning pattern (highlight highlight + glow) */
-.board-cell.pattern-hit {
+.bingo-board__cell.bingo-board__cell--pattern-hit {
   background: var(--highlight);
   color: var(--text-on-accent);
   box-shadow: 0 0 10px var(--highlight-glow);
   border: 2px solid var(--text-muted);
 }
 
-.board-cell.pattern-hit.is-free {
+.bingo-board__cell.bingo-board__cell--pattern-hit.is-free {
   background: var(--highlight);
 }
 
@@ -1243,7 +1244,7 @@ span.pattern-mini {
 }
 
 /* Single cohesive box holding the "Last Called" number and the called-numbers
-   grid together, separated by a divider. The inner numbers-panel drops its own
+   grid together, separated by a divider. The inner .called-numbers drops its own
    surface/padding so the combined box provides the one frame. */
 .called-combined {
   background: var(--panel-bg);
@@ -1251,7 +1252,7 @@ span.pattern-mini {
   padding: 16px;
 }
 
-.called-combined .numbers-panel {
+.called-combined .called-numbers {
   background: transparent;
   padding: 0;
 }
@@ -1502,11 +1503,11 @@ span.pattern-mini {
 
 /* Mobile-only "Install App" link - styled as a pill button to read as a clear
    call-to-action (shown by usePwaInstall only on mobile when not yet installed). */
-.app-footer-install {
+.app-footer__install {
   margin-top: 14px;
 }
 
-.app-footer-install a {
+.app-footer__install a {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -1516,7 +1517,7 @@ span.pattern-mini {
   font-weight: 600;
 }
 
-.app-footer-install a:hover {
+.app-footer__install a:hover {
   background: color-mix(in srgb, var(--highlight) 12%, transparent);
   text-decoration: none;
 }

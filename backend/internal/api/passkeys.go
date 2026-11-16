@@ -207,7 +207,7 @@ func (h handlers) finishPasskeySignIn(ctx context.Context, in *passkeySignInInpu
 	if err := h.startSession(ctx, pu.user, ip); err != nil {
 		return nil, h.fail("sign in", err)
 	}
-	return &meOutput{Body: Me{Account: accountOf(pu.user)}}, nil
+	return &meOutput{Body: Me{Account: h.accountOf(pu.user)}}, nil
 }
 
 func (h handlers) listPasskeys(ctx context.Context, _ *struct{}) (*passkeysOutput, error) {

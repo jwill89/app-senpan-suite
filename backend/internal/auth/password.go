@@ -1,8 +1,8 @@
 // Package auth holds the accounts' rules that need no request: argon2id password
-// hashing and verification, the account limits and the reserved bootstrap account,
-// personal access tokens, and what a signed-in session carries. The store (seeding
-// the bootstrap admin), the API's operations (signing in, accounts) and the server's
-// session layer (who a request is) share it.
+// hashing and verification, the account limits, personal access tokens, and what a
+// signed-in session carries. The store (making an admin from the host), the API's
+// operations (signing in, accounts) and the server's session layer (who a request
+// is) share it.
 package auth
 
 import (

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Small reusable loading spinner. Styled entirely with theme tokens (see the
- * `.spinner` rules in components.css) so custom themes restyle it automatically.
+ * `.loading-spinner` rules in components.css) so custom themes restyle it
+ * automatically.
  *
  *   <LoadingSpinner />                      inline spinner
  *   <LoadingSpinner label="Loading..." />     spinner + muted label
@@ -16,8 +17,12 @@ defineProps<{
 </script>
 
 <template>
-  <div :class="block ? 'loading-block' : 'loading-inline'" role="status" aria-live="polite">
-    <span class="spinner" aria-hidden="true"></span>
-    <span v-if="label" class="loading-label">{{ label }}</span>
+  <div
+    :class="['loading-spinner', { 'loading-spinner--block': block }]"
+    role="status"
+    aria-live="polite"
+  >
+    <span class="loading-spinner__spinner" aria-hidden="true"></span>
+    <span v-if="label" class="loading-spinner__label">{{ label }}</span>
   </div>
 </template>

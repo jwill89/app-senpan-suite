@@ -9,7 +9,7 @@
  */
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { join, relative, sep } from 'node:path'
+import { basename, join, relative, sep } from 'node:path'
 
 const SRC = fileURLToPath(new URL('../src', import.meta.url))
 const REPO = fileURLToPath(new URL('../..', import.meta.url))
@@ -47,7 +47,7 @@ function declaredClasses(css) {
   return out
 }
 
-const THIRD_PARTY = /^(vc-|milkdown|crepe|ProseMirror|v3-|cm-|fa-|svg-inline)/
+const THIRD_PARTY = /^(vc-|ProseMirror|v3-|cm-|fa-|svg-inline)/
 
 // ---------------------------------------------------------------- rule 1
 // Class names must describe a role, never an appearance. A class named for a color
@@ -57,11 +57,18 @@ const APPEARANCE =
   /(^|-)(gold|silver|bronze|red|green|blue|yellow|amber|orange|purple|pink|grey|gray|white|black|dim|bright)(-|$)/
 
 // ---------------------------------------------------------------- rule 2
-// One separator style. `-` joins a name to its part, `--` marks a modifier, and
-// `is-` marks state. BEM's `__` is not used: much of the CSS lives in Vue
-// `<style scoped>` blocks, where the compiler already guarantees uniqueness, so
-// `__` would add ceremony and no isolation.
-const BEM_ELEMENT = /__/
+// Separators. `-` joins a name to its part, `--` marks a modifier, and `is-` marks
+// state. A reusable component - an SFC under components/common/ - names the classes
+// it owns BEM, `block__element--modifier`, with its own name in kebab-case as the
+// block (`.list-row__title` for ListRow). Every other class joins its parts with
+// `-`, so a `__` always names the component it belongs to.
+const BEM_BLOCKS = new Set(
+  walk(join(SRC, 'components', 'common'), (n) => n.endsWith('.vue')).map((f) =>
+    basename(f, '.vue')
+      .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+      .toLowerCase(),
+  ),
+)
 
 // ---------------------------------------------------------------- rule 3
 // Bare state words (`.active`, `.open`) collide with data values and HTML
@@ -98,8 +105,12 @@ for (const f of srcFiles) {
           'appearance-named class',
           `.${cls} in ${rel(f)} - name the role or the token, not the colour`,
         )
-      if (BEM_ELEMENT.test(cls))
-        fail('BEM __ separator', `.${cls} in ${rel(f)} - use "-" for a part, "--" for a modifier`)
+      const element = cls.indexOf('__')
+      if (element !== -1 && !BEM_BLOCKS.has(cls.slice(0, element)))
+        fail(
+          'BEM __ outside a reusable component',
+          `.${cls} in ${rel(f)} - "__" is for a components/common/ SFC's own block; use "-" for a part`,
+        )
       if (BARE_STATE.has(cls))
         fail('bare state class', `.${cls} in ${rel(f)} - state must be prefixed "is-"`)
     }

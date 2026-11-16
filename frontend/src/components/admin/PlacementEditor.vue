@@ -111,24 +111,26 @@ function onCanvasPointerDown(e: PointerEvent): void {
         <div v-else class="placement-item-empty">{{ item.label }}</div>
 
         <template v-if="item.key === selectedKey">
+          <!-- The drag handles answer the pointer alone: the form's position, size and
+               rotation fields do the same from the keyboard. They are hidden from
+               assistive technology and are not buttons, since a control inside the
+               item's own button can't be reached. -->
           <!-- Rotate handle (above, top-centre) -->
-          <button
+          <span
             class="placement-handle placement-rotate"
-            type="button"
-            aria-label="Rotate"
+            aria-hidden="true"
             title="Drag to rotate"
             @pointerdown.stop="beginDrag('rotate', item, $event)"
           >
             <font-awesome-icon :icon="['fas', 'rotate']" />
-          </button>
+          </span>
           <!-- Resize handle (bottom-right) -->
-          <button
+          <span
             class="placement-handle placement-resize"
-            type="button"
-            aria-label="Resize"
+            aria-hidden="true"
             title="Drag to resize"
             @pointerdown.stop="beginDrag('resize', item, $event)"
-          ></button>
+          ></span>
         </template>
       </div>
     </div>

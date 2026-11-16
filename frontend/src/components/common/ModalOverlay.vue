@@ -14,7 +14,7 @@
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
 
 defineProps<{
-  /** Adds the `modal-centered` class to the box (used by simple prompts). */
+  /** Adds the `modal-overlay__box--centered` class to the box (used by simple prompts). */
   centered?: boolean
   /** Inline style applied to the box (some modals set max-width/height). */
   boxStyle?: string | Record<string, string>
@@ -183,8 +183,8 @@ onBeforeUnmount(() => {
   <div ref="overlay" class="modal-overlay" @click.self="emit('close')">
     <div
       ref="box"
-      class="modal-box"
-      :class="{ 'modal-centered': centered }"
+      class="modal-overlay__box"
+      :class="{ 'modal-overlay__box--centered': centered }"
       :style="boxStyle"
       role="dialog"
       aria-modal="true"

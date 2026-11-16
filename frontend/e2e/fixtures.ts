@@ -48,8 +48,8 @@ async function body<T>(response: Promise<APIResponse>): Promise<T> {
  * Playwright's test, with what the pages need from the run's server, which serves
  * `/images/` from its data folder as production's does:
  *
- * - `staff`: the API, signed in as the bootstrap admin, which seeds the rest through
- *   the endpoints the admin pages call.
+ * - `staff`: the API, signed in as the run's staff account (an owner and an admin), which
+ *   seeds the rest through the endpoints the admin pages call.
  * - `bingo`: a game that has just started, with a card in it.
  * - `raffle`: an open raffle, removed again after the test.
  */

@@ -7,6 +7,7 @@ vi.mock('vue-router', () => ({ useRouter: () => ({ push }) }))
 
 import ToastNotification from '@/components/common/ToastNotification.vue'
 import { useUiStore } from '@/stores/ui'
+import { axeFindings } from '@/__tests__/axe'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -23,9 +24,9 @@ describe('ToastNotification alerts', () => {
     ui.notify('Saved', 'success')
     const w = mount(ToastNotification)
     await w.vm.$nextTick()
-    const toasts = w.findAll('.toast')
+    const toasts = w.findAll('.toast-notification__toast')
     expect(toasts).toHaveLength(2)
-    expect(toasts[0]!.classes()).toContain('toast--alert')
+    expect(toasts[0]!.classes()).toContain('toast-notification__toast--alert')
     expect(toasts[0]!.text()).toContain('Jasmine Room (Room #3)')
   })
 
@@ -33,9 +34,9 @@ describe('ToastNotification alerts', () => {
     const ui = useUiStore()
     ui.alert({ title: 'Tea room unlocked', message: 'check it' })
     const w = mount(ToastNotification)
-    await w.find('.toast--alert').trigger('click')
+    await w.find('.toast-notification__toast--alert').trigger('click')
     expect(ui.alerts).toHaveLength(1)
-    await w.find('.toast-close').trigger('click')
+    await w.find('.toast-notification__close').trigger('click')
     expect(ui.alerts).toHaveLength(0)
   })
 
@@ -47,8 +48,21 @@ describe('ToastNotification alerts', () => {
       action: { label: 'Open Tea Rooms', to: '/admin/teahouse/tea-rooms' },
     })
     const w = mount(ToastNotification)
-    await w.find('.toast-actions button').trigger('click')
+    await w.find('.toast-notification__actions button').trigger('click')
     expect(push).toHaveBeenCalledWith('/admin/teahouse/tea-rooms')
     expect(ui.alerts).toHaveLength(0)
+  })
+
+  it('has nothing axe flags with an alert, its action and a toast', async () => {
+    const ui = useUiStore()
+    ui.alert({
+      title: 'Tea room unlocked',
+      message: 'check it',
+      action: { label: 'Open Tea Rooms', to: '/admin/teahouse/tea-rooms' },
+    })
+    ui.notify('Saved', 'success')
+    const w = mount(ToastNotification)
+    await w.vm.$nextTick()
+    expect(await axeFindings(w.element)).toEqual([])
   })
 })

@@ -159,8 +159,8 @@ function cancelRename(): void {
                 <font-awesome-icon :icon="['fad', 'image']" />
               </div>
             </template>
-            <h4 class="list-row-title">{{ item.title }}</h4>
-            <p class="text-muted text-sm list-row-meta">
+            <h4 class="list-row__title">{{ item.title }}</h4>
+            <p class="text-muted text-sm list-row__meta">
               <span v-if="item.format">{{ item.format }}</span>
               <span v-if="item.chapters">- {{ item.chapters }} ch</span>
             </p>

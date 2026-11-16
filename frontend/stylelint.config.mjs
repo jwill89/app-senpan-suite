@@ -9,13 +9,16 @@ export default {
   rules: {
     // app.css imports its parts by string, which Vite resolves and bundles.
     'import-notation': 'string',
-    // Class names are kebab-case, a part joined with `-`, a modifier with `--`, and
-    // no BEM `__` (the shared pattern allows it). The libraries the stylesheets
-    // reskin keep their own names: vue-color's BEM classes (`vc-input__input`) and
-    // ProseMirror's.
+    // Class names are kebab-case: a part joined with `-`, a modifier after `--`, and
+    // a reusable component's own classes BEM, `block__element--modifier` (which
+    // blocks may take `__` is checked by scripts/check-conventions.mjs). ProseMirror,
+    // whose classes the stylesheets reskin, keeps its own names.
     'selector-class-pattern': [
-      '^(?:vc-[a-z0-9-]+(?:__[a-z0-9-]+)?|ProseMirror(?:-[a-z]+)*|[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?)$',
-      { message: 'Name classes in kebab-case, a modifier after --, no __ (AGENTS.md)' },
+      '^(?:ProseMirror(?:-[a-z]+)*|[a-z][a-z0-9]*(?:-[a-z0-9]+)*(?:__[a-z0-9]+(?:-[a-z0-9]+)*)?(?:--[a-z0-9]+(?:-[a-z0-9]+)*)?)$',
+      {
+        message:
+          'Name classes in kebab-case, a modifier after --, and block__element--modifier only for a reusable component (AGENTS.md)',
+      },
     ],
     // Off: the stylesheets are ordered by object and domain on purpose (app.css sets
     // the cascade between files), and this rule pairs selectors from unrelated parts

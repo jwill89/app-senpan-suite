@@ -10,9 +10,18 @@ vi.mock('@/router', () => ({ adminTabRouteName: (tab: string) => 'admin-' + tab 
 import AdminSidebar from '@/components/admin/AdminSidebar.vue'
 import { useAuthStore } from '@/stores/auth'
 import type { Account } from '@/api/client'
+import { axeFindings } from '@/__tests__/axe'
 
 function makeUser(partial: Partial<Account>): Account {
-  return { id: 1, username: 'u', isAdmin: false, permissions: [], hasPassword: true, ...partial }
+  return {
+    id: 1,
+    username: 'u',
+    isAdmin: false,
+    permissions: [],
+    hasPassword: true,
+    owner: false,
+    ...partial,
+  }
 }
 
 /** Mounts the sidebar with the given logged-in account. The AppVersions footer
@@ -161,5 +170,14 @@ describe('AdminSidebar', () => {
     const buttons = sections[0]!.findAll('.admin-nav-items button')
     expect(buttons).toHaveLength(1)
     expect(buttons[0]!.text()).toContain('Manage Cards')
+  })
+
+  it('has nothing axe flags for an admin, or for an account with one page', async () => {
+    const admin = mountAs(makeUser({ isAdmin: true }))
+    expect(await axeFindings(admin.element)).toEqual([])
+    admin.unmount()
+
+    const staff = mountAs(makeUser({ permissions: ['bingo-cards'] }))
+    expect(await axeFindings(staff.element)).toEqual([])
   })
 })

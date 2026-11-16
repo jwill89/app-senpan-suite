@@ -1,7 +1,7 @@
 {
   "name": "app-suite-frontend",
   "private": true,
-  "version": "5.4.0",
+  "version": "5.5.0",
   "type": "module",
   "engines": {
     "node": "^26"
@@ -26,14 +26,23 @@
   "dependencies": {
     "@awesome.me/kit-46204fb6f1": "^1.0.9",
     "@ckpack/vue-color": "^1.6.0",
+    "@fontsource/montserrat": "^5.3.0",
     "@fortawesome/fontawesome-svg-core": "^7.3.1",
     "@fortawesome/free-brands-svg-icons": "^7.3.1",
     "@fortawesome/vue-fontawesome": "^3.3.3",
-    "@milkdown/crepe": "^7.23.0",
     "@tanstack/vue-table": "^9.3.1",
+    "@tiptap/core": "^3.33.1",
+    "@tiptap/extension-hard-break": "^3.33.1",
+    "@tiptap/extension-link": "^3.33.1",
+    "@tiptap/extension-paragraph": "^3.33.1",
+    "@tiptap/extensions": "^3.33.1",
+    "@tiptap/markdown": "^3.33.1",
+    "@tiptap/pm": "^3.33.1",
+    "@tiptap/starter-kit": "^3.33.1",
     "html-to-image": "^1.11.13",
     "konva": "^10.9.1",
     "markdown-it": "^15.0.3",
+    "marked": "^17.0.6",
     "openapi-fetch": "0.17.0",
     "pinia": "^4.1.0",
     "vue": "^3.5.45",
@@ -50,6 +59,7 @@
     "@vitejs/plugin-vue": "^6.0.10",
     "@vitest/coverage-v8": "^5.1.0",
     "@vue/test-utils": "^2.5.1",
+    "axe-core": "^4.14.0",
     "cross-env": "^10.1.0",
     "eslint": "^10.14.0",
     "jsdom": "^31.0.0",
@@ -66,9 +76,6 @@
     "form-data": "^4.0.6",
     "js-beautify": {
       "glob": "^14.0.2"
-    },
-    "micromark-extension-math": {
-      "katex": "^0.19.1"
     },
     "workbox-build": {
       "glob": "^14.0.2"

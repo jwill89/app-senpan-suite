@@ -7,20 +7,26 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"app-suite/internal/api/apitest"
+	"app-suite/internal/auth"
 	"app-suite/internal/live"
 	"app-suite/internal/server"
 	"app-suite/internal/store"
 	"app-suite/internal/store/storetest"
 )
 
+// The admin account newTestEnv makes, as `app-suite admin` would on a host.
 const (
-	// Bootstrap account seeded by the baseline migration.
-	seedAdminUser = "admin"
-	seedAdminPass = "admin"
+	adminUser = "admin"
+	adminPass = "admin-password"
 )
+
+// adminHash is adminPass hashed, once for the test binary: argon2id takes 64 MiB and a
+// noticeable moment per hash, and every test environment needs the account.
+var adminHash = sync.OnceValues(func() (string, error) { return auth.Hash(adminPass) })
 
 // testEnv bundles a test server, authenticated client, and raw store.
 type testEnv struct {
@@ -38,6 +44,7 @@ func newTestEnv(t *testing.T) *testEnv {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { st.Close() })
+	makeAdmin(t, st)
 
 	hub := live.New()
 	srv := server.New(t.Context(), st, hub, t.TempDir(), nil)
@@ -54,6 +61,19 @@ func newTestEnv(t *testing.T) *testEnv {
 	client.Transport = apitest.Transport(t, client.Transport)
 
 	return &testEnv{ts: ts, client: client, store: st, srv: srv, hub: hub}
+}
+
+// makeAdmin makes the admin account the tests sign in as (adminUser), as
+// `app-suite admin` does on a host.
+func makeAdmin(t *testing.T, st *store.Store) {
+	t.Helper()
+	hash, err := adminHash()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.MakeAdmin(t.Context(), adminUser, hash); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func (e *testEnv) url(path string) string {
@@ -115,7 +135,7 @@ func (e *testEnv) del(t *testing.T, path string) *http.Response {
 func (e *testEnv) loginAdmin(t *testing.T) {
 	t.Helper()
 	resp := e.postJSON(t, "/api/v1/auth/login", map[string]string{
-		"username": seedAdminUser, "password": seedAdminPass,
+		"username": adminUser, "password": adminPass,
 	})
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
@@ -294,13 +314,13 @@ func TestAuth_LoginSuccess(t *testing.T) {
 	env := newTestEnv(t)
 
 	resp := env.postJSON(t, "/api/v1/auth/login", map[string]string{
-		"username": seedAdminUser, "password": seedAdminPass,
+		"username": adminUser, "password": adminPass,
 	})
-	if name := accountName(t, resp); name != seedAdminUser {
-		t.Errorf("sign-in answered %q; want %q", name, seedAdminUser)
+	if name := accountName(t, resp); name != adminUser {
+		t.Errorf("sign-in answered %q; want %q", name, adminUser)
 	}
-	if name := env.signedInAs(t); name != seedAdminUser {
-		t.Errorf("after signing in, who am I = %q; want %q", name, seedAdminUser)
+	if name := env.signedInAs(t); name != adminUser {
+		t.Errorf("after signing in, who am I = %q; want %q", name, adminUser)
 	}
 }
 
@@ -308,7 +328,7 @@ func TestAuth_LoginWrongPassword(t *testing.T) {
 	env := newTestEnv(t)
 
 	resp := env.postJSON(t, "/api/v1/auth/login", map[string]string{
-		"username": seedAdminUser, "password": "wrong",
+		"username": adminUser, "password": "wrong",
 	})
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Errorf("status = %d; want 401", resp.StatusCode)

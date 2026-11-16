@@ -291,7 +291,7 @@
 
 /* The designer fills the screen: it needs the room, and on a phone there is no
    backdrop worth keeping around it. */
-.festival-ema-designer-modal .modal-box {
+.festival-ema-designer-modal .modal-overlay__box {
   display: flex;
   flex-direction: column;
   width: 100vw;

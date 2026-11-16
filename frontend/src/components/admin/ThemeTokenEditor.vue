@@ -225,10 +225,10 @@ async function revealInPreview(id: string): Promise<void> {
           <!-- Modal & backdrop: the real dialog box over a contained stand-in for
                the overlay, which is position:fixed and would cover the editor. -->
           <section class="theme-preview-overlay">
-            <div class="modal-box">
+            <div class="modal-overlay__box">
               <h3>Modal dialog</h3>
-              <p class="confirm-msg">Floats above a dimmed backdrop.</p>
-              <div class="confirm-btns">
+              <p class="confirm-modal__msg">Floats above a dimmed backdrop.</p>
+              <div class="confirm-modal__btns">
                 <button type="button" class="btn-neutral">Cancel</button>
                 <button type="button" class="btn-action">Confirm</button>
               </div>
@@ -240,42 +240,44 @@ async function revealInPreview(id: string): Promise<void> {
                pattern-hit cell is the one carrier of --highlight-glow. -->
           <section class="admin-panel theme-preview-panel theme-preview-panel--wide">
             <h5 class="section-heading">Bingo board</h5>
-            <div class="board-wrap theme-preview-board">
-              <div class="board-header" data-pair="bingo-top bingo-bottom">
+            <div class="bingo-board theme-preview-board">
+              <div class="bingo-board__header" data-pair="bingo-top bingo-bottom">
                 <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
               </div>
-              <div class="board-grid">
-                <div class="board-cell" data-pair="board-num board-num-hover">
-                  <span class="cell-num">7</span>
+              <div class="bingo-board__grid">
+                <div class="bingo-board__cell" data-pair="board-num board-num-hover">
+                  <span class="bingo-board__cell-num">7</span>
                 </div>
-                <div class="board-cell"><span class="cell-num">23</span></div>
-                <div class="board-cell is-free" data-pair="free-num">
-                  <span class="cell-num">FREE</span>
+                <div class="bingo-board__cell"><span class="bingo-board__cell-num">23</span></div>
+                <div class="bingo-board__cell is-free" data-pair="free-num">
+                  <span class="bingo-board__cell-num">FREE</span>
                 </div>
-                <div class="board-cell pattern-hit"><span class="cell-num">52</span></div>
-                <div class="board-cell"><span class="cell-num">68</span></div>
+                <div class="bingo-board__cell bingo-board__cell--pattern-hit">
+                  <span class="bingo-board__cell-num">52</span>
+                </div>
+                <div class="bingo-board__cell"><span class="bingo-board__cell-num">68</span></div>
               </div>
             </div>
-            <div class="numbers-cols theme-preview-tracker">
-              <div class="numbers-col">
-                <div class="numbers-col-header">B</div>
-                <div class="num-cell">3</div>
+            <div class="called-numbers__cols theme-preview-tracker">
+              <div class="called-numbers__col">
+                <div class="called-numbers__col-header">B</div>
+                <div class="called-numbers__num-cell">3</div>
               </div>
-              <div class="numbers-col">
-                <div class="numbers-col-header">I</div>
-                <div class="num-cell">19</div>
+              <div class="called-numbers__col">
+                <div class="called-numbers__col-header">I</div>
+                <div class="called-numbers__num-cell">19</div>
               </div>
-              <div class="numbers-col numbers-col--unused">
-                <div class="numbers-col-header">N</div>
-                <div class="num-cell">31</div>
+              <div class="called-numbers__col called-numbers__col--unused">
+                <div class="called-numbers__col-header">N</div>
+                <div class="called-numbers__num-cell">31</div>
               </div>
-              <div class="numbers-col">
-                <div class="numbers-col-header">G</div>
-                <div class="num-cell is-called" data-pair="called-num">52</div>
+              <div class="called-numbers__col">
+                <div class="called-numbers__col-header">G</div>
+                <div class="called-numbers__num-cell is-called" data-pair="called-num">52</div>
               </div>
-              <div class="numbers-col">
-                <div class="numbers-col-header">O</div>
-                <div class="num-cell">68</div>
+              <div class="called-numbers__col">
+                <div class="called-numbers__col-header">O</div>
+                <div class="called-numbers__num-cell">68</div>
               </div>
             </div>
           </section>
@@ -550,14 +552,14 @@ async function revealInPreview(id: string): Promise<void> {
 }
 
 /* Containment only. Everything below sets GEOMETRY - never colour. The preview
-   is built from the app's own objects (.admin-panel, .btn-*, .badge, .board-*,
-   .num-cell, .modal-box) so that what an editor sees IS what the app renders;
+   is built from the app's own objects (.admin-panel, .btn-*, .badge, .bingo-board,
+   .called-numbers, .modal-overlay__box) so what an editor sees IS what the app renders;
    re-declaring a colour here would build a replica that drifts from the app.
    The stage's `color` is the one exception and is load-bearing: an inherited
    colour is an already-resolved value, so a bare <p> inheriting from the real
    <body> would paint the SAVED theme's --text. Declared here it resolves against
    the stage's own inline custom properties (previewStyle) and every descendant -
-   including .subpanel and .modal-box, which declare no colour - inherits the
+   including .subpanel and .modal-overlay__box, which declare no colour - inherits the
    EDITED token. */
 .theme-preview-panel {
   padding: 14px;
@@ -578,7 +580,7 @@ async function revealInPreview(id: string): Promise<void> {
   margin-bottom: 0;
 }
 
-/* .board-wrap is inline-block in the app; as a flex item it would stretch and
+/* .bingo-board is inline-block in the app; as a flex item it would stretch and
    leave the cells adrift in oversized tracks. */
 .theme-preview-board {
   align-self: flex-start;
@@ -588,7 +590,7 @@ async function revealInPreview(id: string): Promise<void> {
    100px) / 5))), which assumes the board sits near the page edges. Here it is
    nested admin-panel > token-preview > stage > panel, so the same formula needs a
    wider allowance; the desktop 68px is unchanged. */
-.theme-preview-board .board-cell {
+.theme-preview-board .bingo-board__cell {
   --cell-size: min(68px, calc((100vw - 220px) / 5));
 }
 
@@ -598,7 +600,7 @@ async function revealInPreview(id: string): Promise<void> {
 
 /* Contained stand-in for .modal-overlay, which is position:fixed / inset:0 /
    z-index:500 and would cover the whole editor. Only the --modal-overlay token
-   is borrowed; the dialog itself is the real .modal-box. */
+   is borrowed; the dialog itself is the real .modal-overlay__box. */
 .theme-preview-overlay {
   background: var(--modal-overlay);
   border-radius: var(--radius);
@@ -610,7 +612,7 @@ async function revealInPreview(id: string): Promise<void> {
 
 /* Real dialogs are >=440px wide; in a grid track this narrow the two full-size
    dialog buttons must be allowed to wrap. */
-.theme-preview-overlay .confirm-btns {
+.theme-preview-overlay .confirm-modal__btns {
   flex-wrap: wrap;
 }
 

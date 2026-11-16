@@ -7,7 +7,7 @@
 defineProps<{
   /** 5x5 boolean grid; true = required cell. */
   patternData: boolean[][]
-  /** Extra classes for the wrapper (e.g. 'pattern-mini-sm'). */
+  /** Extra classes for the wrapper (e.g. 'pattern-mini--sm'). */
   size?: string
   /** Render as inline-grid (used in the game-start checkbox list). */
   inline?: boolean
@@ -21,7 +21,7 @@ defineProps<{
         :is="inline ? 'span' : 'div'"
         v-for="(cell, ci) in row"
         :key="ri + '-' + ci"
-        :class="['pattern-mini-cell', cell ? 'is-on' : '']"
+        :class="['pattern-mini__cell', cell ? 'is-on' : '']"
       />
     </template>
   </component>

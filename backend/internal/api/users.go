@@ -16,10 +16,12 @@ import (
 	"app-suite/internal/permissions"
 )
 
-// The Users page: an admin's alone. The bootstrap admin (auth.ReservedUsername) is
-// kept: nobody renames, deactivates, demotes or deletes it here, or sets its password,
-// which it changes itself, or links or unlinks its Discord account but itself. Its
-// permissions may be edited, harmlessly, since an admin holds every one.
+// The Users page: an admin's alone. An owner, named in the server's config (Deps.Owner),
+// is kept: nobody renames, deactivates, demotes or deletes it here, or sets its
+// password, which it changes itself (or the host's `app-suite admin` resets), or links
+// or unlinks its Discord account but itself. Its permissions may be edited, harmlessly,
+// since an admin holds every one. An admin doesn't deactivate, demote or delete itself
+// either, so the last admin can't lock everyone out by a slip.
 
 var userTags = []string{"Users"}
 
@@ -68,13 +70,15 @@ func (h handlers) registerUsers(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "update-user", Method: http.MethodPatch, Path: "/users/{id}",
 		Summary: "Change an account", Tags: userTags, Security: secured, Middlewares: admin,
-		Description: "A username another account has, or the admin account's, is refused (409).",
-		Errors:      []int{http.StatusForbidden, http.StatusNotFound, http.StatusConflict},
+		Description: "A username another account has, or an owner's, is refused (409). An owner's username, active " +
+			"flag, admin role and password aren't changed here (403), nor does an admin deactivate or demote itself (403).",
+		Errors: []int{http.StatusForbidden, http.StatusNotFound, http.StatusConflict},
 	}, h.updateUser)
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-user", Method: http.MethodDelete, Path: "/users/{id}",
 		Summary: "Delete an account", Tags: userTags, DefaultStatus: http.StatusNoContent,
-		Security: secured, Middlewares: admin,
+		Description: "An owner, or the admin's own account, is never deleted (403).",
+		Security:    secured, Middlewares: admin,
 		Errors: []int{http.StatusForbidden, http.StatusNotFound},
 	}, h.deleteUser)
 }
@@ -94,7 +98,7 @@ func (h handlers) listUsers(ctx context.Context, _ *struct{}) (*userListOutput, 
 		if err != nil {
 			return nil, h.fail("read an account", err)
 		}
-		out.Users = append(out.Users, userOf(u, r.CreatedAt, r.LastLoginAt, links[u.ID]))
+		out.Users = append(out.Users, h.userOf(u, r.CreatedAt, r.LastLoginAt, links[u.ID]))
 	}
 	return &userListOutput{Body: out}, nil
 }
@@ -105,15 +109,14 @@ func (h handlers) updateUser(ctx context.Context, in *updateUserInput) (*userOut
 		return nil, err
 	}
 	change := in.Body
-	if target.Username == auth.ReservedUsername &&
-		(change.Username != nil || change.IsActive != nil || change.IsAdmin != nil || change.Password != nil) {
-		return nil, huma.Error403Forbidden("The admin account can't be changed here.")
+	if err := h.checkUserChanges(ctx, target, change); err != nil {
+		return nil, err
 	}
 	name := target.Username
 	if change.Username != nil {
 		name = strings.TrimSpace(*change.Username)
-		if strings.EqualFold(name, auth.ReservedUsername) {
-			return nil, huma.Error409Conflict("That username is the admin account's.")
+		if name != target.Username && h.Owner != nil && h.Owner(name) {
+			return nil, huma.Error409Conflict("That username is an owner's.")
 		}
 	}
 	perms := target.Permissions
@@ -157,7 +160,37 @@ func (h handlers) updateUser(ctx context.Context, in *updateUserInput) (*userOut
 	if err != nil {
 		return nil, h.fail("read a Discord link", err)
 	}
-	return &userOutput{Body: userOf(u, row.CreatedAt, row.LastLoginAt, link)}, nil
+	return &userOutput{Body: h.userOf(u, row.CreatedAt, row.LastLoginAt, link)}, nil
+}
+
+// checkUserChanges is nil when change may be made to target, or a 403 saying why not:
+// an owner's username, active flag, admin role and password stay as they are, and an
+// admin doesn't deactivate or demote itself. Asking for what an account already has
+// changes nothing and passes.
+func (h handlers) checkUserChanges(ctx context.Context, target *model.User, change UserChanges) error {
+	deactivate := change.IsActive != nil && !*change.IsActive && target.IsActive
+	demote := change.IsAdmin != nil && !*change.IsAdmin && target.IsAdmin
+	if h.isOwner(target) {
+		switch {
+		case change.Username != nil && strings.TrimSpace(*change.Username) != target.Username:
+			return huma.Error403Forbidden("An owner's username is named in the server's config, so it isn't changed here.")
+		case deactivate:
+			return huma.Error403Forbidden("An owner can't be deactivated.")
+		case demote:
+			return huma.Error403Forbidden("An owner can't be demoted.")
+		case change.Password != nil:
+			return huma.Error403Forbidden("An owner changes its own password, with Change Password.")
+		}
+	}
+	if Who(ctx).ID == target.ID {
+		switch {
+		case deactivate:
+			return huma.Error403Forbidden("You can't deactivate your own account.")
+		case demote:
+			return huma.Error403Forbidden("You can't drop your own admin role.")
+		}
+	}
+	return nil
 }
 
 func (h handlers) applyUserChanges(ctx context.Context, id int64, name string, active, admin bool, perms []string, hash string) error {
@@ -190,8 +223,11 @@ func (h handlers) deleteUser(ctx context.Context, in *userIDInput) (*struct{}, e
 	if err != nil {
 		return nil, err
 	}
-	if target.Username == auth.ReservedUsername {
-		return nil, huma.Error403Forbidden("The admin account can't be deleted.")
+	switch {
+	case h.isOwner(target):
+		return nil, huma.Error403Forbidden("An owner can't be deleted.")
+	case Who(ctx).ID == target.ID:
+		return nil, huma.Error403Forbidden("You can't delete your own account.")
 	}
 	// Its passkeys, token, Discord link and waiting links go with it (the foreign keys
 	// cascade); a session it left behind finds no account and acts as a guest.
@@ -243,6 +279,6 @@ func checkPermissions(keys []string) ([]string, error) {
 
 // userOf is u as the Users page shows it, with the Discord account linked to it (nil
 // for none).
-func userOf(u *model.User, createdAt, lastLoginAt *string, link *DiscordAccount) User {
-	return User{Account: *accountOf(u), IsActive: u.IsActive, CreatedAt: createdAt, LastLoginAt: lastLoginAt, Discord: link}
+func (h handlers) userOf(u *model.User, createdAt, lastLoginAt *string, link *DiscordAccount) User {
+	return User{Account: *h.accountOf(u), IsActive: u.IsActive, CreatedAt: createdAt, LastLoginAt: lastLoginAt, Discord: link}
 }

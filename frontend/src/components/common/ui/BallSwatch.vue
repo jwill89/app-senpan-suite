@@ -8,7 +8,7 @@ withDefaults(defineProps<{ color: string; size?: 'sm' | 'md' | 'lg' }>(), { size
 </script>
 
 <template>
-  <span class="ball-swatch" :class="`ball-swatch-${size}`" :style="{ background: color }"></span>
+  <span class="ball-swatch" :class="`ball-swatch--${size}`" :style="{ background: color }"></span>
 </template>
 
 <style scoped>
@@ -26,17 +26,17 @@ withDefaults(defineProps<{ color: string; size?: 'sm' | 'md' | 'lg' }>(), { size
   vertical-align: middle;
 }
 
-.ball-swatch-sm {
+.ball-swatch--sm {
   width: 14px;
   height: 14px;
 }
 
-.ball-swatch-md {
+.ball-swatch--md {
   width: 20px;
   height: 20px;
 }
 
-.ball-swatch-lg {
+.ball-swatch--lg {
   width: 30px;
   height: 30px;
 }

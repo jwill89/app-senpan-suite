@@ -20,18 +20,18 @@ const durationMs = YOEVER_DURATION_MS
 </script>
 
 <template>
-  <div class="yoever-layer" aria-hidden="true">
+  <div class="yoever-overlay" aria-hidden="true">
     <div
       v-for="y in yoever.active"
       :key="y.id"
-      class="yoever-fly"
+      class="yoever-overlay__fly"
       :style="{ top: y.top + 'vh', animationDuration: durationMs + 'ms' }"
     >
-      <div class="yoever-bob">
-        <img class="yoever-head" :src="headSrc" alt="" />
-        <div class="yoever-name">
-          <span class="yoever-quote">&ldquo;It's Yoever.&rdquo;</span>
-          <span class="yoever-attrib">~{{ y.name || 'Someone' }}</span>
+      <div class="yoever-overlay__bob">
+        <img class="yoever-overlay__head" :src="headSrc" alt="" />
+        <div class="yoever-overlay__name">
+          <span class="yoever-overlay__quote">&ldquo;It's Yoever.&rdquo;</span>
+          <span class="yoever-overlay__attrib">~{{ y.name || 'Someone' }}</span>
         </div>
       </div>
     </div>
@@ -39,7 +39,7 @@ const durationMs = YOEVER_DURATION_MS
 </template>
 
 <style scoped>
-.yoever-layer {
+.yoever-overlay {
   position: fixed;
   inset: 0;
   overflow: hidden;
@@ -52,7 +52,7 @@ const durationMs = YOEVER_DURATION_MS
    duration is supplied inline (animationDuration) so it stays in lockstep with the
    store's removal timer; keeping it out of a var()-in-shorthand also avoids a
    fragile custom-property resolution that could collapse the animation to 0s. */
-.yoever-fly {
+.yoever-overlay__fly {
   position: absolute;
   left: 0;
   will-change: transform, opacity;
@@ -63,7 +63,7 @@ const durationMs = YOEVER_DURATION_MS
 
 /* Vertical bounce, decoupled from the horizontal traverse so both transforms can
    run at once (parent = X, child = Y). */
-.yoever-bob {
+.yoever-overlay__bob {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -72,14 +72,14 @@ const durationMs = YOEVER_DURATION_MS
   animation: yoever-bob 1.05s ease-in-out infinite;
 }
 
-.yoever-head {
+.yoever-overlay__head {
   width: clamp(90px, 14vw, 170px);
   height: auto;
   user-select: none;
   filter: drop-shadow(0 6px 10px rgb(0 0 0 / 45%));
 }
 
-.yoever-name {
+.yoever-overlay__name {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -93,14 +93,14 @@ const durationMs = YOEVER_DURATION_MS
   text-shadow: 0 1px 2px rgb(0 0 0 / 60%);
 }
 
-.yoever-quote {
+.yoever-overlay__quote {
   font-weight: 700;
   font-style: italic;
   font-size: clamp(0.85rem, 2.4vw, 1.1rem);
   white-space: nowrap;
 }
 
-.yoever-attrib {
+.yoever-overlay__attrib {
   font-weight: 600;
   font-size: clamp(0.72rem, 2vw, 0.92rem);
   opacity: 0.9;
@@ -143,14 +143,14 @@ const durationMs = YOEVER_DURATION_MS
 
 /* Reduced motion: don't fly or bounce - fade in and out, centred. */
 @media (prefers-reduced-motion: reduce) {
-  .yoever-fly {
+  .yoever-overlay__fly {
     left: 50%;
     transform: translateX(-50%);
     animation-name: yoever-fade;
     animation-timing-function: ease-in-out;
   }
 
-  .yoever-bob {
+  .yoever-overlay__bob {
     animation: none;
   }
 

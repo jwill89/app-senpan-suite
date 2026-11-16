@@ -1,5 +1,6 @@
 /*
- * Shared components - toasts, modals, pagination, loading & empty states.
+ * Shared components - toasts, modals, pagination, loading & empty states, and the
+ * Markdown editor.
  */
 
 /* ================================================================
@@ -9,7 +10,7 @@
 /* The top-right column every toast and sticky alert stacks in. It ignores the
    pointer so the page under its empty space stays clickable; its children opt back
    in. */
-.toast-stack {
+.toast-notification {
   position: fixed;
   top: 20px;
   right: 20px;
@@ -23,7 +24,7 @@
 }
 
 /* Base toast - slides in from the right */
-.toast {
+.toast-notification__toast {
   padding: 14px 24px;
   border-radius: var(--radius);
   font-weight: 600;
@@ -35,7 +36,7 @@
 /* A sticky alert: a raised card with a warning stripe rather than a solid fill
    (text-on-fill can't be trusted on the light --warning), dismissed only by its
    own button - clicking the card itself does nothing, since it may hold an action. */
-.toast--alert {
+.toast-notification__toast--alert {
   width: 100%;
   padding: 12px 14px;
   background: var(--panel-bg);
@@ -47,55 +48,55 @@
   cursor: default;
 }
 
-.toast-head {
+.toast-notification__head {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.toast-icon {
+.toast-notification__icon {
   color: var(--warning);
 }
 
-.toast-title {
+.toast-notification__title {
   flex: 1;
 }
 
-.toast-close {
+.toast-notification__close {
   padding: 0 2px;
   background: none;
   border: none;
   color: var(--text-muted);
 }
 
-.toast-close:hover {
+.toast-notification__close:hover {
   color: var(--text);
 }
 
-.toast-body {
+.toast-notification__body {
   margin: 6px 0 0;
   font-size: 0.92rem;
   line-height: 1.4;
 }
 
-.toast-actions {
+.toast-notification__actions {
   display: flex;
   justify-content: flex-end;
   margin-top: 10px;
 }
 
 /* Toast color variants */
-.toast-success {
+.toast-notification__toast--success {
   background: var(--success);
   color: var(--text-on-fill);
 }
 
-.toast-error {
+.toast-notification__toast--error {
   background: var(--danger);
   color: var(--text-on-fill);
 }
 
-.toast-info {
+.toast-notification__toast--info {
   background: var(--accent-2);
   color: var(--text-on-fill);
 }
@@ -129,7 +130,7 @@
 }
 
 /* Centered modal content box */
-.modal-box {
+.modal-overlay__box {
   background: var(--panel-bg);
   border-radius: 0;
   padding: 24px;
@@ -137,26 +138,26 @@
   width: 90%;
 }
 
-.modal-box h3 {
+.modal-overlay__box h3 {
   margin-bottom: 12px;
 }
 
 /* Themed confirm dialog (ui.confirm) - message + action button row */
-.modal-box .confirm-msg {
+.modal-overlay__box .confirm-modal__msg {
   color: var(--text-muted);
   font-size: 0.95rem;
   line-height: 1.5;
   margin-bottom: 20px;
 }
 
-.modal-box .confirm-btns {
+.modal-overlay__box .confirm-modal__btns {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
 }
 
 /* Centered confirm dialogs put the buttons in the middle */
-.modal-box.modal-centered .confirm-btns {
+.modal-overlay__box.modal-overlay__box--centered .confirm-modal__btns {
   justify-content: center;
 }
 
@@ -217,7 +218,7 @@ button:disabled:active {
   }
 }
 
-.spinner {
+.loading-spinner__spinner {
   display: inline-block;
   width: 1.1em;
   height: 1.1em;
@@ -230,14 +231,14 @@ button:disabled:active {
 }
 
 /* Inline spinner + optional label (e.g. inside a button). */
-.loading-inline {
+.loading-spinner {
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
 /* Standalone centered loading block for list/data loads. */
-.loading-block {
+.loading-spinner--block {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,7 +247,7 @@ button:disabled:active {
   color: var(--text-muted);
 }
 
-.loading-label {
+.loading-spinner__label {
   color: var(--text-muted);
 }
 
@@ -263,31 +264,31 @@ button:disabled:active {
   padding: 40px 24px;
 }
 
-.empty-state-icon {
+.empty-state__icon {
   font-size: 2.4rem;
   opacity: 0.5;
   margin-bottom: 6px;
   color: var(--text-muted);
 }
 
-.empty-state-title {
+.empty-state__title {
   font-size: 0.95rem;
   line-height: 1.4;
 }
 
-.empty-state-hint {
+.empty-state__hint {
   font-size: 0.82rem;
   opacity: 0.85;
   max-width: 44ch;
   line-height: 1.45;
 }
 
-.empty-state-action {
+.empty-state__action {
   margin-top: 10px;
 }
 
 /* Top-of-viewport route-loading progress bar (indeterminate). */
-.route-progress {
+.route-progress-bar {
   position: fixed;
   top: 0;
   left: 0;
@@ -298,7 +299,7 @@ button:disabled:active {
   overflow: hidden;
 }
 
-.route-progress-bar {
+.route-progress-bar__bar {
   height: 100%;
   width: 40%;
   background: var(--accent);
@@ -420,4 +421,165 @@ kbd {
     opacity: 0.35;
     transform: scale(0.65);
   }
+}
+
+/* ================================================================
+   8. MARKDOWN EDITOR - MarkdownEditor.vue: its toolbar, its link row, and
+       the editable text with the prose inside it.
+   ================================================================ */
+
+/* Framed like any other form control: the input fill, the control outline, and
+   the focus colour of a text field. */
+.markdown-editor {
+  border: 2px solid var(--control-border);
+  border-radius: var(--radius);
+  background: var(--input-bg);
+}
+
+.markdown-editor:focus-within {
+  border-color: var(--accent-2);
+}
+
+.markdown-editor__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px;
+  border-bottom: 1px solid var(--control-border);
+  background: var(--panel-raised-bg);
+}
+
+/* Compact text-style picker, the toolbar's first control. */
+.markdown-editor__style {
+  padding: 5px 8px;
+  font-size: 0.85rem;
+}
+
+/* A thin rule between groups of tools. */
+.markdown-editor__separator {
+  align-self: stretch;
+  width: 1px;
+  margin: 2px;
+  background: var(--control-border);
+}
+
+/* Icon-only buttons, tighter than `.btn-sm` so the toolbar fits a narrow panel. */
+.markdown-editor__tool {
+  padding: 6px 8px;
+}
+
+/* The address row under the toolbar, open while a link is being set. */
+.markdown-editor__link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-bottom: 1px solid var(--control-border);
+}
+
+.markdown-editor__link-input {
+  flex: 1 1 200px;
+  min-width: 0;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+
+.markdown-editor__link-note {
+  flex-basis: 100%;
+  font-size: 0.85rem;
+  color: var(--danger);
+}
+
+/* The editable text. Its height floor comes from the component's `min-height`. */
+.markdown-editor__surface {
+  min-height: var(--markdown-editor-min-height, 180px);
+  padding: 0.6rem 0.85rem;
+  line-height: 1.5;
+  color: var(--text);
+  outline: none;
+}
+
+.markdown-editor__surface > * + * {
+  margin-top: 0.6em;
+}
+
+.markdown-editor__surface :is(h1, h2, h3) {
+  line-height: 1.25;
+}
+
+.markdown-editor__surface h1 {
+  font-size: 1.5rem;
+}
+
+.markdown-editor__surface h2 {
+  font-size: 1.3rem;
+}
+
+.markdown-editor__surface h3 {
+  font-size: 1.15rem;
+}
+
+.markdown-editor__surface :is(h4, h5, h6) {
+  font-size: 1rem;
+}
+
+.markdown-editor__surface :is(ul, ol) {
+  padding-left: 1.5em;
+}
+
+.markdown-editor__surface blockquote {
+  padding-left: 0.75em;
+  border-left: 3px solid var(--control-border);
+  color: var(--text-muted);
+}
+
+.markdown-editor__surface hr {
+  margin: 0.9em 0;
+  border: none;
+  border-top: 1px solid var(--control-border);
+}
+
+.markdown-editor__surface :is(code, pre) {
+  border-radius: var(--radius);
+  background: var(--panel-raised-bg);
+  font-family: ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.markdown-editor__surface code {
+  padding: 0.1em 0.3em;
+}
+
+.markdown-editor__surface pre {
+  padding: 0.5em 0.75em;
+}
+
+.markdown-editor__surface pre code {
+  padding: 0;
+  background: none;
+}
+
+/* The placeholder, shown in the first paragraph while the editor is empty. */
+.markdown-editor__surface p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* Markdown the editor keeps as written (an image), shown as its source. */
+.markdown-editor__source {
+  padding: 0.1em 0.3em;
+  border-radius: var(--radius);
+  background: var(--panel-raised-bg);
+  color: var(--text-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+.markdown-editor__source.ProseMirror-selectednode {
+  outline: 2px solid var(--accent-2);
 }

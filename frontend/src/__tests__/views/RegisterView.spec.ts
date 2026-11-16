@@ -10,6 +10,7 @@ vi.mock('@/api/client', async (importOriginal) => ({
 }))
 
 import RegisterView from '@/views/RegisterView.vue'
+import { axeFindings } from '@/__tests__/axe'
 
 // Stub the real Turnstile widget so its script-loading onMounted never runs.
 const stubs = {
@@ -43,5 +44,19 @@ describe('RegisterView Turnstile', () => {
 
     expect(wrapper.find('.turnstile-stub').exists()).toBe(false)
     expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('has nothing axe flags, before and after a refused submit', async () => {
+    config.mockResolvedValue({ turnstileSiteKey: '' })
+    // The real FormField, whose label names each field.
+    const wrapper = mount(RegisterView, {
+      global: { stubs: { TurnstileWidget: stubs.TurnstileWidget, LoadingSpinner: true } },
+    })
+    await flushPromises()
+    expect(await axeFindings(wrapper.element)).toEqual([])
+
+    await wrapper.find('form').trigger('submit')
+    expect(wrapper.find('.error-msg').text()).toBe('Username is required.')
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

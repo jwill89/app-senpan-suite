@@ -18,8 +18,12 @@ export const SERVER_DATA = join(DATA_DIR, 'data')
 export const LOG_FILE = join(DATA_DIR, 'senpan.log')
 export const SERVER = join(DATA_DIR, process.platform === 'win32' ? 'app-suite.exe' : 'app-suite')
 
-/** The account migration v22 seeds on a new database; the run's staff sign in with it. */
-export const STAFF = { username: 'admin', password: 'admin' }
+/**
+ * The run's staff account, which signs in to seed the rest: an owner and an admin, made on
+ * the throwaway database with the host's own command (`app-suite admin -password-stdin`),
+ * as a host's first admin is made.
+ */
+export const STAFF = { username: 'e2e-owner', password: 'e2e owner password' }
 
 /**
  * The flags `task dev:backend` runs the API with, every path the run's own. The server's
@@ -44,4 +48,7 @@ export const serverEnv: Record<string, string> = {
   APPSUITE_CORS_ORIGINS: '',
   APPSUITE_WEBHOOK_OVERRIDE: '',
   APPSUITE_WEBHOOK_DRY_RUN: '1',
+  APPSUITE_OWNERS: STAFF.username,
+  // The policy is enforced, so the run's pages are held to it.
+  APPSUITE_CSP_REPORT_ONLY: '',
 }

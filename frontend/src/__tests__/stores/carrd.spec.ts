@@ -16,7 +16,7 @@ function callsTo(method: 'GET' | 'POST', path: string) {
   return api[method].mock.calls.filter(([p]) => p === path) as [string, Record<string, unknown>][]
 }
 
-import { useCarrdStore, carrdImageUrl, joinCarrdPath } from '@/stores/carrd'
+import { useCarrdStore, carrdImageUrl, carrdPreviewUrl, joinCarrdPath } from '@/stores/carrd'
 
 beforeEach(() => {
   setActivePinia(createPinia())
@@ -39,6 +39,13 @@ describe('pure helpers', () => {
       'https://carrd.senpan.cafe/my%20folder/a/b/pic%201.png',
     )
     expect(carrdImageUrl('folder', '', 'p.png')).toBe('https://carrd.senpan.cafe/folder/p.png')
+  })
+
+  it('carrdPreviewUrl names the same file on this site', () => {
+    expect(carrdPreviewUrl('my folder', 'a/b', 'pic 1.png')).toBe(
+      '/carrd/my%20folder/a/b/pic%201.png',
+    )
+    expect(carrdPreviewUrl('folder', '', 'p.png')).toBe('/carrd/folder/p.png')
   })
 
   it('joinCarrdPath keeps the root clean (no leading slash)', () => {

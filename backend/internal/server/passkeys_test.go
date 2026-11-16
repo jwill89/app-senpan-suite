@@ -133,13 +133,13 @@ func TestPasskeys_ListAddAndRemove(t *testing.T) {
 		t.Fatalf("begin adding with the wrong password: %d; want 422", resp.StatusCode)
 	}
 	resp.Body.Close()
-	resp = passkeyDo(t, env, http.MethodPost, "/api/v1/me/passkeys/begin", map[string]string{"password": seedAdminPass})
+	resp = passkeyDo(t, env, http.MethodPost, "/api/v1/me/passkeys/begin", map[string]string{"password": adminPass})
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("begin adding: %d; want 200", resp.StatusCode)
 	}
 	options, _ := decodeBody(t, resp)["publicKey"].(map[string]any)
 	user, _ := options["user"].(map[string]any)
-	if user["name"] != seedAdminUser {
+	if user["name"] != adminUser {
 		t.Errorf("the options name %v; want the account", user["name"])
 	}
 
@@ -179,13 +179,13 @@ func TestSignInMovesTheSession(t *testing.T) {
 func TestSignInIsRateLimited(t *testing.T) {
 	env := newTestEnv(t)
 	for range 5 {
-		resp := env.postJSON(t, "/api/v1/auth/login", map[string]string{"username": seedAdminUser, "password": "wrong"})
+		resp := env.postJSON(t, "/api/v1/auth/login", map[string]string{"username": adminUser, "password": "wrong"})
 		resp.Body.Close()
 		if resp.StatusCode != http.StatusUnauthorized {
 			t.Fatalf("a wrong password: %d; want 401", resp.StatusCode)
 		}
 	}
-	resp := env.postJSON(t, "/api/v1/auth/login", map[string]string{"username": seedAdminUser, "password": seedAdminPass})
+	resp := env.postJSON(t, "/api/v1/auth/login", map[string]string{"username": adminUser, "password": adminPass})
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusTooManyRequests {
 		t.Fatalf("after five failures: %d; want 429", resp.StatusCode)

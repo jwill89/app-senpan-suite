@@ -86,7 +86,7 @@ func requestFrom(t *testing.T, env *testEnv, ip string, body map[string]any) *ht
 		t.Fatal(err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("CF-Connecting-IP", ip)
+	req.Header.Set("X-Forwarded-For", ip)
 	resp, err := env.client.Do(req)
 	if err != nil {
 		t.Fatal(err)

@@ -68,10 +68,10 @@ func (s *Server) fillActor(r *http.Request, a *requestActor) {
 // and that UA is trustworthy here precisely because Cloudflare already verified
 // the source, so it is not a spoofable self-claim.
 //
-// This is a logging hint only, never a security decision. Like CF-Connecting-IP
-// it is forgeable by a client that reaches the origin without passing through
-// Cloudflare; lock the origin to Cloudflare's IP ranges (or Authenticated Origin
-// Pulls) if you need it to be tamper-proof.
+// This is a logging hint only, never a security decision. It is forgeable by a
+// client that reaches the origin without passing through Cloudflare; lock the
+// origin to Cloudflare's IP ranges (or Authenticated Origin Pulls) if you need it
+// to be tamper-proof.
 func verifiedBot(r *http.Request) (string, bool) {
 	if !truthyHeader(r, "Cf-Verified-Bot") && !truthyHeader(r, "X-Verified-Bot") {
 		return "", false

@@ -9,6 +9,7 @@
  * `reset()` after a failed login (or on `expired`) to issue a fresh one.
  */
 import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue'
+import { cspNonce } from '@/lib/csp'
 
 const props = defineProps<{ siteKey: string }>()
 const emit = defineEmits<{ verified: [token: string]; expired: []; error: [] }>()
@@ -35,6 +36,7 @@ function loadScript(): Promise<void> {
   return new Promise((resolve, reject) => {
     const s = document.createElement('script')
     s.src = SCRIPT_SRC
+    s.nonce = cspNonce
     s.async = true
     s.defer = true
     s.addEventListener('load', () => resolve(), { once: true })

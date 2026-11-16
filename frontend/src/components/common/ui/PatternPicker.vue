@@ -96,17 +96,17 @@ function toggleSelectAll(): void {
     </div>
 
     <!-- Flat search results -->
-    <div v-if="searching" class="pattern-checks">
+    <div v-if="searching" class="pattern-picker__checks">
       <label
         v-for="p in patterns.gameFilteredPatterns"
         :key="p.id"
-        :class="['pattern-check', model.includes(p.id) ? 'is-selected' : '']"
+        :class="['pattern-picker__check', model.includes(p.id) ? 'is-selected' : '']"
       >
         <input v-model="model" type="checkbox" :value="p.id" />
-        <span class="dot"></span>
-        <PatternMini :pattern-data="p.patternData" size="pattern-mini-sm" />
-        <span class="pattern-check-name">{{ p.name }}</span>
-        <span class="pattern-check-cat">{{ p.categoryName }}</span>
+        <span class="pattern-picker__dot"></span>
+        <PatternMini :pattern-data="p.patternData" size="pattern-mini--sm" />
+        <span class="pattern-picker__check-name">{{ p.name }}</span>
+        <span class="pattern-picker__check-cat">{{ p.categoryName }}</span>
       </label>
     </div>
 
@@ -136,16 +136,19 @@ function toggleSelectAll(): void {
             <span class="text-muted fw-normal">({{ group.patterns.length }})</span>
           </h4>
         </div>
-        <div v-show="!patterns.isCategoryCollapsed(group.category.id)" class="pattern-checks">
+        <div
+          v-show="!patterns.isCategoryCollapsed(group.category.id)"
+          class="pattern-picker__checks"
+        >
           <label
             v-for="p in group.patterns"
             :key="p.id"
-            :class="['pattern-check', model.includes(p.id) ? 'is-selected' : '']"
+            :class="['pattern-picker__check', model.includes(p.id) ? 'is-selected' : '']"
           >
             <input v-model="model" type="checkbox" :value="p.id" />
-            <span class="dot"></span>
-            <PatternMini :pattern-data="p.patternData" size="pattern-mini-sm" />
-            <span class="pattern-check-name">{{ p.name }}</span>
+            <span class="pattern-picker__dot"></span>
+            <PatternMini :pattern-data="p.patternData" size="pattern-mini--sm" />
+            <span class="pattern-picker__check-name">{{ p.name }}</span>
           </label>
         </div>
       </template>

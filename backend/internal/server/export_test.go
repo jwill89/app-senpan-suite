@@ -39,6 +39,13 @@ func (s *Server) RouteDiscordSignInForTest(baseURL string) {
 	s.discordOAuth.MeURL = baseURL + "/me"
 }
 
+// RouteGoogleFontsForTest points the Google Fonts fetches at a stand-in at baseURL,
+// which answers the CSS API at /css2 and serves the font files under /s/.
+func (s *Server) RouteGoogleFontsForTest(baseURL string) {
+	s.googleFonts.CSSURL = baseURL + "/css2"
+	s.googleFonts.FileURL = baseURL + "/s/"
+}
+
 // The following expose pure, unexported helpers to the external server_test
 // package so their logic can be unit-tested without spinning up the HTTP server.
 var (
@@ -49,8 +56,8 @@ var (
 	// AccountMutationForTest reports whether a write's path has the staff streams
 	// check their accounts again.
 	AccountMutationForTest = accountMutation
-	// LogClientIPForTest exposes the CF-Connecting-IP-first client-IP extraction
-	// used for the request log's ip field.
+	// LogClientIPForTest exposes the client-address extraction used for the
+	// request log's ip field.
 	LogClientIPForTest = logClientIP
 	// ExpireDueTeaRoomLocksForTest runs ONE pass of the lock-expiry sweep, so what
 	// the scheduler decides - unlock and announce, or leave the lock alone - can be

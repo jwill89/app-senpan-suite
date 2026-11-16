@@ -137,8 +137,7 @@ func (p publicFiles) serve(w http.ResponseWriter, r *http.Request, dir, rel stri
 	h := w.Header()
 	h.Set("X-Content-Type-Options", "nosniff")
 	h.Set("X-Frame-Options", "DENY")
-	h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
-	h.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+	h.Set("Referrer-Policy", "same-origin")
 
 	ext := strings.ToLower(path.Ext(rel))
 	contentType, known := contentTypes[ext]

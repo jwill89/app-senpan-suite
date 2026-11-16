@@ -10,7 +10,7 @@ const ui = useUiStore()
 </script>
 
 <template>
-  <div v-if="ui.routeLoading" class="route-progress" role="progressbar" aria-label="Loading">
-    <div class="route-progress-bar"></div>
+  <div v-if="ui.routeLoading" class="route-progress-bar" role="progressbar" aria-label="Loading">
+    <div class="route-progress-bar__bar"></div>
   </div>
 </template>

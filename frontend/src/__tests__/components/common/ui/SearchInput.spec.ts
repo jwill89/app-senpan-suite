@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import SearchInput from '@/components/common/ui/SearchInput.vue'
+import { axeFindings } from '@/__tests__/axe'
 
 describe('SearchInput', () => {
   it('binds the model value to the input', () => {
@@ -23,5 +24,10 @@ describe('SearchInput', () => {
     const input = wrapper.find('input')
     expect(input.attributes('placeholder')).toBe('Find patterns...')
     expect(input.attributes('aria-label')).toBe('Search patterns')
+  })
+
+  it('has nothing axe flags', async () => {
+    const wrapper = mount(SearchInput, { props: { modelValue: 'hello' } })
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

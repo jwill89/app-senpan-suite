@@ -10,9 +10,11 @@
  * account with their Discord account; an account's Discord dialog makes a link
  * that links whoever opens it to that account. Each is shown once, when made.
  *
- * The seeded "admin" account is protected: its modify actions are hidden here
- * (it changes its own password via the topbar "Change Password" dialog, and only
- * it links its own Discord account), and the backend rejects any such change too.
+ * An owner (named in the server's config) is protected: its modify actions are
+ * hidden here (it changes its own password via the topbar "Change Password"
+ * dialog, and only it links its own Discord account), and the backend rejects any
+ * such change too. An admin can't deactivate, demote or delete its own account
+ * either, so those controls are off on its own row.
  */
 import { computed, onMounted, ref } from 'vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -22,7 +24,7 @@ import SearchInput from '@/components/common/ui/SearchInput.vue'
 import FormField from '@/components/common/ui/FormField.vue'
 import ModalOverlay from '@/components/common/ModalOverlay.vue'
 import DataTable, { type DataColumn } from '@/components/common/ui/DataTable.vue'
-import { useUsersStore, PROTECTED_ADMIN } from '@/stores/users'
+import { useUsersStore } from '@/stores/users'
 import { useUiStore } from '@/stores/ui'
 import { useAuthStore } from '@/stores/auth'
 import { ADMIN_PERMISSIONS } from '@/lib/constants'
@@ -59,17 +61,25 @@ const userColumns: DataColumn[] = [
   { key: 'actions', label: '', align: 'right' },
 ]
 
-/** Whether a user is the protected bootstrap admin (no destructive actions). */
-function isProtected(u: User): boolean {
-  return u.username === PROTECTED_ADMIN
+/** Whether an account is the signed-in admin's own. */
+function isSelf(u: User): boolean {
+  return u.id === auth.user?.id
 }
 
-/** Whether an account's Discord dialog is offered: the protected admin's to itself only. */
+/** Whether an account's Discord dialog is offered: an owner's to itself only. */
 function canManageDiscord(u: User): boolean {
-  if (isProtected(u) && auth.user?.username !== PROTECTED_ADMIN) {
+  if (u.owner && !isSelf(u)) {
     return false
   }
   return users.discordSignIn || !!u.discord
+}
+
+/** An account's role as the table shows it. */
+function roleLabel(u: User): string {
+  if (u.owner) {
+    return 'Owner'
+  }
+  return u.isAdmin ? 'Admin' : 'User'
 }
 
 /** A Discord account as the table shows it: its display name, then its username. */
@@ -138,6 +148,9 @@ const savingUser = ref(false)
 
 /** The account currently being edited (live from the store, for the title). */
 const editUser = computed(() => users.users.find((u) => u.id === editUserId.value) ?? null)
+
+/** Whether the account being edited is the signed-in admin's own, which it can't deactivate or demote. */
+const editingSelf = computed(() => editUser.value !== null && isSelf(editUser.value))
 
 function openEdit(u: User): void {
   editUserId.value = u.id
@@ -289,7 +302,8 @@ onMounted(() => {
         Accounts sign in with a username and password, a passkey, or a linked Discord account. New
         sign-ups via the shared registration link start <strong>inactive</strong> - activate one
         here and grant the pages it should access. A Discord sign-up link makes an active account
-        with no pages until you grant them. Admins have full access to everything.
+        with no pages until you grant them. Admins have full access to everything. An owner account,
+        named in the server's config, can't be changed or deleted here.
       </p>
 
       <SearchInput
@@ -327,9 +341,7 @@ onMounted(() => {
           </span>
         </template>
         <template #cell-role="{ row }">
-          <span :class="row.isAdmin ? 'badge-admin' : 'text-muted'">
-            {{ row.isAdmin ? 'Admin' : 'User' }}
-          </span>
+          <span :class="row.isAdmin ? 'badge-admin' : 'text-muted'">{{ roleLabel(row) }}</span>
         </template>
         <template #cell-permissions="{ row }">
           <span class="text-muted">{{ permissionSummary(row) }}</span>
@@ -348,8 +360,8 @@ onMounted(() => {
             >
               <font-awesome-icon :icon="['fab', 'discord']" /> Discord
             </button>
-            <template v-if="isProtected(row)">
-              <span class="text-muted text-xs">Protected account</span>
+            <template v-if="row.owner">
+              <span class="text-muted text-xs">Owner account</span>
             </template>
             <template v-else>
               <button
@@ -361,6 +373,7 @@ onMounted(() => {
                 <font-awesome-icon :icon="['fas', 'pen-to-square']" /> Edit
               </button>
               <button
+                v-if="!isSelf(row)"
                 type="button"
                 class="btn-danger btn-sm"
                 title="Delete this account"
@@ -403,11 +416,15 @@ onMounted(() => {
           />
         </FormField>
         <label class="perm-option">
-          <input v-model="editActive" type="checkbox" /> Account active
+          <input v-model="editActive" type="checkbox" :disabled="editingSelf" /> Account active
         </label>
         <label class="perm-option">
-          <input v-model="editAdmin" type="checkbox" /> Administrator (full access to every page)
+          <input v-model="editAdmin" type="checkbox" :disabled="editingSelf" /> Administrator (full
+          access to every page)
         </label>
+        <p v-if="editingSelf" class="text-muted text-xs m-0">
+          This is your own account: another admin can deactivate or demote it, but you can't.
+        </p>
       </div>
 
       <!-- Page permissions -->

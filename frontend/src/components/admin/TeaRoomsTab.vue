@@ -239,7 +239,7 @@ async function submitWebhook(): Promise<void> {
                 <font-awesome-icon :icon="['fad', 'bars']" />
               </span>
               <span
-                class="list-row-swatch"
+                class="list-row__swatch"
                 :style="{ background: t.color || '#ff3131' }"
                 aria-hidden="true"
               ></span>
@@ -254,19 +254,19 @@ async function submitWebhook(): Promise<void> {
               </div>
             </template>
 
-            <h4 class="list-row-title">
+            <h4 class="list-row__title">
               {{ t.name }}
               <span v-if="t.roomNumber" class="text-muted fw-normal"
                 >- Room {{ t.roomNumber }}</span
               >
             </h4>
-            <p v-if="t.subtitle" class="text-sm text-muted list-row-meta list-row-meta--inline">
+            <p v-if="t.subtitle" class="text-sm text-muted list-row__meta list-row__meta--inline">
               {{ t.subtitle }}
             </p>
-            <p class="text-sm list-row-meta list-row-meta--inline">
+            <p class="text-sm list-row__meta list-row__meta--inline">
               <font-awesome-icon :icon="['fad', 'coins']" /> {{ costText(t) }}
             </p>
-            <p class="list-row-meta list-row-meta--inline">
+            <p class="list-row__meta list-row__meta--inline">
               <span class="badge" :class="t.open ? 'badge--success' : 'badge--muted'">
                 {{ t.open ? 'Open' : 'Closed' }}
               </span>
@@ -279,7 +279,7 @@ async function submitWebhook(): Promise<void> {
               </span>
               <span v-if="t.lockable" class="badge badge--muted">Lockable</span>
             </p>
-            <p v-if="t.hashtags" class="text-sm text-muted list-row-meta list-row-meta--inline">
+            <p v-if="t.hashtags" class="text-sm text-muted list-row__meta list-row__meta--inline">
               {{ t.hashtags }}
             </p>
 

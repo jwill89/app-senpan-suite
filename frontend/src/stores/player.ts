@@ -327,7 +327,7 @@ export const usePlayerStore = defineStore('player', () => {
   }
 
   function boardCellClass(ri: number, ci: number, cell: number): (string | false)[] {
-    const classes: (string | false)[] = ['board-cell']
+    const classes: (string | false)[] = ['bingo-board__cell']
     if (cell === 0) {
       classes.push('is-free')
     }

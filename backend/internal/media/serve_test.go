@@ -74,6 +74,8 @@ func TestImagesServeAPicture(t *testing.T) {
 		"Cache-Control":               "public, max-age=86400",
 		"X-Content-Type-Options":      "nosniff",
 		"X-Frame-Options":             "DENY",
+		"Referrer-Policy":             "same-origin",
+		"Strict-Transport-Security":   "", // the vhost's to send
 		"Access-Control-Allow-Origin": "",
 		"Content-Security-Policy":     "",
 	} {
@@ -136,6 +138,9 @@ func TestImagesRefuseWhatIsNotAPublicPicture(t *testing.T) {
 		}
 		if resp.Header.Get("X-Content-Type-Options") != "nosniff" {
 			t.Errorf("%q's 404 lacks nosniff", rel)
+		}
+		if got := resp.Header.Get("Referrer-Policy"); got != "same-origin" {
+			t.Errorf("%q's 404 has Referrer-Policy %q, want same-origin", rel, got)
 		}
 	}
 }

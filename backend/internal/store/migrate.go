@@ -10,13 +10,13 @@ import (
 
 	"github.com/pressly/goose/v3"
 
-	"app-suite/internal/auth"
+	"app-suite/internal/store/migrations"
 )
 
-// Migrations: goose runs the numbered SQL files in migrations/ at start, on the
-// write pool, each in its own transaction unless it says otherwise, and each also
-// sets PRAGMA user_version to its own number, so user_version always equals goose's
-// version.
+// Migrations: goose runs the numbered SQL files in migrations/ and the Go ones beside
+// them (migrations.Go) at start, on the write pool, each in its own transaction unless
+// it says otherwise, and each also sets PRAGMA user_version to its own number, so
+// user_version always equals goose's version.
 //
 // Version 71 is the baseline: migration 71 builds the schema (baseline.sql) on an
 // empty database and seeds it, and leaves a database already at v71 as it is. A
@@ -37,8 +37,8 @@ func provider(write *sql.DB) (*goose.Provider, error) {
 	if err != nil {
 		return nil, err
 	}
-	return goose.NewProvider(goose.DialectSQLite3, write, files,
-		goose.WithGoMigrations(goose.NewGoMigration(baselineVersion, &goose.GoFunc{RunTx: baseline}, nil)))
+	gos := append([]*goose.Migration{goose.NewGoMigration(baselineVersion, &goose.GoFunc{RunTx: baseline}, nil)}, migrations.Go()...)
+	return goose.NewProvider(goose.DialectSQLite3, write, files, goose.WithGoMigrations(gos...))
 }
 
 // migrate brings the schema up to date.
@@ -113,26 +113,13 @@ func baseline(ctx context.Context, tx *sql.Tx) error {
 		return fmt.Errorf("baseline schema: %w", err)
 	}
 
-	// The seeds. INSERT OR IGNORE, so a run against a database that has them never
-	// overwrites one changed since. The bootstrap account's password is "admin",
-	// to be changed as soon as an install creates it.
-	hash, err := auth.Hash("admin")
-	if err != nil {
-		return fmt.Errorf("hash the bootstrap password: %w", err)
+	// The seed: the first pattern category. INSERT OR IGNORE, so a run against a
+	// database that has it never overwrites one changed since. No account is seeded:
+	// the first admin is made on the host (`app-suite admin`).
+	if _, err := tx.ExecContext(ctx, `INSERT OR IGNORE INTO pattern_categories (id, name, sort_order) VALUES (1, 'Standard', 0)`); err != nil {
+		return fmt.Errorf("seed: %w", err)
 	}
-	seeds := []struct {
-		query string
-		args  []any
-	}{
-		{`INSERT OR IGNORE INTO pattern_categories (id, name, sort_order) VALUES (1, 'Standard', 0)`, nil},
-		{`INSERT OR IGNORE INTO users (username, password_hash, is_admin, is_active, permissions) VALUES ('admin', ?, 1, 1, '[]')`, []any{hash}},
-	}
-	for _, seed := range seeds {
-		if _, err := tx.ExecContext(ctx, seed.query, seed.args...); err != nil {
-			return fmt.Errorf("seed: %w", err)
-		}
-	}
-	_, err = tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", baselineVersion))
+	_, err := tx.ExecContext(ctx, fmt.Sprintf("PRAGMA user_version = %d", baselineVersion))
 	return err
 }
 

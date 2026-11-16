@@ -26,6 +26,7 @@ type Account struct {
 	IsAdmin     bool     `json:"isAdmin" doc:"Whether it is an admin, who holds every permission and alone manages accounts and the integrations."`
 	Permissions []string `json:"permissions" nullable:"false" doc:"The page permissions it has been granted. An admin holds every one, listed here or not."`
 	HasPassword bool     `json:"hasPassword" doc:"Whether it has a password. An account made with Discord has none until one is set; setting one, or adding a passkey, then asks for no current password."`
+	Owner       bool     `json:"owner" doc:"Whether it is one of the owners the server's config names. Nobody deactivates, demotes, renames or deletes an owner (403), and only the owner itself sets its password or makes or removes its Discord link."`
 }
 
 // Me is who is signed in.
@@ -98,7 +99,7 @@ func (h handlers) registerMe(api huma.API) {
 }
 
 func (h handlers) getMe(ctx context.Context, _ *struct{}) (*meOutput, error) {
-	return &meOutput{Body: Me{Account: accountOf(Who(ctx))}}, nil
+	return &meOutput{Body: Me{Account: h.accountOf(Who(ctx))}}, nil
 }
 
 func (h handlers) changePassword(ctx context.Context, in *changePasswordInput) (*struct{}, error) {
@@ -208,7 +209,7 @@ func (h handlers) revokeToken(ctx context.Context, _ *struct{}) (*struct{}, erro
 }
 
 // accountOf is u as the API shows it, or nil for nobody.
-func accountOf(u *model.User) *Account {
+func (h handlers) accountOf(u *model.User) *Account {
 	if u == nil {
 		return nil
 	}
@@ -216,5 +217,13 @@ func accountOf(u *model.User) *Account {
 	if perms == nil {
 		perms = []string{}
 	}
-	return &Account{ID: u.ID, Username: u.Username, IsAdmin: u.IsAdmin, Permissions: perms, HasPassword: u.HasPassword}
+	return &Account{
+		ID: u.ID, Username: u.Username, IsAdmin: u.IsAdmin, Permissions: perms, HasPassword: u.HasPassword,
+		Owner: h.isOwner(u),
+	}
+}
+
+// isOwner reports whether u is one of the owners the server's config names.
+func (h handlers) isOwner(u *model.User) bool {
+	return u != nil && h.Owner != nil && h.Owner(u.Username)
 }

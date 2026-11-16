@@ -179,7 +179,7 @@ async function submitWebhook(): Promise<void> {
                 <font-awesome-icon :icon="['fad', 'bars']" />
               </span>
               <span
-                class="list-row-swatch"
+                class="list-row__swatch"
                 :style="{ background: a.embedColor || '#ff3131' }"
                 aria-hidden="true"
               ></span>
@@ -194,22 +194,22 @@ async function submitWebhook(): Promise<void> {
               </div>
             </template>
 
-            <h4 class="list-row-title">{{ a.name }}</h4>
-            <p v-if="a.subtitle" class="text-sm text-muted list-row-meta list-row-meta--inline">
+            <h4 class="list-row__title">{{ a.name }}</h4>
+            <p v-if="a.subtitle" class="text-sm text-muted list-row__meta list-row__meta--inline">
               {{ a.subtitle }}
             </p>
             <p
               v-if="a.owners.length"
-              class="text-sm text-muted list-row-meta list-row-meta--inline"
+              class="text-sm text-muted list-row__meta list-row__meta--inline"
             >
               <font-awesome-icon :icon="['fad', 'user']" /> {{ a.owners.join(', ') }}
             </p>
-            <p v-if="a.location" class="text-sm text-muted list-row-meta list-row-meta--inline">
+            <p v-if="a.location" class="text-sm text-muted list-row__meta list-row__meta--inline">
               <font-awesome-icon :icon="['fad', 'location-dot']" /> {{ a.location }}
             </p>
             <p
               v-if="a.discordLink || a.carrdLink || a.hours.length"
-              class="list-row-meta list-row-meta--inline"
+              class="list-row__meta list-row__meta--inline"
             >
               <span v-if="a.discordLink" class="badge badge--accent">Discord</span>
               <span v-if="a.carrdLink" class="badge badge--muted">Carrd</span>

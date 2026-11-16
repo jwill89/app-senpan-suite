@@ -314,48 +314,136 @@ func TestUsers_ResetPasswordEndsSessionsAndToken(t *testing.T) {
 	signInAs(t, newClient(t, env), env, "staff", "resetpassword")
 }
 
-// -- Protected admin account --------------------------------------------------
+// -- Owners and an admin's own account -----------------------------------------
 
-func TestProtectedAdmin_CannotBeModifiedByAdmins(t *testing.T) {
+// secondAdmin makes another active admin and answers a client of its own signed in as
+// it, and its id.
+func secondAdmin(t *testing.T, e *testEnv) (*http.Client, int64) {
+	t.Helper()
+	id := addAccount(t, e, "second-admin", "password-2", nil)
+	if err := db.New(e.store.DB()).UpdateUser(t.Context(), db.UpdateUserParams{
+		IsActive: 1, IsAdmin: 1, Permissions: "[]", ID: id,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	c := newClient(t, e)
+	signInAs(t, c, e, "second-admin", "password-2")
+	return c, id
+}
+
+// An owner named in the config is never deactivated, demoted, renamed or deleted, nor
+// has its password set, by another admin or by itself (403); the account answers as
+// an owner.
+func TestOwner_CannotBeChangedOrDeleted(t *testing.T) {
 	env := newTestEnv(t)
+	env.srv.SetOwners([]string{adminUser})
 	env.loginAdmin(t)
-	adminID := findUserID(t, env, "admin")
-	path := "/api/v1/users/" + itoa(adminID)
+	ownerID := findUserID(t, env, adminUser)
+	other, _ := secondAdmin(t, env)
+	path := "/api/v1/users/" + itoa(ownerID)
 
-	// PATCHing active/admin/password on the protected admin account is refused.
 	for _, body := range []map[string]any{
 		{"isActive": false},
 		{"isAdmin": false},
+		{"username": "renamed"},
 		{"password": "password123"},
 	} {
-		resp := env.patchJSON(t, path, body)
-		if resp.StatusCode != http.StatusForbidden {
-			t.Fatalf("PATCH %v on admin: status = %d; want 403", body, resp.StatusCode)
+		for who, c := range map[string]*http.Client{"another admin": other, "the owner": env.client} {
+			resp := reqAs(t, c, env, http.MethodPatch, path, body)
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusForbidden {
+				t.Errorf("PATCH %v on an owner by %s: %d; want 403", body, who, resp.StatusCode)
+			}
 		}
-		resp.Body.Close()
+	}
+	resp := reqAs(t, other, env, http.MethodDelete, path, nil)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("DELETE an owner: %d; want 403", resp.StatusCode)
 	}
 
-	// DELETE of the protected admin account is refused.
-	resp := env.del(t, path)
-	if resp.StatusCode != http.StatusForbidden {
-		t.Fatalf("DELETE admin: status = %d; want 403", resp.StatusCode)
+	owner, _ := userRow(t, env, adminUser)["owner"].(bool)
+	second, _ := userRow(t, env, "second-admin")["owner"].(bool)
+	if !owner || second {
+		t.Errorf("owner flags: %v for the owner, %v for the other admin; want true and false", owner, second)
+	}
+	if me(t, env.client, env)["owner"] != true {
+		t.Error("the owner's own account doesn't say it is an owner")
+	}
+	if row := userRow(t, env, adminUser); row["isActive"] != true || row["isAdmin"] != true {
+		t.Errorf("the owner after the refusals: %v", row)
+	}
+}
+
+// An owner's permissions may be edited, harmlessly (an admin holds every one), and
+// asking for what it already has passes.
+func TestOwner_PermissionsStillEditable(t *testing.T) {
+	env := newTestEnv(t)
+	env.srv.SetOwners([]string{adminUser})
+	env.loginAdmin(t)
+	ownerID := findUserID(t, env, adminUser)
+
+	resp := env.patchJSON(t, "/api/v1/users/"+itoa(ownerID), map[string]any{
+		"permissions": []string{"bingo-cards"}, "isActive": true, "isAdmin": true,
+	})
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("PATCH permissions on an owner: status = %d; want 200", resp.StatusCode)
 	}
 	resp.Body.Close()
 }
 
-// TestProtectedAdmin_PermissionsStillEditable confirms setting permissions on the
-// admin account is allowed (deliberately not part of the protected field set -
-// admins hold every permission implicitly, so it's a harmless no-op here).
-func TestProtectedAdmin_PermissionsStillEditable(t *testing.T) {
+// Without the config naming it, the same account is an ordinary admin: another admin
+// may demote it, and nothing about the name admin protects it.
+func TestOwner_OnlyTheConfigMakesOne(t *testing.T) {
 	env := newTestEnv(t)
 	env.loginAdmin(t)
-	adminID := findUserID(t, env, "admin")
+	id := findUserID(t, env, adminUser)
+	other, _ := secondAdmin(t, env)
 
-	resp := env.patchJSON(t, "/api/v1/users/"+itoa(adminID), map[string]any{"permissions": []string{"bingo-cards"}})
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("PATCH permissions on admin: status = %d; want 200", resp.StatusCode)
+	if userRow(t, env, adminUser)["owner"] != false {
+		t.Error("an account named admin is an owner without the config naming it")
 	}
+	resp := reqAs(t, other, env, http.MethodPatch, "/api/v1/users/"+itoa(id), map[string]any{"isAdmin": false})
 	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Errorf("another admin demoting an account that isn't an owner: %d; want 200", resp.StatusCode)
+	}
+}
+
+// An admin doesn't deactivate, demote or delete itself (403); another admin may.
+func TestAdmin_CannotLockItselfOut(t *testing.T) {
+	env := newTestEnv(t)
+	env.loginAdmin(t)
+	id := findUserID(t, env, adminUser)
+	path := "/api/v1/users/" + itoa(id)
+
+	for _, body := range []map[string]any{{"isActive": false}, {"isAdmin": false}} {
+		resp := env.patchJSON(t, path, body)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusForbidden {
+			t.Errorf("PATCH %v on itself: %d; want 403", body, resp.StatusCode)
+		}
+	}
+	resp := env.del(t, path)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("DELETE itself: %d; want 403", resp.StatusCode)
+	}
+	if row := userRow(t, env, adminUser); row["isActive"] != true || row["isAdmin"] != true {
+		t.Errorf("after the refusals: %v; want still an active admin", row)
+	}
+
+	other, otherID := secondAdmin(t, env)
+	resp = reqAs(t, other, env, http.MethodDelete, "/api/v1/users/"+itoa(otherID), nil)
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusForbidden {
+		t.Errorf("the second admin deleting itself: %d; want 403", resp.StatusCode)
+	}
+	resp = env.del(t, "/api/v1/users/"+itoa(otherID))
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusNoContent {
+		t.Errorf("deleting another admin: %d; want 204", resp.StatusCode)
+	}
 }
 
 // -- Self-service password change ---------------------------------------------
@@ -379,7 +467,7 @@ func TestAccount_ChangePassword(t *testing.T) {
 	resp.Body.Close()
 
 	// Correct change succeeds.
-	resp = changePassword(t, env.client, env, seedAdminPass, "newpassword1")
+	resp = changePassword(t, env.client, env, adminPass, "newpassword1")
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("change password status = %d; want 204", resp.StatusCode)
 	}
@@ -387,12 +475,12 @@ func TestAccount_ChangePassword(t *testing.T) {
 
 	// The old password is refused; the new one signs in (fresh client).
 	c := newClient(t, env)
-	resp = postAs(t, c, env, "/api/v1/auth/login", map[string]string{"username": seedAdminUser, "password": seedAdminPass})
+	resp = postAs(t, c, env, "/api/v1/auth/login", map[string]string{"username": adminUser, "password": adminPass})
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("old password login status = %d; want 401", resp.StatusCode)
 	}
 	resp.Body.Close()
-	signInAs(t, c, env, seedAdminUser, "newpassword1")
+	signInAs(t, c, env, adminUser, "newpassword1")
 }
 
 // TestAccount_ChangePasswordEndsOtherSessions: a change signs out the account's other
@@ -401,16 +489,16 @@ func TestAccount_ChangePasswordEndsOtherSessions(t *testing.T) {
 	env := newTestEnv(t)
 	env.loginAdmin(t)
 	other := newClient(t, env)
-	signInAs(t, other, env, seedAdminUser, seedAdminPass)
+	signInAs(t, other, env, adminUser, adminPass)
 	token := createToken(t, env.client, env)
 
-	resp := changePassword(t, env.client, env, seedAdminPass, "newpassword1")
+	resp := changePassword(t, env.client, env, adminPass, "newpassword1")
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("change password status = %d; want 204", resp.StatusCode)
 	}
 
-	if name := env.signedInAs(t); name != seedAdminUser {
+	if name := env.signedInAs(t); name != adminUser {
 		t.Errorf("this browser after the change is %q; want still signed in", name)
 	}
 	if name := accountName(t, getAs(t, other, env, "/api/v1/me")); name != "" {
@@ -434,17 +522,17 @@ func TestLoginAfterPasswordChangeStampsEpoch(t *testing.T) {
 
 	// Bump the account past epoch 0. Below this point a session missing the epoch
 	// is indistinguishable from a stale one and gets rejected.
-	resp := changePassword(t, env.client, env, seedAdminPass, "newpassword1")
+	resp := changePassword(t, env.client, env, adminPass, "newpassword1")
 	if resp.StatusCode != http.StatusNoContent {
 		t.Fatalf("change password status = %d; want 204", resp.StatusCode)
 	}
 	resp.Body.Close()
 
 	c := newClient(t, env)
-	signInAs(t, c, env, seedAdminUser, "newpassword1")
+	signInAs(t, c, env, adminUser, "newpassword1")
 
 	// The assertion that matters: the session survives into the next request.
-	if name := accountName(t, getAs(t, c, env, "/api/v1/me")); name != seedAdminUser {
+	if name := accountName(t, getAs(t, c, env, "/api/v1/me")); name != adminUser {
 		t.Errorf("the session a sign-in made does not resolve on the next request (who am I = %q)", name)
 	}
 }
@@ -521,7 +609,7 @@ func TestUsers_ListShowsLastSignIn(t *testing.T) {
 	if seen["never"] != nil {
 		t.Errorf("an account that never signed in shows %v; want null", seen["never"])
 	}
-	if seen[seedAdminUser] == nil {
+	if seen[adminUser] == nil {
 		t.Error("the admin just signed in; its lastLoginAt should be set")
 	}
 }

@@ -26,7 +26,13 @@ import EmptyState from '@/components/common/ui/EmptyState.vue'
 import SearchInput from '@/components/common/ui/SearchInput.vue'
 import DataTable, { type DataColumn } from '@/components/common/ui/DataTable.vue'
 import ModalOverlay from '@/components/common/ModalOverlay.vue'
-import { useCarrdStore, carrdImageUrl, joinCarrdPath, CARRD_BASE_URL } from '@/stores/carrd'
+import {
+  useCarrdStore,
+  carrdImageUrl,
+  carrdPreviewUrl,
+  joinCarrdPath,
+  CARRD_BASE_URL,
+} from '@/stores/carrd'
 import { useUiStore } from '@/stores/ui'
 import { slugify, formatSize } from '@/lib/format'
 import type { CarrdProject } from '@/api/client'
@@ -226,8 +232,13 @@ function fileKind(name: string): 'image' | 'audio' | 'video' {
   return 'image'
 }
 
-/** Public URL for a file at the current path (shorthand for the grid). */
+/** This site's address for a file at the current path, which the grid shows. */
 function fileUrl(name: string): string {
+  return carrdPreviewUrl(carrd.selectedFolder ?? '', carrd.currentPath, name)
+}
+
+/** The Carrd host's public URL for a file at the current path, which a thumbnail opens. */
+function publicUrl(name: string): string {
   return carrdImageUrl(carrd.selectedFolder ?? '', carrd.currentPath, name)
 }
 
@@ -354,7 +365,7 @@ onMounted(() => carrd.loadProjects())
             <!-- Image: clickable thumbnail -->
             <a
               v-if="fileKind(img.name) === 'image'"
-              :href="fileUrl(img.name)"
+              :href="publicUrl(img.name)"
               target="_blank"
               rel="noopener"
               class="media-tile"

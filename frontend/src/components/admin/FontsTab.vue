@@ -27,6 +27,7 @@ import DataTable, {
 } from '@/components/common/ui/DataTable.vue'
 import FontEditModal from '@/components/admin/FontEditModal.vue'
 import { applyUploadedFonts, uploadedFontUrl } from '@/lib/theme'
+import { cspNonce } from '@/lib/csp'
 import { useFontsStore, fontShareUrl, toUploadedFont, FONT_KIT_URL } from '@/stores/fonts'
 import { useUiStore } from '@/stores/ui'
 import type { Font, FontVariant } from '@/api/client'
@@ -119,6 +120,7 @@ watch(
     if (!el) {
       el = document.createElement('style')
       el.id = 'font-preview-variants'
+      el.nonce = cspNonce
       document.head.appendChild(el)
     }
     const f = selectedFont.value

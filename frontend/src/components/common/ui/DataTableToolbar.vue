@@ -42,19 +42,19 @@ const countText = computed(() =>
 </script>
 
 <template>
-  <div class="dt-toolbar">
-    <div class="dt-toolbar-start">
+  <div class="data-table-toolbar">
+    <div class="data-table-toolbar__start">
       <slot name="search" />
       <slot name="filters" />
     </div>
-    <div class="dt-toolbar-end">
-      <label v-if="perPageOptions" class="dt-toolbar-perpage">
+    <div class="data-table-toolbar__end">
+      <label v-if="perPageOptions" class="data-table-toolbar__perpage">
         <span class="text-muted text-xs">Per page:</span>
         <select v-model.number="perPage" aria-label="Rows per page">
           <option v-for="n in perPageOptions" :key="n" :value="n">{{ n }}</option>
         </select>
       </label>
-      <span class="dt-toolbar-count">{{ countText }}</span>
+      <span class="data-table-toolbar__count">{{ countText }}</span>
       <slot name="actions" />
     </div>
   </div>

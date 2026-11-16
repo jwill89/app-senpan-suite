@@ -13,7 +13,7 @@ namespace SenpanCompanion.Services;
 /// for the session only. The plugin is Windows-only (FFXIV/Dalamud), so DPAPI is
 /// always the right primitive here.
 /// </summary>
-internal static class TokenProtector
+internal static partial class TokenProtector
 {
     // CRYPTPROTECT_UI_FORBIDDEN - never show a UI prompt (we run headless of any dialog).
     private const int UiForbidden = 0x1;
@@ -102,14 +102,14 @@ internal static class TokenProtector
         public IntPtr PbData;
     }
 
-    [DllImport("crypt32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    [LibraryImport("crypt32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CryptProtectData(ref DataBlob dataIn, string? dataDescr, IntPtr optionalEntropy, IntPtr reserved, IntPtr promptStruct, int flags, ref DataBlob dataOut);
+    private static partial bool CryptProtectData(ref DataBlob dataIn, string? dataDescr, IntPtr optionalEntropy, IntPtr reserved, IntPtr promptStruct, int flags, ref DataBlob dataOut);
 
-    [DllImport("crypt32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    [LibraryImport("crypt32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool CryptUnprotectData(ref DataBlob dataIn, IntPtr dataDescr, IntPtr optionalEntropy, IntPtr reserved, IntPtr promptStruct, int flags, ref DataBlob dataOut);
+    private static partial bool CryptUnprotectData(ref DataBlob dataIn, IntPtr dataDescr, IntPtr optionalEntropy, IntPtr reserved, IntPtr promptStruct, int flags, ref DataBlob dataOut);
 
-    [DllImport("kernel32.dll", SetLastError = true)]
-    private static extern IntPtr LocalFree(IntPtr mem);
+    [LibraryImport("kernel32.dll", SetLastError = true)]
+    private static partial IntPtr LocalFree(IntPtr mem);
 }

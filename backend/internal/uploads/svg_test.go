@@ -106,3 +106,27 @@ func TestSanitizeSVG_PreservesLegitArtwork(t *testing.T) {
 		}
 	}
 }
+
+// The page's policy refuses style attributes in inlined markup, so a style attribute
+// becomes the presentation attributes it names, outranking one already there, and
+// nothing else of it is kept.
+func TestSanitizeSVG_TurnsStyleIntoPresentationAttributes(t *testing.T) {
+	in := `<svg xmlns="http://www.w3.org/2000/svg"><path d="M0 0" fill="red" ` +
+		`style="FILL: #fff; stroke-width:2px !important; opacity:.5; position:fixed; ` +
+		`stroke:url(https://evil.test/x.svg#a); font-family:a\62 c; color:red;"/></svg>`
+	out, ok := SanitizeSVG([]byte(in))
+	if !ok {
+		t.Fatal("rejected")
+	}
+	got := string(out)
+	for _, want := range []string{`fill="#fff"`, `stroke-width="2px"`, `opacity=".5"`, `color="red"`, `d="M0 0"`} {
+		if !strings.Contains(got, want) {
+			t.Errorf("missing %s:\n%s", want, got)
+		}
+	}
+	for _, bad := range []string{"style=", `fill="red"`, "position", "evil.test", "font-family", "important"} {
+		if strings.Contains(got, bad) {
+			t.Errorf("kept %q:\n%s", bad, got)
+		}
+	}
+}

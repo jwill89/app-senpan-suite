@@ -41,7 +41,7 @@ const app = useAppStore()
 const ui = useUiStore()
 const yoever = useYoeverStore()
 
-/** Ref to the BingoBoard component so we can capture its `.board-wrap` root. */
+/** Ref to the BingoBoard component so we can capture its `.bingo-board` root. */
 const boardRef = useTemplateRef<{ $el?: HTMLElement }>('boardRef')
 /** True while the card image is being generated (drives the export button). */
 const exporting = ref(false)

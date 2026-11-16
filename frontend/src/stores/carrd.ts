@@ -20,10 +20,22 @@ import { useUiStore } from './ui'
 /** Public base URL the carrd directory is served from (no trailing slash). */
 export const CARRD_BASE_URL = 'https://carrd.senpan.cafe'
 
+/** A file's path below the carrd folder, each segment encoded, with no leading slash. */
+function carrdFilePath(folder: string, path: string, name: string): string {
+  return [folder, ...path.split('/').filter(Boolean), name].map(encodeURIComponent).join('/')
+}
+
 /** Joins a folder, optional subpath, and name into a public carrd URL. */
 export function carrdImageUrl(folder: string, path: string, name: string): string {
-  const segs = [folder, ...path.split('/').filter(Boolean), name]
-  return `${CARRD_BASE_URL}/${segs.map(encodeURIComponent).join('/')}`
+  return `${CARRD_BASE_URL}/${carrdFilePath(folder, path, name)}`
+}
+
+/**
+ * The same file on this site (`/carrd/...`), which serves the carrd folder too: what
+ * the tab shows, so the page loads nothing from the Carrd host.
+ */
+export function carrdPreviewUrl(folder: string, path: string, name: string): string {
+  return `/carrd/${carrdFilePath(folder, path, name)}`
 }
 
 /** Appends a segment to a relative path ("" stays clean, no leading slash). */

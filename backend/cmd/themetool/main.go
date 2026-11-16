@@ -74,7 +74,7 @@ var pairs = []pair{
 	{"highlight", "panel-bg", "heading / panel", false},
 	{"highlight", "page-bg", "heading / page", false},
 	{"highlight", "panel-raised-bg", "heading / raised", false},
-	// B-I-N-G-O header letters (--highlight) over the board-wrap gradient; check
+	// B-I-N-G-O header letters (--highlight) over the bingo board's gradient; check
 	// both gradient stops. Large display type, so large-text thresholds apply.
 	{"highlight", "board-gradient-start", "BINGO hdr / board top", true},
 	{"highlight", "board-gradient-end", "BINGO hdr / board bot", true},

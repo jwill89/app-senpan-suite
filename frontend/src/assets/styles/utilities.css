@@ -415,13 +415,13 @@
 }
 
 /* Required-field marker appended to the label. */
-.req {
+.form-field__required {
   color: var(--danger);
   margin-left: 2px;
 }
 
 /* Help text shown beneath a field's control. */
-.field-help {
+.form-field__help {
   display: block;
   margin-top: 4px;
   color: var(--text-muted);
@@ -470,7 +470,7 @@
    for why this is not left to each caller. The two groups wrap as units on a
    narrow screen, so a table never ends up with its count orphaned above its
    search box. */
-.dt-toolbar {
+.data-table-toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -478,8 +478,8 @@
   margin-bottom: 12px;
 }
 
-.dt-toolbar-start,
-.dt-toolbar-end {
+.data-table-toolbar__start,
+.data-table-toolbar__end {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -487,12 +487,12 @@
 
 /* The left group takes the slack, which pins the right group to the far edge on
    every table whether or not a search box is present. */
-.dt-toolbar-start {
+.data-table-toolbar__start {
   flex: 1 1 240px;
   min-width: 0;
 }
 
-.dt-toolbar-end {
+.data-table-toolbar__end {
   margin-left: auto;
   flex-wrap: wrap;
 }
@@ -502,29 +502,29 @@
    would come out a different width on each table and read as a different
    component. It still shrinks when it has to, so narrow viewports are
    unaffected. */
-.dt-toolbar-start .search-input {
+.data-table-toolbar__start .search-input {
   flex: 0 1 320px;
 }
 
-.dt-toolbar-count {
+.data-table-toolbar__count {
   color: var(--text-muted);
   font-size: 0.8rem;
   white-space: nowrap;
 }
 
-.dt-toolbar-perpage {
+.data-table-toolbar__perpage {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-.dt-toolbar-perpage select {
+.data-table-toolbar__perpage select {
   width: 70px;
 }
 
 /* DataTable: the single admin table style. Wrap scrolls horizontally on narrow
    screens. */
-.data-table-wrap {
+.data-table__wrap {
   overflow-x: auto;
 }
 
@@ -566,16 +566,16 @@
 }
 
 /* Expandable rows: the whole row is the toggle, and the detail band sits under it. */
-.data-table .dt-expandable {
+.data-table .data-table__expandable {
   cursor: pointer;
 }
 
-.data-table .dt-detail-row > td {
+.data-table .data-table__detail-row > td {
   background: rgb(127 127 127 / 8%);
 }
 
 /* Checkbox column for bulk actions: only as wide as the control. */
-.data-table .dt-select-col {
+.data-table .data-table__select-col {
   width: 34px;
   text-align: center;
 }
@@ -587,7 +587,7 @@
   position: relative;
 }
 
-.dt-resizer {
+.data-table__resizer {
   position: absolute;
   top: 0;
   right: 0;
@@ -598,7 +598,7 @@
   user-select: none;
 }
 
-.dt-resizer::after {
+.data-table__resizer::after {
   content: '';
   position: absolute;
   top: 15%;
@@ -609,8 +609,8 @@
   transition: background 0.15s;
 }
 
-.dt-resizer:hover::after,
-.dt-resizer:active::after {
+.data-table__resizer:hover::after,
+.data-table__resizer:active::after {
   background: var(--highlight);
 }
 
@@ -648,7 +648,7 @@
    looking at, so a page title and the panel titles stacked beneath it don't
    compete for the same emphasis. */
 .manager-header,
-.subpage-header {
+.sub-page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -662,7 +662,7 @@
 /* Top step of the heading scale - panel titles are set in admin.css, section
    labels keep the browser default. */
 .manager-header > h3,
-.subpage-header > h3 {
+.sub-page-header > h3 {
   margin: 0;
   font-size: 2rem;
   line-height: 1.1;
@@ -672,12 +672,12 @@
    Applied to the page- and panel-level titles only; `.section-heading`
    (level 3) is a short label inside a panel, where a period reads as noise. */
 .manager-header > h3::after,
-.subpage-header > h3::after,
+.sub-page-header > h3::after,
 .admin-panel > h3:first-child::after {
   content: '.';
 }
 
-.manager-actions {
+.manager-view__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -688,7 +688,7 @@
    (these headings render `<font-awesome-icon/>{{ title }}` with no literal space). */
 .admin-panel > h3 > .svg-inline--fa:first-child,
 .manager-header > h3 > .svg-inline--fa:first-child,
-.subpage-header > h3 > .svg-inline--fa:first-child {
+.sub-page-header > h3 > .svg-inline--fa:first-child {
   margin-right: 0.45em;
 }
 
@@ -1210,7 +1210,7 @@
 /* -- Object: media (image picker, thumbnail, cover, placeholder) ------------
    Shared by the announcement + book-club image fields (reuse-an-image pickers,
    cover/preview images, and the empty placeholder shown when none is set). */
-.img-picker {
+.image-picker__grid {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1218,7 +1218,7 @@
   overflow-y: auto;
 }
 
-.img-thumb {
+.image-picker__thumb {
   width: 72px;
   height: 48px;
   padding: 0;
@@ -1229,15 +1229,15 @@
   background: var(--panel-bg);
 }
 
-.img-thumb img {
+.image-picker__thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.img-thumb:hover,
-.img-thumb.is-active {
+.image-picker__thumb:hover,
+.image-picker__thumb.is-active {
   border-color: var(--accent);
 }
 
@@ -1318,19 +1318,19 @@
   padding: 12px;
 }
 
-.list-row-media {
+.list-row__media {
   display: flex;
   flex: 0 0 auto;
   gap: 8px;
 }
 
-.list-row-body {
+.list-row__body {
   flex: 1;
   min-width: 0;
   align-self: flex-start;
 }
 
-.list-row-actions {
+.list-row__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -1345,22 +1345,22 @@
 
    `--inline` is for a meta line that is a wrapping row of chips/badges rather than
    a single sentence. */
-.list-row-swatch {
+.list-row__swatch {
   width: 6px;
   align-self: stretch;
   border-radius: 0;
   flex: 0 0 auto;
 }
 
-.list-row-title {
+.list-row__title {
   margin: 0 0 4px;
 }
 
-.list-row-meta {
+.list-row__meta {
   margin: 0 0 4px;
 }
 
-.list-row-meta--inline {
+.list-row__meta--inline {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -1368,7 +1368,7 @@
 }
 
 /* A square media tile in a picker/browser grid (Images, Carrd upload). Distinct
-   from `.img-thumb`, which is the fixed 72x48 thumbnail inside a form's image
+   from `.image-picker__thumb`, which is the fixed 72x48 thumbnail inside a form's image
    picker. */
 .media-tile-wrap {
   position: relative;
@@ -1444,20 +1444,20 @@
 }
 
 /* Modal helpers */
-.modal-centered {
+.modal-overlay__box--centered {
   max-width: 440px;
   text-align: center;
 }
 
 /* Scaled-down board preview (admin card preview modal) */
-.board-preview {
+.bingo-board--preview {
   transform: scale(0.85);
   transform-origin: top center;
   margin-bottom: -15%;
 }
 
 /* Smaller pattern mini cells for game start pattern picker */
-.pattern-mini-sm .pattern-mini-cell {
+.pattern-mini--sm .pattern-mini__cell {
   width: 10px;
   height: 10px;
 }

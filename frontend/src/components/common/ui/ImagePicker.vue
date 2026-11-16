@@ -157,24 +157,24 @@ onMounted(async () => {
 
 <template>
   <div class="flex-row items-start">
-    <div class="image-field-main">
-      <img v-if="model" :src="assetUrl(model)" class="image-field-preview" alt="Image preview" />
-      <div v-else class="image-field-preview media-empty">
+    <div class="image-picker__main">
+      <img v-if="model" :src="assetUrl(model)" class="image-picker__preview" alt="Image preview" />
+      <div v-else class="image-picker__preview media-empty">
         <font-awesome-icon :icon="['fad', 'image']" />
       </div>
       <button v-if="model" type="button" class="btn-neutral btn-sm mt-8" @click="model = ''">
         Remove
       </button>
     </div>
-    <div class="image-field-reuse">
+    <div class="image-picker__reuse">
       <span class="field-label">Select an uploaded image</span>
       <p v-if="!images.sortedCategories.length" class="text-muted text-sm">
         No image categories yet - create one on the System -> Images page.
       </p>
       <template v-else>
-        <div class="image-picker-bar">
+        <div class="image-picker__bar">
           <select
-            class="image-picker-category"
+            class="image-picker__category"
             :value="selectedDir"
             aria-label="Image category"
             @change="onDirChange"
@@ -186,7 +186,7 @@ onMounted(async () => {
           <template v-if="canUpload">
             <button
               type="button"
-              class="btn-neutral btn-sm image-picker-upload"
+              class="btn-neutral btn-sm image-picker__upload"
               :disabled="busy || !selectedDir"
               title="Upload images into this category"
               aria-label="Upload images into this category"
@@ -208,19 +208,19 @@ onMounted(async () => {
         </div>
         <!-- eslint-disable-next-line vuejs-accessibility/no-static-element-interactions -- a drop target: dragging files in has no keyboard form, and the Upload button above is the keyboard path -->
         <div
-          class="image-picker-drop"
+          class="image-picker__drop"
           :class="{ 'is-dragover': dragOver }"
           @dragover.prevent="onDragOver"
           @dragenter.prevent="onDragOver"
           @dragleave.prevent="dragOver = false"
           @drop.prevent="onDrop"
         >
-          <div v-if="entries.length" class="img-picker">
+          <div v-if="entries.length" class="image-picker__grid">
             <button
               v-for="img in entries"
               :key="img.name"
               type="button"
-              class="img-thumb"
+              class="image-picker__thumb"
               :class="{ 'is-active': model === img[valueKey] }"
               :title="img.name"
               aria-label="Use this image"
@@ -229,7 +229,7 @@ onMounted(async () => {
               <!-- The grid paints 72x48 thumbs from the ORIGINALS, so without
                    lazy loading opening a form fetches and decodes every image in
                    the category at full resolution. Lazy resolves against the
-                   clipping .img-picker scrollport, so only visible rows load. -->
+                   clipping .image-picker__grid scrollport, so only visible rows load. -->
               <img :src="assetUrl(img.path)" alt="" loading="lazy" decoding="async" />
             </button>
           </div>
@@ -244,16 +244,16 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.image-field-main {
+.image-picker__main {
   flex: 0 0 150px;
 }
 
-.image-field-reuse {
+.image-picker__reuse {
   flex: 1;
   min-width: 160px;
 }
 
-.image-field-preview {
+.image-picker__preview {
   width: 150px;
   height: 85px;
   object-fit: cover;
@@ -261,7 +261,7 @@ onMounted(async () => {
   margin-bottom: 8px;
 }
 
-.image-picker-bar {
+.image-picker__bar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -269,26 +269,26 @@ onMounted(async () => {
   margin-bottom: 8px;
 }
 
-.image-picker-category {
+.image-picker__category {
   flex: 1 1 auto;
   max-width: 280px;
 }
 
-.image-picker-upload {
+.image-picker__upload {
   flex: 0 0 auto;
   white-space: nowrap;
 }
 
 /* The thumbnail grid doubles as the drop target, so drag-to-upload costs no
    extra vertical space. The outline only appears mid-drag. */
-.image-picker-drop {
+.image-picker__drop {
   border-radius: var(--radius-media);
   outline: 2px dashed transparent;
   outline-offset: 3px;
   transition: outline-color 0.15s ease;
 }
 
-.image-picker-drop.is-dragover {
+.image-picker__drop.is-dragover {
   outline-color: var(--accent);
 }
 </style>

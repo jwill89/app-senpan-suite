@@ -15,7 +15,7 @@
  * All inserts run in a single transaction (all-or-nothing).
  *
  * USAGE:
- *   php insert_styles.php /opt/senpan/data/database.sqlite
+ *   php insert_styles.php <data folder>/database.sqlite
  *
  * Back up the DB first (e.g. cp database.sqlite database.sqlite.bak) - this writes
  * to the live styles table. Stop the service or run during a quiet window if you

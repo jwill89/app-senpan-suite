@@ -39,7 +39,7 @@ async function onInstall(): Promise<void> {
 <template>
   <footer class="app-footer">
     <!-- Per-browser theme picker (hidden unless the admin has published themes). -->
-    <div class="app-footer-theme">
+    <div class="app-footer__theme">
       <ThemePicker />
     </div>
     <p>
@@ -52,7 +52,7 @@ async function onInstall(): Promise<void> {
       Developed by
       <a href="https://xiv.mathdad.me" target="_blank" rel="noopener">MathDad</a>
     </p>
-    <p v-if="showInstall" class="app-footer-install">
+    <p v-if="showInstall" class="app-footer__install">
       <br />
       <a href="#" role="button" @click.prevent="onInstall">
         <font-awesome-icon :icon="['fas', 'download']" />
@@ -63,7 +63,7 @@ async function onInstall(): Promise<void> {
 </template>
 
 <style scoped>
-.app-footer-theme {
+.app-footer__theme {
   display: flex;
   justify-content: center;
   margin-bottom: 10px;

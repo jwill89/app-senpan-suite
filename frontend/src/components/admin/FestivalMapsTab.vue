@@ -331,7 +331,8 @@ function setStatus(status: FestivalMapStatus): void {
                 Paste it into the other site's HTML. The map stays live - stalls, hours and links
                 follow this map, so changes here reach every site it was pasted into without
                 repasting. It is {{ MAP_EMBED_HEIGHT }}px tall; edit that number in the snippet to
-                give the map more or less room.
+                give the map more or less room. Only the sites listed under System -> Settings,
+                "Sites that may show a festival map in a frame", can show it.
               </template>
             </FormField>
           </div>

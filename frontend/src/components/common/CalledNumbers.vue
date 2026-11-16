@@ -26,16 +26,16 @@ function isDimmed(li: number): boolean {
 </script>
 
 <template>
-  <div class="numbers-panel">
+  <div class="called-numbers">
     <h3>Called Numbers ({{ count }} / 75)</h3>
-    <div class="numbers-cols">
+    <div class="called-numbers__cols">
       <template v-for="(letter, li) in BINGO_LETTERS" :key="letter">
-        <div :class="['numbers-col', isDimmed(li) ? 'numbers-col--unused' : '']">
-          <div class="numbers-col-header">{{ letter }}</div>
+        <div :class="['called-numbers__col', isDimmed(li) ? 'called-numbers__col--unused' : '']">
+          <div class="called-numbers__col-header">{{ letter }}</div>
           <div
             v-for="n in columnNumbers(li)"
             :key="n"
-            :class="['num-cell', isCalled(n) ? 'is-called' : '']"
+            :class="['called-numbers__num-cell', isCalled(n) ? 'is-called' : '']"
           >
             {{ n }}
           </div>

@@ -28,7 +28,7 @@ defineProps<{
       <h3 v-if="title || $slots.title">
         <slot name="title"><font-awesome-icon v-if="icon" :icon="icon" />{{ title }}</slot>
       </h3>
-      <div v-if="$slots.actions" class="manager-actions"><slot name="actions" /></div>
+      <div v-if="$slots.actions" class="manager-view__actions"><slot name="actions" /></div>
     </div>
     <div v-if="$slots.toolbar" class="manager-toolbar"><slot name="toolbar" /></div>
     <slot />

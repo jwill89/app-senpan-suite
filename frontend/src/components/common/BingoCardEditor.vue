@@ -64,20 +64,27 @@ const invalidCells = computed(() => {
 </script>
 
 <template>
-  <div class="card-editor">
-    <div class="card-editor-header">
-      <div v-for="letter in BINGO_LETTERS" :key="letter" class="card-editor-letter">
+  <div class="bingo-card-editor">
+    <div class="bingo-card-editor__header">
+      <div v-for="letter in BINGO_LETTERS" :key="letter" class="bingo-card-editor__letter">
         {{ letter }}
       </div>
     </div>
-    <div class="card-editor-grid">
+    <div class="bingo-card-editor__grid">
       <template v-for="row in 5" :key="row">
         <template v-for="col in 5" :key="`${row}-${col}`">
-          <div v-if="isFree(row - 1, col - 1)" class="card-editor-cell card-editor-free">FREE</div>
+          <div
+            v-if="isFree(row - 1, col - 1)"
+            class="bingo-card-editor__cell bingo-card-editor__cell--free"
+          >
+            FREE
+          </div>
           <input
             v-else
-            class="card-editor-cell"
-            :class="{ 'card-editor-invalid': invalidCells.has(`${row - 1}-${col - 1}`) }"
+            class="bingo-card-editor__cell"
+            :class="{
+              'bingo-card-editor__cell--invalid': invalidCells.has(`${row - 1}-${col - 1}`),
+            }"
             type="number"
             inputmode="numeric"
             :min="columnRange(col - 1)[0]"
@@ -98,12 +105,12 @@ const invalidCells = computed(() => {
 <style scoped>
 /* Centre the whole editor: the grids centre via margin-auto, and text-align
    centres the inline "Generate Random" button under them. */
-.card-editor {
+.bingo-card-editor {
   text-align: center;
 }
 
-.card-editor-header,
-.card-editor-grid {
+.bingo-card-editor__header,
+.bingo-card-editor__grid {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 6px;
@@ -111,24 +118,24 @@ const invalidCells = computed(() => {
   margin-inline: auto;
 }
 
-.card-editor-header {
+.bingo-card-editor__header {
   margin-bottom: 6px;
 }
 
-.card-editor-letter {
+.bingo-card-editor__letter {
   text-align: center;
   font-weight: 700;
   color: var(--highlight);
 }
 
-.card-editor-cell {
+.bingo-card-editor__cell {
   aspect-ratio: 1;
   text-align: center;
   font-size: 1rem;
   padding: 0;
 }
 
-.card-editor-free {
+.bingo-card-editor__cell--free {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -139,7 +146,7 @@ const invalidCells = computed(() => {
   border-radius: var(--radius, 6px);
 }
 
-.card-editor-invalid {
+.bingo-card-editor__cell--invalid {
   border-color: var(--danger) !important;
   outline: 1px solid var(--danger);
 }

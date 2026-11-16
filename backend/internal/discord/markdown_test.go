@@ -19,7 +19,7 @@ func TestTimeStyle(t *testing.T) {
 	}
 }
 
-// TestMarkdown verifies the Milkdown->Discord normalizations: backslash hard breaks,
+// TestMarkdown verifies the normalizations of stored Markdown for Discord: backslash hard breaks,
 // <br> tags, loose lists, and escaped timestamp tokens and emoji shortcodes.
 func TestMarkdown(t *testing.T) {
 	cases := []struct {
@@ -58,8 +58,8 @@ func TestMarkdown(t *testing.T) {
 		// Emoji shortcodes: the serializer escapes the underscores in a multi-word
 		// name, which stops Discord resolving it (":video_game:" would show as literal
 		// text where ":tada:" renders). Unescape inside the token only.
-		// These inputs are verbatim mdast-util-to-markdown output (the serializer
-		// Milkdown uses): it escapes the underscore and leaves the colons alone.
+		// These inputs are verbatim mdast-util-to-markdown output, which text stored by
+		// an earlier editor carries: it escapes the underscore and leaves the colons alone.
 		{"escaped shortcode mid-sentence", "Play :video\\_game: now", "Play :video_game: now"},
 		{"escaped shortcode at start", ":video\\_game: at start", ":video_game: at start"},
 		{"escaped shortcode at end", "end with :video\\_game:", "end with :video_game:"},

@@ -3,7 +3,7 @@ name: CI
 # The full quality gate on every push and pull request, on shared-tooling's reusable
 # workflows at the release the shared/ submodule holds (the docs job fails if the two
 # ever differ): the Vue/TS frontend, the Go backend, the FFXIV plugin, the PowerShell
-# scripts and the docs. scripts/check.ps1 runs the same checks locally.
+# scripts and the docs. `task check` runs the same checks locally.
 on:
   push:
   pull_request:
@@ -22,7 +22,7 @@ jobs:
   # are the committed ones, which the generated job checks. The build is uploaded for
   # the backend job, since the binary embeds it.
   frontend:
-    uses: jwill89/shared-tooling/.github/workflows/web.yml@v2.15.1
+    uses: jwill89/shared-tooling/.github/workflows/web.yml@v2.15.2
     with:
       dir: frontend
       fontawesome: true
@@ -88,26 +88,25 @@ jobs:
   # frontend job's build, which the binary embeds, so every Go step compiles with it.
   backend:
     needs: frontend
-    uses: jwill89/shared-tooling/.github/workflows/go.yml@v2.15.1
+    uses: jwill89/shared-tooling/.github/workflows/go.yml@v2.15.2
     with:
       dir: backend
       download-artifact: web-dist
       download-path: backend/internal/web/dist
       # Counted across packages: the API's request tests live in internal/server and
-      # exercise internal/api. scripts/check.ps1 checks the same floor locally.
+      # exercise internal/api. `task test:go` checks the same floor locally.
       coverpkg: ./...
       coverage-floor: 83.5
-      # sqlc's generated code is left out of the count: the code that calls it is tested.
-      coverage-exclude: |
-        /internal/db/(db|models)\.go$
-        /internal/db/[^/]+\.sql\.go$
+      # sqlc's generated code (every Go file in internal/db) is left out of the count: the
+      # code that calls it is tested.
+      coverage-exclude: /internal/db/
       build: go build -ldflags="-s -w" -o app-suite .
 
   # Built against Dalamud with warnings as errors (the shared analyzers, imported by
   # plugins/Directory.Build.props), dotnet format, and the tests of everything that
   # doesn't touch the game (the client, the live stream's reader, the pricing).
   plugin:
-    uses: jwill89/shared-tooling/.github/workflows/dotnet.yml@v2.15.1
+    uses: jwill89/shared-tooling/.github/workflows/dotnet.yml@v2.15.2
     with:
       projects: plugins/SenpanCompanion
       test-project: plugins/SenpanCompanion.Tests
@@ -120,7 +119,7 @@ jobs:
   # board, see a draw arrive live and keep a stamp across a reload.
   e2e:
     needs: [frontend, backend]
-    uses: jwill89/shared-tooling/.github/workflows/e2e.yml@v2.15.1
+    uses: jwill89/shared-tooling/.github/workflows/e2e.yml@v2.15.2
     with:
       dir: frontend
       go-version-file: backend/go.mod
@@ -130,19 +129,22 @@ jobs:
       FONTAWESOME_TOKEN: ${{ secrets.FONTAWESOME_NPM_TOKEN }}
 
   scripts:
-    uses: jwill89/shared-tooling/.github/workflows/pwsh.yml@v2.15.1
+    uses: jwill89/shared-tooling/.github/workflows/pwsh.yml@v2.15.2
 
+  # The app's, the plugin's and the backend's closed CHANGELOG, each with its compare links.
   docs:
-    uses: jwill89/shared-tooling/.github/workflows/docs.yml@v2.15.1
+    uses: jwill89/shared-tooling/.github/workflows/docs.yml@v2.15.2
+    with:
+      changelogs: CHANGELOG.md plugins/CHANGELOG.md backend/CHANGELOG.md
 
   # OSV-Scanner over every lockfile. An osv-scanner.toml beside a lockfile passes over the
   # advisories that reach only lint, test or build tooling.
   osv:
-    uses: jwill89/shared-tooling/.github/workflows/osv.yml@v2.15.1
+    uses: jwill89/shared-tooling/.github/workflows/osv.yml@v2.15.2
 
   # On a push to main, AFTER the whole gate passes, tag + release a version with no
   # release yet: the app as v<version> (which the deploy ships) and the plugin as
-  # Plugin-v<version>, each with its CHANGELOG.md entry as the body, so a green version
+  # Plugin-v<version>, each with its own CHANGELOG's entry as the body, so a green version
   # bump auto-publishes a release linked to its notes. Idempotent - versions already
   # released are skipped, so ordinary main pushes are a no-op here.
   release:

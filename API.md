@@ -1,57 +1,31 @@
 # Senpan App Suite - API
 
-The HTTP API is on [huma](https://huma.rocks) (release 5.0.0,
-[`plans/release-c.md`](plans/release-c.md)), on the shape shared-tooling's standards
-give an API ([`shared/standards/api-and-realtime.md`](shared/standards/api-and-realtime.md)),
-as Kindred Nights and Home Library have it.
+The HTTP API is on [huma](https://huma.rocks) (release 5.0.0, [`plans/release-c.md`](plans/release-c.md)), on the shape shared-tooling's standards give an API ([`shared/standards/api-and-realtime.md`](shared/standards/api-and-realtime.md)), as Kindred Nights and Home Library have it.
 
 ## The document
 
-- The operations on huma live under **`/api/v1`**, registered in
-  [`backend/internal/api`](backend/internal/api/), one file per domain.
-- huma generates their **OpenAPI 3.1** document from the code: every operation's
-  inputs and outputs are Go types, so the document can't drift from them. It is
-  committed as [`frontend/src/api/openapi.json`](frontend/src/api/openapi.json), and
-  the SPA's types are generated from it into `frontend/src/api/schema.d.ts`
-  (openapi-typescript); `frontend/src/api/client.ts` is the client (openapi-fetch).
-  Neither generated file is edited by hand.
+- The operations on huma live under **`/api/v1`**, registered in [`backend/internal/api`](backend/internal/api/), one file per domain.
+- huma generates their **OpenAPI 3.1** document from the code: every operation's inputs and outputs are Go types, so the document can't drift from them. It is committed as [`frontend/src/api/openapi.json`](frontend/src/api/openapi.json), and the SPA's types are generated from it into `frontend/src/api/schema.d.ts` (openapi-typescript); `frontend/src/api/client.ts` is the client (openapi-fetch). Neither generated file is edited by hand.
 - After an API change, regenerate both and commit them with it:
 
   ```bash
   task gen   # go run . openapi, then openapi-typescript and Prettier
   ```
 
-  CI's `generated` job, and `scripts/check.ps1`, run the same and fail on a difference.
-- The server tests hold every documented 2xx answer to the document
-  (`internal/api/apitest`): a test that calls an operation fails if the answer isn't
-  one the document declares.
+  CI's `generated` job, and `task check`, run the same and fail on a difference.
+- The server tests hold every documented 2xx answer to the document (`internal/api/apitest`): a test that calls an operation fails if the answer isn't one the document declares.
 
-Nothing under `/api/` is registered by hand any more: `routes()` in
-`backend/internal/server` holds the HTTP shell only. The Dalamud plugin's client is
-generated from the same document (NSwag, `plugins/SenpanCompanion/nswag.json` into
-`Api/SenpanApi.g.cs`, also by `task gen`), so the SPA and the plugin read the API as it
-declares itself.
+Nothing under `/api/` is registered by hand any more: `routes()` in `backend/internal/server` holds the HTTP shell only. The Dalamud plugin's client is generated from the same document (NSwag, `plugins/SenpanCompanion/nswag.json` into `Api/SenpanApi.g.cs`, also by `task gen`), so the SPA and the plugin read the API as it declares itself.
 
 ## Errors
 
-Every error under `/api` is an RFC 9457 problem details body
-(`application/problem+json`): `title`, `status`, a `detail` a person can read, and,
-for a failed validation, `errors` naming each field. That holds for huma's
-operations, a path or method the API doesn't have (404, or 405 with `Allow`), and a
-crash (a generic 500).
+Every error under `/api` is an RFC 9457 problem details body (`application/problem+json`): `title`, `status`, a `detail` a person can read, and, for a failed validation, `errors` naming each field. That holds for huma's operations, a path or method the API doesn't have (404, or 405 with `Allow`), and a crash (a generic 500).
 
-A failed validation is a 422, each field named in `errors`; a state conflict is a 409
-(a raffle that is closed, a winner changed by another console, a tea-room number taken,
-a type still used by announcements, a garapon with no draws left, a stamp already
-collected); an unknown or hidden item is a 404, and so is deleting one that isn't
-there. A body over an operation's size cap is a 413.
+A failed validation is a 422, each field named in `errors`; a state conflict is a 409 (a raffle that is closed, a winner changed by another console, a tea-room number taken, a type still used by announcements, a garapon with no draws left, a stamp already collected); an unknown or hidden item is a 404, and so is deleting one that isn't there. A body over an operation's size cap is a 413.
 
 ### Posting to Discord
 
-An operation that posts to Discord (`post-affiliate`, `post-tea-room`,
-`send-announcement`, `publish-reading-list`, `approve-ema-plaque`, `post-ema-request`)
-declares the same three errors, and never
-answers 502:
+An operation that posts to Discord (`post-affiliate`, `post-tea-room`, `send-announcement`, `publish-reading-list`, `approve-ema-plaque`, `post-ema-request`) declares the same three errors, and never answers 502:
 
 | Status | When |
 |---|---|
@@ -59,21 +33,13 @@ answers 502:
 | 503 | Discord can't be reached, or didn't answer after the post may have gone out (the detail then says to check the channel before trying again) |
 | 500 | The webhook isn't set, or Discord refused the post (a deleted webhook, a bad token); the detail carries Discord's message |
 
-Publishing a reading list is a 409 when it has no items and a 408 when the request is
-cancelled; when a post fails part-way, the detail says how far it got ("Posted N of M,
-then: ..."). The AniList lookup (`look-up-title`) fails the same way: 503, 429 or 500.
+Publishing a reading list is a 409 when it has no items and a 408 when the request is cancelled; when a post fails part-way, the detail says how far it got ("Posted N of M, then: ..."). The AniList lookup (`look-up-title`) fails the same way: 503, 429 or 500.
 
-A Discord webhook is read and set through its own page: `GET`/`PUT /affiliates/webhook`,
-`/tea-rooms/webhook` and `/book-clubs/{club}/webhook` (`{ webhookUrl }`, empty for
-none), guarded by that page. An announcement type carries its own `webhookUrl`.
+A Discord webhook is read and set through its own page: `GET`/`PUT /affiliates/webhook`, `/tea-rooms/webhook` and `/book-clubs/{club}/webhook` (`{ webhookUrl }`, empty for none), guarded by that page. An announcement type carries its own `webhookUrl`.
 
 ## Festival
 
-Page keys are in brackets. A visitor's operation is public; where it is token-gated the
-unguessable token is the capability. A public write has its own rate limit (429 with
-`Retry-After`) and, where marked, a Cloudflare Turnstile check (403 "Bot check failed.
-Please try again."). A time a map or an ema day states is `{ label, start, end }`, `end`
-null when unstated.
+Page keys are in brackets. A visitor's operation is public; where it is token-gated the unguessable token is the capability. A public write has its own rate limit (429 with `Retry-After`) and, where marked, a Cloudflare Turnstile check (403 "Bot check failed. Please try again."). A time a map or an ema day states is `{ label, start, end }`, `end` null when unstated.
 
 | Operations | Notes |
 |---|---|
@@ -95,13 +61,7 @@ null when unstated.
 
 ## Media
 
-A multipart operation declares its parts: `files` (1 to 50) for the image library, Carrd
-and fonts, `image` for a cover or an ema plaque. The server judges a file by its bytes,
-never by its name or the browser's type. A multi-file upload answers 201
-`{ uploaded, skipped }` (a refused file is in `skipped` with its reason) when at least one
-file was saved, and 422 with one error per file when none was. JPEG and PNG are
-re-encoded, which drops their metadata; GIF and WebP are checked and kept as sent. Upload
-names are kept, so a same-name upload replaces the file.
+A multipart operation declares its parts: `files` (1 to 50) for the image library, Carrd and fonts, `image` for a cover or an ema plaque. The server judges a file by its bytes, never by its name or the browser's type. A multi-file upload answers 201 `{ uploaded, skipped }` (a refused file is in `skipped` with its reason) when at least one file was saved, and 422 with one error per file when none was. JPEG and PNG are re-encoded, which drops their metadata; GIF and WebP are checked and kept as sent. Upload names are kept, so a same-name upload replaces the file.
 
 | Operations | Notes |
 |---|---|
@@ -114,59 +74,27 @@ names are kept, so a same-name upload replaces the file.
 
 ## Caching
 
-An answer is `Cache-Control: private, no-store`, except a public read (the same for
-everyone), which is `no-cache` with an `ETag`; a request that already holds that ETag
-gets `304 Not Modified` with no body. The public reads are the two public tea-room ones,
-the open stamp rallies, the published festival maps and the Google Fonts list. The two
-font operations set their own `private` rules (the kit for five minutes, a font file for
-a week) and honor `Range` and `If-None-Match`.
+An answer is `Cache-Control: private, no-store`, except a public read (the same for everyone), which is `no-cache` with an `ETag`; a request that already holds that ETag gets `304 Not Modified` with no body. The public reads are the two public tea-room ones, the open stamp rallies, the published festival maps and the Google Fonts list. The two font operations set their own `private` rules (the kit for five minutes, a font file for a week) and honor `Range` and `If-None-Match`.
 
 ### The public tea-room API
 
-`GET /api/v1/tea-rooms/public` answers `{ teaRooms: [...] }` and
-`GET /api/v1/tea-rooms/public/{number}` the room itself (404 for an unknown number), for
-the Carrd pages that show live availability and pricing. Every field is camelCase, and
-no webhook is in it.
+`GET /api/v1/tea-rooms/public` answers `{ teaRooms: [...] }` and `GET /api/v1/tea-rooms/public/{number}` the room itself (404 for an unknown number), for the Carrd pages that show live availability and pricing. Every field is camelCase, and no webhook is in it.
 
-A browser may read it cross-origin only from an origin on the `teaRoomOrigins` setting
-(System -> Settings). `Vary: Origin` is always sent; for an allowed origin the answer
-echoes it in `Access-Control-Allow-Origin` (never `*`, never with credentials). A
-`https://*.example.com` entry covers every subdomain of `example.com`, not the apex.
-The preflight is answered for an allowed origin (`GET`, the `If-None-Match` header,
-`Access-Control-Max-Age` 600). Migration 74 seeds `https://senpan.cafe` and
-`https://*.senpan.cafe`; saved empty, the list allows no cross-origin read.
+A browser may read it cross-origin only from an origin on the `teaRoomOrigins` setting (System -> Settings). `Vary: Origin` is always sent; for an allowed origin the answer echoes it in `Access-Control-Allow-Origin` (never `*`, never with credentials). A `https://*.example.com` entry covers every subdomain of `example.com`, not the apex. The preflight is answered for an allowed origin (`GET`, the `If-None-Match` header, `Access-Control-Max-Age` 600). Migration 74 seeds `https://senpan.cafe` and `https://*.senpan.cafe`; saved empty, the list allows no cross-origin read.
 
 ## Authentication (orientation)
 
-Identity comes from either a **session cookie** (set by signing in, `POST /api/v1/auth/login`,
-`POST /api/v1/auth/passkey/finish` or Discord's callback; `GET /api/v1/me` says who it is) or a
-**personal access token** - `Authorization: Bearer pat_...`, never in a URL. A token inherits its account's permissions, so external clients
-(e.g. the FFXIV plugin) pass through the same guards as the SPA. An operation that
-needs sign-in answers 401 when there is none, and 403 when the account lacks the
-access.
+Identity comes from either a **session cookie** (set by signing in, `POST /api/v1/auth/login`, `POST /api/v1/auth/passkey/finish` or Discord's callback; `GET /api/v1/me` says who it is) or a **personal access token** - `Authorization: Bearer pat_...`, never in a URL. A token inherits its account's permissions, so external clients (e.g. the FFXIV plugin) pass through the same guards as the SPA. An operation that needs sign-in answers 401 when there is none, and 403 when the account lacks the access.
 
-Signing in with Discord is three pages the browser opens rather than calls:
-`GET /api/v1/auth/discord/start`, `GET /api/v1/auth/discord/callback` (where Discord sends
-the browser back) and `GET /api/v1/auth/discord/invite/{token}` (an admin's one-time link
-to sign up, or to link a Discord account to an account, made with
-`POST /api/v1/discord-invites`). Each answers 302 whatever happens: signed in, to the admin
-area or the page `?next=` named; otherwise to `/admin/login?error=discord_*` with the
-reason. `GET /api/v1/config`'s `discordSignIn` says whether it is set up. An account made
-with Discord has no password until it sets one (`hasPassword` on the account).
+Signing in with Discord is three pages the browser opens rather than calls: `GET /api/v1/auth/discord/start`, `GET /api/v1/auth/discord/callback` (where Discord sends the browser back) and `GET /api/v1/auth/discord/invite/{token}` (an admin's one-time link to sign up, or to link a Discord account to an account, made with `POST /api/v1/discord-invites`). Each answers 302 whatever happens: signed in, to the admin area or the page `?next=` named; otherwise to `/admin/login?error=discord_*` with the reason. `GET /api/v1/config`'s `discordSignIn` says whether it is set up. An account made with Discord has no password until it sets one (`hasPassword` on the account).
 
-Grantable page-permission keys: `bingo-game`, `bingo-cards`, `bingo-winners-log`,
-`bingo-patterns`, `bingo-presets`, `teahouse-announcements`, `teahouse-affiliates`,
-`teahouse-tea-rooms`, `teahouse-raffles`, `festival-map`, `festival-garapon`,
-`festival-stamp-rally`, `festival-ema`, `atelier-fonts`, `atelier-carrd`, `system-settings`, `system-themes`, `system-images`,
-plus per-book-club `bookclub-yaoi` / `bookclub-yuri`. The Users page is admin-only
-(not grantable).
+Grantable page-permission keys: `bingo-game`, `bingo-cards`, `bingo-winners-log`, `bingo-patterns`, `bingo-presets`, `teahouse-announcements`, `teahouse-affiliates`, `teahouse-tea-rooms`, `teahouse-raffles`, `festival-map`, `festival-garapon`, `festival-stamp-rally`, `festival-ema`, `atelier-fonts`, `atelier-carrd`, `system-settings`, `system-themes`, `system-images`, plus per-book-club `bookclub-yaoi` / `bookclub-yuri`. The Users page is admin-only (not grantable).
+
+The owner accounts are named in the server's config (`-owners` / `APPSUITE_OWNERS`), and an account says whether it is one (`owner`). Nobody deactivates, demotes, renames or deletes an owner (403); only the owner itself sets its password (with `PUT /api/v1/me/password`) and makes or removes its Discord link. An admin doesn't deactivate, demote or delete its own account (403). The first admin is made on the host, never through the API: `app-suite admin -db <database> <username>`.
 
 ## Live events
 
-Two streams of server-sent events replace the WebSocket. They are operations in the
-document (`stream-staff-events`, `stream-board-events`), each event a named schema, so
-the SPA's types for them are generated. Both are `private, no-store` with no ETag, and
-the access log writes a stream once, when it closes.
+Two streams of server-sent events replace the WebSocket. They are operations in the document (`stream-staff-events`, `stream-board-events`), each event a named schema, so the SPA's types for them are generated. Both are `private, no-store` with no ETag, and the access log writes a stream once, when it closes.
 
 | Stream | Who | Refused |
 |---|---|---|
@@ -175,12 +103,7 @@ the access log writes a stream once, when it closes.
 
 ### The envelope
 
-Every event is `{ id, type, gameId, at, payload }`: `id` is the event's number (also the
-SSE `id:`; 0, with none, for a `ping` or a `log`), `type` its name (also the SSE `event:`), `gameId` the game it belongs to or
-`null`, `at` an RFC 3339 time in UTC. The `payload` is the event's own. An event names
-what changed and the client reads it again over REST. Two kinds carry their data
-instead: a draw carries the number called, and an event with nothing to read again
-carries what it reports (a log line, a reaction, who answered half-time).
+Every event is `{ id, type, gameId, at, payload }`: `id` is the event's number (also the SSE `id:`; 0, with none, for a `ping` or a `log`), `type` its name (also the SSE `event:`), `gameId` the game it belongs to or `null`, `at` an RFC 3339 time in UTC. The `payload` is the event's own. An event names what changed and the client reads it again over REST. Two kinds carry their data instead: a draw carries the number called, and an event with nothing to read again carries what it reports (a log line, a reaction, who answered half-time).
 
 ### Events and who hears them
 
@@ -210,45 +133,23 @@ The hub filters every event by viewer. Admins hold every permission.
 | `resync`, `ping` | none | every stream |
 
 A `halftime_resolved` is the first answer to the prompt; a second answer is refused with
-409. A number inside its draw delay is hidden from anyone without the Game page, here
-and in `GET /game` and `GET /board/{id}`.
+409. A number inside its draw delay is hidden from anyone without the Game page, here and in `GET /game` and `GET /board/{id}`.
 
 ### Staying in step
 
-- **Heartbeat.** Every stream gets a `ping` every 25 seconds, so a quiet stream isn't
-  cut by a proxy. A client that hears nothing for much longer has lost the stream and
-  opens it again.
-- **Resuming.** The hub keeps the last 1000 events, with ids that keep rising across
-  restarts. A client that reopens sends `Last-Event-ID` (a browser's `EventSource` does
-  it by itself) and gets the events after it that it may hear. An id too old, or from
-  before a restart, gets `resync`: read everything again.
-- **Re-read on open.** The stream carries only what changes, so a client reads the state
-  it shows again every time a stream opens, and on `resync`.
-- **Slow clients.** A stream that falls 64 events behind is ended, and resumes from its
-  last id when it reconnects.
-- **Accounts.** A staff stream checks its account on every heartbeat and right after any
-  account change. An account deactivated or deleted, a password change, signing out, or
-  losing every permission ends the stream; losing one permission narrows what it hears.
-  A client that gets 401 or 403 on reopening stops.
+- **Heartbeat.** Every stream gets a `ping` every 25 seconds, so a quiet stream isn't cut by a proxy. A client that hears nothing for much longer has lost the stream and opens it again.
+- **Resuming.** The hub keeps the last 1000 events, with ids that keep rising across restarts. A client that reopens sends `Last-Event-ID` (a browser's `EventSource` does it by itself) and gets the events after it that it may hear. An id too old, or from before a restart, gets `resync`: read everything again.
+- **Re-read on open.** The stream carries only what changes, so a client reads the state it shows again every time a stream opens, and on `resync`.
+- **Slow clients.** A stream that falls 64 events behind is ended, and resumes from its last id when it reconnects.
+- **Accounts.** A staff stream checks its account on every heartbeat and right after any account change. An account deactivated or deleted, a password change, signing out, or losing every permission ends the stream; losing one permission narrows what it hears. A client that gets 401 or 403 on reopening stops.
 
 ## Conventions
 
-The standards' ([`api-and-realtime.md`](shared/standards/api-and-realtime.md)), in
-short:
+The standards' ([`api-and-realtime.md`](shared/standards/api-and-realtime.md)), in short:
 
-- **Methods:** `GET` reads, `POST` creates (-> `201` with the resource) or runs a
-  command, `PUT` replaces, `PATCH` changes only what it sends, `DELETE` removes
-  (-> `204`).
-- **Resources & items:** a collection is `/api/v1/<resource>`, an item
-  `/api/v1/<resource>/{id}`; sub-collections nest. Path segments are kebab-case; JSON
-  fields and query parameters are camelCase. A trailing slash answers as the path
-  without it.
-- **Commands:** a state change that isn't CRUD is `POST …/{id}/<verb>` (`…/close`,
-  `…/pick-winner`); bulk writes are `POST` (`…/reorder`); deleting everything is
-  `DELETE …/all`, answering `{ "deleted": N }`.
+- **Methods:** `GET` reads, `POST` creates (-> `201` with the resource) or runs a command, `PUT` replaces, `PATCH` changes only what it sends, `DELETE` removes (-> `204`).
+- **Resources & items:** a collection is `/api/v1/<resource>`, an item `/api/v1/<resource>/{id}`; sub-collections nest. Path segments are kebab-case; JSON fields and query parameters are camelCase. A trailing slash answers as the path without it.
+- **Commands:** a state change that isn't CRUD is `POST …/{id}/<verb>` (`…/close`, `…/pick-winner`); bulk writes are `POST` (`…/reorder`); deleting everything is `DELETE …/all`, answering `{ "deleted": N }`.
 - **Times** are RFC 3339 in UTC, `null` for none.
 
-The one intentional exception is signing in and out and signing up, under
-`/api/v1/auth/*` (`login`, `logout`, `register`, `passkey/begin`, `passkey/finish`),
-which stay small action-shaped credential calls rather than resource CRUD. A 401 from
-one of them means the credentials were wrong, not that a session ended.
+The one intentional exception is signing in and out and signing up, under `/api/v1/auth/*` (`login`, `logout`, `register`, `passkey/begin`, `passkey/finish`), which stay small action-shaped credential calls rather than resource CRUD. A 401 from one of them means the credentials were wrong, not that a session ended.

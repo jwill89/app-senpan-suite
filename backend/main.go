@@ -40,6 +40,14 @@ func main() {
 		}
 		return
 	}
+	// `app-suite admin -db <path> <username>` makes or resets an admin on the host
+	// (admin.go).
+	if len(os.Args) >= 2 && os.Args[1] == "admin" {
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		status := adminCommand(ctx, os.Args[2:], os.Stdin, os.Stdout, os.Stderr)
+		stop()
+		os.Exit(status)
+	}
 	if err := run(); err != nil {
 		slog.Error("fatal", "error", err)
 		os.Exit(1)
@@ -53,15 +61,16 @@ func run() error {
 	corsOrigins := flag.String("cors-origins", "", "Comma-separated CORS allowlist of cross-origin sites (env APPSUITE_CORS_ORIGINS; empty = same-origin only, no CORS headers)")
 	turnstileSecret := flag.String("turnstile-secret", "", "Cloudflare Turnstile secret key (env APPSUITE_TURNSTILE_SECRET; empty = login bot check disabled)")
 	turnstileSiteKey := flag.String("turnstile-sitekey", "", "Cloudflare Turnstile public site key (env APPSUITE_TURNSTILE_SITEKEY)")
-	logFile := flag.String("log-file", "/var/log/senpan/senpan.log", "Rotating JSON log file path (daily midnight rotation); empty = stdout only")
+	logFile := flag.String("log-file", "", "Rotating JSON log file path (daily midnight rotation); empty = stdout only")
 	webhookOverride := flag.String("webhook-override", "", "Redirect EVERY outbound Discord post to this webhook URL (env APPSUITE_WEBHOOK_OVERRIDE; dev safety when running on a copy of live data)")
 	webhookDryRun := flag.Bool("webhook-dry-run", false, "Log outbound Discord posts instead of sending them (env APPSUITE_WEBHOOK_DRY_RUN=1); wins over -webhook-override")
+	cspReportOnly := flag.Bool("csp-report-only", false, "Send the Content-Security-Policy as report-only: browsers report what it would block and block nothing (env APPSUITE_CSP_REPORT_ONLY=1)")
+	ownersFlag := flag.String("owners", "", "Comma-separated usernames of the owner accounts, which nobody deactivates, demotes, renames or deletes (env APPSUITE_OWNERS)")
 	flag.Parse()
 
 	// Logging: install the JSON slog handler before anything logs. Always writes
-	// to stdout (journald); also to the rotating file when -log-file is set (prod
-	// default). On a file-sink failure we still log to stdout and warn. Dev on a
-	// non-Linux box should pass -log-file="" to avoid creating a /var/log tree.
+	// to stdout (journald); also to the rotating file when -log-file names one (the
+	// systemd unit does). On a file-sink failure we still log to stdout and warn.
 	logCloser, logErr := logging.Setup(*logFile, slog.LevelInfo)
 	if logCloser != nil {
 		defer func() { _ = logCloser.Close() }() // at exit: the log is where a failure would go
@@ -123,6 +132,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// The policy can be made report-only from the env file, without a deploy, while
+	// something it blocks in production is fixed.
+	site.ReportOnly = *cspReportOnly || os.Getenv("APPSUITE_CSP_REPORT_ONLY") == "1"
+	if site.ReportOnly {
+		slog.Warn("CSP REPORT-ONLY: the Content-Security-Policy is reported, not enforced")
+	}
 
 	hub := live.New()
 	srv := server.New(ctx, db, hub, *dataDir, allowedOrigins)
@@ -130,6 +145,24 @@ func run() error {
 	srv.SetTurnstile(tsSecret, tsSiteKey)
 	srv.SetDiscordSignIn(discordClientID, discordClientSecret)
 	srv.SetLogFile(*logFile) // GET /api/v1/logs tails this file
+
+	// The owner accounts: flag > env. Each is made on the host first (`app-suite admin`).
+	ownersCSV := *ownersFlag
+	if ownersCSV == "" {
+		ownersCSV = os.Getenv("APPSUITE_OWNERS")
+	}
+	var owners []string
+	for _, name := range strings.Split(ownersCSV, ",") {
+		if name = strings.TrimSpace(name); name != "" {
+			owners = append(owners, name)
+		}
+	}
+	srv.SetOwners(owners)
+	if len(owners) > 0 {
+		slog.Info("owner accounts named", "owners", owners)
+	} else {
+		slog.Warn("no owner accounts named (-owners, APPSUITE_OWNERS); any admin may demote or delete another")
+	}
 
 	// Outbound-Discord safety valves. A development server is normally pointed at a
 	// COPY OF THE LIVE DATABASE, whose announcement types, book clubs, affiliates and

@@ -14,7 +14,7 @@ namespace SenpanCompanion.Services;
 /// so it can't affect the client or raise an automation concern; it's pure local
 /// audio feedback on the operator's PC.
 /// </summary>
-public static class Chime
+public static partial class Chime
 {
     private const uint SndAsync = 0x0001;
     private const uint SndMemory = 0x0004;
@@ -34,8 +34,9 @@ public static class Chime
     private static IntPtr winnerWav;
     private static IntPtr unlockWav;
 
-    [DllImport("winmm.dll", SetLastError = true)]
-    private static extern bool PlaySound(IntPtr data, IntPtr hModule, uint flags);
+    [LibraryImport("winmm.dll", EntryPoint = "PlaySound", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool PlaySound(IntPtr data, IntPtr hModule, uint flags);
 
     /// <summary>A rising arpeggio for a new bingo winner. Best-effort - failures are swallowed.</summary>
     public static void Winner() => Play(ref winnerWav, BuildWinner);

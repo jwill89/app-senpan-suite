@@ -8,6 +8,7 @@ vi.mock('@/lib/sound', () => ({ setSoundVolume: vi.fn(), playWinnerChime: vi.fn(
 
 import KonamiEgg from '@/components/player/KonamiEgg.vue'
 import { usePlayerStore } from '@/stores/player'
+import { axeFindings } from '@/__tests__/axe'
 
 const KONAMI = [
   'ArrowUp',
@@ -131,5 +132,15 @@ describe('KonamiEgg', () => {
 
     press(KONAMI)
     expect(player.stamps).toEqual({ '0-0': true, '1-2': true })
+  })
+
+  it('has nothing axe flags while the reveal shows', async () => {
+    stampedStore()
+    const wrapper = mount(KonamiEgg)
+
+    press(KONAMI)
+    await wrapper.vm.$nextTick()
+
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

@@ -13,6 +13,8 @@ vi.mock('@/api/client', async (importOriginal) => ({
 }))
 
 import AdminLoginView from '@/views/AdminLoginView.vue'
+import { useAuthStore } from '@/stores/auth'
+import { axeFindings } from '@/__tests__/axe'
 
 // Stub the real Turnstile widget so its script-loading onMounted never runs.
 const stubs = {
@@ -48,5 +50,19 @@ describe('AdminLoginView Turnstile', () => {
 
     expect(wrapper.find('.turnstile-stub').exists()).toBe(false)
     expect(wrapper.find('button[type="submit"]').attributes('disabled')).toBeUndefined()
+  })
+
+  it('has nothing axe flags, with the Discord sign-in and an error shown', async () => {
+    config.mockResolvedValue({ turnstileSiteKey: 'site-123', discordSignIn: true })
+    // The real FormField, whose label names each field.
+    const wrapper = mount(AdminLoginView, {
+      global: { stubs: { TurnstileWidget: stubs.TurnstileWidget, LoadingSpinner: true } },
+    })
+    await flushPromises()
+    useAuthStore().authError = 'Invalid username or password.'
+    await flushPromises()
+
+    expect(wrapper.find('.error-msg').exists()).toBe(true)
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

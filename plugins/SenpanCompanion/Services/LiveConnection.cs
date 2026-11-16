@@ -191,11 +191,11 @@ public sealed class LiveConnection : IDisposable
             switch (live.Type)
             {
                 case "draw":
-                {
-                    var draw = live.Read<DrawPayload>();
-                    this.RunOnUi(() => this.Draw?.Invoke(live.GameId, draw.Drawn, draw.Winners));
-                    break;
-                }
+                    {
+                        var draw = live.Read<DrawPayload>();
+                        this.RunOnUi(() => this.Draw?.Invoke(live.GameId, draw.Drawn, draw.Winners));
+                        break;
+                    }
                 case "game_started":
                     this.RunOnUi(() => this.GameStarted?.Invoke(live.GameId));
                     break;
@@ -209,59 +209,59 @@ public sealed class LiveConnection : IDisposable
                     this.RunOnUi(() => this.PatternsChanged?.Invoke());
                     break;
                 case "yoever":
-                {
-                    var yoever = live.Read<YoeverPayload>();
-                    this.RunOnUi(() => this.Yoever?.Invoke(live.GameId, yoever.PlayerName, yoever.Count));
-                    break;
-                }
+                    {
+                        var yoever = live.Read<YoeverPayload>();
+                        this.RunOnUi(() => this.Yoever?.Invoke(live.GameId, yoever.PlayerName, yoever.Count));
+                        break;
+                    }
                 case "yoever_switched":
-                {
-                    var switched = live.Read<YoeverSwitchedPayload>();
-                    this.RunOnUi(() => this.YoeverSwitched?.Invoke(switched.Enabled));
-                    break;
-                }
+                    {
+                        var switched = live.Read<YoeverSwitchedPayload>();
+                        this.RunOnUi(() => this.YoeverSwitched?.Invoke(switched.Enabled));
+                        break;
+                    }
                 case "auto_draw":
-                {
-                    var auto = live.Read<AutoDrawPayload>();
-                    this.RunOnUi(() => this.AutoDraw?.Invoke(auto.Enabled, auto.Interval));
-                    break;
-                }
+                    {
+                        var auto = live.Read<AutoDrawPayload>();
+                        this.RunOnUi(() => this.AutoDraw?.Invoke(auto.Enabled, auto.Interval));
+                        break;
+                    }
                 case "halftime_prompt":
-                {
-                    var prompt = live.Read<HalftimePromptPayload>();
-                    this.RunOnUi(() => this.HalftimePrompt?.Invoke(live.GameId, prompt.AutoPaused));
-                    break;
-                }
+                    {
+                        var prompt = live.Read<HalftimePromptPayload>();
+                        this.RunOnUi(() => this.HalftimePrompt?.Invoke(live.GameId, prompt.AutoPaused));
+                        break;
+                    }
                 case "halftime_resolved":
-                {
-                    var answer = live.Read<HalftimeResolvedPayload>();
-                    this.RunOnUi(() => this.HalftimeResolved?.Invoke(live.GameId, answer.Minigame, answer.By));
-                    break;
-                }
+                    {
+                        var answer = live.Read<HalftimeResolvedPayload>();
+                        this.RunOnUi(() => this.HalftimeResolved?.Invoke(live.GameId, answer.Minigame, answer.By));
+                        break;
+                    }
                 case "draw_delay":
-                {
-                    var delay = live.Read<DrawDelayPayload>();
-                    this.RunOnUi(() => this.DrawDelay?.Invoke(delay.Delay));
-                    break;
-                }
+                    {
+                        var delay = live.Read<DrawDelayPayload>();
+                        this.RunOnUi(() => this.DrawDelay?.Invoke(delay.Delay));
+                        break;
+                    }
                 case "game_details":
-                {
-                    var details = live.Read<GameDetailsPayload>();
-                    this.RunOnUi(() => this.GameDetails?.Invoke(details.Details));
-                    break;
-                }
+                    {
+                        var details = live.Read<GameDetailsPayload>();
+                        this.RunOnUi(() => this.GameDetails?.Invoke(details.Details));
+                        break;
+                    }
                 case "resource_changed":
-                {
-                    var changed = live.Read<ResourceChangedPayload>();
-                    this.RunOnUi(() => this.ResourceChanged?.Invoke(changed.Resource));
-                    break;
-                }
+                    {
+                        var changed = live.Read<ResourceChangedPayload>();
+                        this.RunOnUi(() => this.ResourceChanged?.Invoke(changed.Resource));
+                        break;
+                    }
                 case "tea_room_unlocked":
-                {
-                    var room = live.Read<TeaRoomUnlockedPayload>();
-                    this.RunOnUi(() => this.TeaRoomUnlocked?.Invoke(room.Id, room.Name, room.RoomNumber));
-                    break;
-                }
+                    {
+                        var room = live.Read<TeaRoomUnlockedPayload>();
+                        this.RunOnUi(() => this.TeaRoomUnlocked?.Invoke(room.Id, room.Name, room.RoomNumber));
+                        break;
+                    }
                 case "resync":
                     this.RunOnUi(() => this.Resync?.Invoke());
                     break;

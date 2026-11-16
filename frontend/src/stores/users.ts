@@ -8,9 +8,10 @@
  * Discord, or one to link a Discord account to an account - and unlinks a Discord
  * account.
  *
- * The seeded "admin" account is protected server-side (it can't be renamed,
- * deactivated, demoted, deleted or have its password set here, and only it links
- * or unlinks its own Discord account); the UI also hides those actions for it (see
+ * An owner (`owner` on the account, named in the server's config) is protected
+ * server-side: it can't be renamed, deactivated, demoted, deleted or have its
+ * password set here, and only it links or unlinks its own Discord account. Nor does
+ * an admin deactivate, demote or delete itself. The UI hides those actions too (see
  * UsersTab).
  */
 import { defineStore } from 'pinia'
@@ -18,9 +19,6 @@ import { ref } from 'vue'
 import { api, unwrap, type DiscordInvite, type User } from '@/api/client'
 import type { components } from '@/api/schema'
 import { useUiStore } from './ui'
-
-/** Username of the protected bootstrap admin account. */
-export const PROTECTED_ADMIN = 'admin'
 
 type UserChanges = components['schemas']['UserChanges']
 

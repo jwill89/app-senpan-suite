@@ -34,9 +34,9 @@ describe('stamp toggling', () => {
 })
 
 describe('boardCellClass', () => {
-  it('always includes board-cell', () => {
+  it('always includes bingo-board__cell', () => {
     const player = usePlayerStore()
-    expect(player.boardCellClass(0, 1, 7)).toContain('board-cell')
+    expect(player.boardCellClass(0, 1, 7)).toContain('bingo-board__cell')
   })
 
   it('adds free for the center (0) cell', () => {

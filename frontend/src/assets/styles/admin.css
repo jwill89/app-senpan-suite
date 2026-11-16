@@ -366,7 +366,7 @@
 }
 
 /* Slightly larger cells in saved pattern cards */
-.saved-pattern .pattern-mini .pattern-mini-cell {
+.saved-pattern .pattern-mini .pattern-mini__cell {
   width: 18px;
   height: 18px;
 }
@@ -608,7 +608,7 @@
 }
 
 /* Pattern checkbox list for game start (select which patterns to use) */
-.pattern-checks {
+.pattern-picker__checks {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -619,7 +619,7 @@
    mirrors the Patterns manager's .saved-pattern card so the picker reads
    consistently, and the narrow width lets many patterns fit per row. The
    selection dot sits in the top-right corner; the highlight border marks selection. */
-.pattern-check {
+.pattern-picker__check {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -636,17 +636,17 @@
 }
 
 /* Selected pattern (highlight border) */
-.pattern-check.is-selected {
+.pattern-picker__check.is-selected {
   border-color: var(--highlight);
 }
 
 /* Hide native checkbox input */
-.pattern-check input {
+.pattern-picker__check input {
   display: none;
 }
 
 /* Selection dot indicator, pinned to the card's top-right corner */
-.pattern-check .dot {
+.pattern-picker__check .pattern-picker__dot {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -658,13 +658,13 @@
 }
 
 /* Filled highlight dot when pattern is selected */
-.pattern-check.is-selected .dot {
+.pattern-picker__check.is-selected .pattern-picker__dot {
   background: var(--highlight);
   border-color: var(--highlight);
 }
 
 /* Pattern name below the mini grid (small, wraps for long names) */
-.pattern-check-name {
+.pattern-picker__check-name {
   font-size: 0.72rem;
   line-height: 1.25;
   color: var(--text);
@@ -672,7 +672,7 @@
 }
 
 /* Category line under the name in the flat (search-results) view */
-.pattern-check-cat {
+.pattern-picker__check-cat {
   font-size: 0.66rem;
   color: var(--text-muted);
 }
@@ -986,7 +986,7 @@
 }
 
 /* Nested content boxes inside admin-panel need a darker/lighter bg for contrast */
-.admin-panel .numbers-panel,
+.admin-panel .called-numbers,
 .admin-panel .winners-panel,
 .admin-panel .patterns-panel,
 .admin-panel .last-drawn,
@@ -997,13 +997,13 @@
 
 /* The combined last-drawn + called-numbers box (mirrors the player board) is a
    raised card inside the admin panel; its inner tracker keeps no surface of its
-   own so the one box provides the single frame (beats the .numbers-panel rule
+   own so the one box provides the single frame (beats the .called-numbers rule
    above on specificity). */
 .admin-panel .called-combined {
   background: var(--panel-raised-bg);
 }
 
-.admin-panel .called-combined .numbers-panel {
+.admin-panel .called-combined .called-numbers {
   background: transparent;
 }
 
@@ -1014,11 +1014,11 @@
 }
 
 /* Inactive mini-pattern cells need darker bg inside admin panels */
-.admin-panel .pattern-mini-cell {
+.admin-panel .pattern-mini__cell {
   background: var(--panel-bg);
 }
 
-.admin-panel .pattern-mini-cell.is-on {
+.admin-panel .pattern-mini__cell.is-on {
   background: var(--highlight);
 }
 

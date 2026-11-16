@@ -1,7 +1,7 @@
 version: '3'
 
-# Day-to-day commands; `task` alone lists them. CI is the gate; `task check`
-# (scripts/check.ps1) runs all of it locally, and the lint and test tasks run pieces.
+# Day-to-day commands; `task` alone lists them. CI is the gate; `task check` runs all of
+# it locally, and the lint and test tasks run pieces.
 
 # The tasks the shared/ submodule provides (shared:lint:scripts, shared:lint:md,
 # shared:update and the rest).
@@ -32,7 +32,7 @@ tasks:
     dir: backend
     cmds:
       # devdata is a copy of the live database, real webhook URLs included.
-      - 'go run . -addr :8080 -db ../devdata/database.sqlite -data ../devdata/webroot -log-file "" -webhook-dry-run'
+      - go run . -addr :8080 -db ../devdata/database.sqlite -data ../devdata/webroot -webhook-dry-run
 
   dev:frontend:
     dir: frontend
@@ -70,6 +70,8 @@ tasks:
       - src/**/*
       - public/**/*
       - ../CHANGELOG.md
+      - ../plugins/CHANGELOG.md
+      - ../backend/CHANGELOG.md
     generates:
       - ../backend/internal/web/dist/index.html
 
@@ -86,11 +88,13 @@ tasks:
       - dotnet build -c Release
 
   test:
-    desc: Run the frontend (Vitest) and backend (Go) tests
+    desc: Run every test - the front end's (Vitest), the backend's (Go), the plugin's (xUnit) and the end-to-end suite
     aliases: [tests, test:unit, tests:unit]
     cmds:
       - task: test:frontend
       - task: test:backend
+      - task: test:plugin
+      - task: test:e2e
 
   test:frontend:
     desc: Run the frontend's Vitest tests
@@ -98,6 +102,20 @@ tasks:
     dir: frontend
     cmds:
       - npm test
+
+  # With coverage, so the floor in vite.config.ts fails here as in CI's frontend job.
+  test:coverage:
+    desc: Run the frontend's Vitest tests with coverage, failing below the floor in vite.config.ts
+    dir: frontend
+    cmds:
+      - npm run test:coverage
+
+  # The specs' own tsconfig.vitest.json and their type-check, as web.yml runs them.
+  test:specs:
+    desc: Type-check the frontend's Vitest specs, as CI does
+    cmds:
+      - task: shared:web:specs
+        vars: { DIR: frontend }
 
   test:e2e:
     desc: Run the end-to-end suite (Playwright and axe) on the app as built, on a throwaway database
@@ -115,15 +133,33 @@ tasks:
     cmds:
       - go test ./...
 
+  # CI's backend job: coverage counted across packages (the API's request tests live in
+  # internal/server and exercise internal/api), with sqlc's generated internal/db left out.
+  test:go:
+    desc: Run the Go tests with coverage, failing below the floor CI holds
+    deps: [build:web]
+    cmds:
+      - task: shared:go:coverage
+        vars: { DIR: backend, FLOOR: 83.5, EXCLUDE: /internal/db/, COVERPKG: ./... }
+
+  # From the test project's folder, where plugins/global.json picks Microsoft.Testing.Platform.
+  test:plugin:
+    desc: Run the plugin's tests (no Dalamud needed)
+    dir: plugins/SenpanCompanion.Tests
+    cmds:
+      - dotnet test --project SenpanCompanion.Tests.csproj
+
   lint:
-    desc: Lint, format-check, and type-check the frontend, backend, scripts and docs
+    desc: Every lint and static check - the frontend, the backend, the plugin, the scripts, and what docs.yml checks
     cmds:
       - task: lint:frontend
       - task: lint:backend
+      - task: lint:plugin
       - task: lint:scripts
-      - task: shared:lint:md
-      - task: shared:repo:check
-      - task: shared:version:check
+      # The Markdown, the repo files and CLAUDE.md, the shared workflow refs and every
+      # CHANGELOG's compare links.
+      - task: shared:docs:check
+        vars: { CHANGELOGS: CHANGELOG.md plugins/CHANGELOG.md backend/CHANGELOG.md }
 
   lint:frontend:
     dir: frontend
@@ -149,12 +185,29 @@ tasks:
       # Built from source with the pinned toolchain, the same way CI installs it.
       - go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run ./...
 
+  # The analyzers and the C# code style run in the build (plugins/Directory.Build.props),
+  # so a warning fails it, as in CI; dotnet format checks the formatting of both projects.
+  lint:plugin:
+    desc: Build the plugin with warnings as errors and check both projects' formatting
+    cmds:
+      - cd plugins/SenpanCompanion && dotnet build SenpanCompanion.csproj -c Release -p:TreatWarningsAsErrors=true
+      - cd plugins/SenpanCompanion && dotnet format --verify-no-changes
+      - cd plugins/SenpanCompanion.Tests && dotnet format --verify-no-changes
+
   # PSScriptAnalyzer, with the shared settings, on every tracked script (the local
   # deploy.config.ps1 is untracked, so it is not linted). Install it once with
   # Install-PSResource PSScriptAnalyzer -Version 1.25.0 -Scope CurrentUser -TrustRepository
   lint:scripts:
     cmds:
       - task: shared:lint:scripts
+
+  # CI's generated job: sqlc's queries, the OpenAPI document, the SPA's types and the
+  # plugin's client must be what the generators make from the code. Compared with the
+  # files as they were before, so a change not yet committed passes as it will in CI.
+  gen:check:
+    desc: Regenerate the generated code and fail if it changed any of it, as CI does
+    cmds:
+      - pwsh -NoProfile -File scripts/Test-GeneratedCode.ps1
 
   vuln:
     desc: Check dependencies for known vulnerabilities
@@ -167,38 +220,16 @@ tasks:
       - task: shared:vuln
 
   check:
-    desc: Everything CI runs (scripts/check.ps1); -- -SkipFrontend or -- -SkipBackend for half
+    desc: Everything CI runs - the generated code, then lint, the vulnerability checks and the tests with their coverage floors at once, then the end-to-end suite
     cmds:
+      - task: gen:check
       # The steps that don't depend on each other run at once, each line prefixed with
-      # its task. -- -SkipFrontend or -- -SkipBackend still leave a half out.
-      - task --parallel --output prefixed check:backend check:frontend check:plugin check:repo shared:vuln -- {{.CLI_ARGS}}
-
-  # Both parts need the SPA's build (the backend compiles it in; the end-to-end suite's
-  # server serves it), which build:web makes once for the parallel run.
-  check:backend:
-    desc: The backend part of task check (scripts/check.ps1 -Only backend)
-    deps: [build:web]
-    cmds:
-      - pwsh -NoProfile -File scripts/check.ps1 -Only backend {{.CLI_ARGS}}
-
-  check:frontend:
-    desc: The frontend part of task check, end-to-end suite included (scripts/check.ps1 -Only frontend)
-    deps: [build:web]
-    cmds:
-      - pwsh -NoProfile -File scripts/check.ps1 -Only frontend {{.CLI_ARGS}}
-
-  check:plugin:
-    desc: The plugin part of task check (scripts/check.ps1 -Only plugin)
-    cmds:
-      - pwsh -NoProfile -File scripts/check.ps1 -Only plugin {{.CLI_ARGS}}
-
-  check:repo:
-    desc: The scripts, docs and shared-file part of task check (scripts/check.ps1 -Only repo)
-    cmds:
-      - pwsh -NoProfile -File scripts/check.ps1 -Only repo {{.CLI_ARGS}}
+      # its task; the end-to-end suite follows, on the same build.
+      - task --parallel --output prefixed lint vuln test:coverage test:specs test:go test:plugin
+      - task: test:e2e
 
   push:
-    desc: Take the in-range updates Dependabot would open, scan for advisories, run task check, then push (-- -Yes, -SkipUpdates, -SkipCheck)
+    desc: Take the in-range updates Dependabot would open, push, and follow the commit's CI run (-- -Yes, -SkipUpdates, -NoWait)
     interactive: true
     cmds:
       - task: shared:push

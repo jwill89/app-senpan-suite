@@ -11,9 +11,32 @@
  * disabled for safety; linkify on.
  */
 import { ref } from 'vue'
+import type { MarkdownIt } from 'markdown-it'
 
 interface MarkdownRenderer {
   render: (src: string) => string
+}
+
+/**
+ * markdown-it aligns a table column with a `style` attribute on each cell, which the
+ * page's Content-Security-Policy refuses in rendered markup; the alignment classes
+ * (`ta-left`, `ta-center`, `ta-right`) align the cell instead.
+ */
+export function alignCellsWithClasses(md: MarkdownIt): void {
+  md.core.ruler.push('align_cells_with_classes', (state) => {
+    for (const token of state.tokens) {
+      const style =
+        token.type === 'th_open' || token.type === 'td_open' ? token.attrGet('style') : null
+      if (style === null) {
+        continue
+      }
+      token.attrs = (token.attrs ?? []).filter(([name]) => name !== 'style')
+      const align = /^text-align:(left|center|right)$/.exec(String(style))?.[1]
+      if (align) {
+        token.attrJoin('class', `ta-${align}`)
+      }
+    }
+  })
 }
 
 // Two configured instances share one lazy import: `md` converts single newlines
@@ -39,6 +62,8 @@ function ensureLoaded(): Promise<void> {
     // rather than depend on a transitive default.
     inline.linkify.set({ fuzzyLink: true })
     flow.linkify.set({ fuzzyLink: true })
+    alignCellsWithClasses(inline)
+    alignCellsWithClasses(flow)
     md = inline
     mdFlow = flow
     ready.value = true

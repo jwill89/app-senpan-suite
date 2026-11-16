@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import FestivalMapWidget from '@/components/common/ui/FestivalMapWidget.vue'
+import { axeFindings } from '@/__tests__/axe'
 import type { PublicFestivalMap } from '@/api/client'
 
 /**
@@ -102,7 +103,7 @@ describe('festival map widget: embedded links', () => {
    */
   it('opens its in-app links in a new tab when embedded', async () => {
     const wrapper = await widget(true)
-    const links = wrapper.findAll('.map-stall-rally a')
+    const links = wrapper.findAll('.festival-map-widget__stall-rally a')
     expect(links.length).toBe(2) // the raffle, and the stamp card sign-up
 
     for (const link of links) {
@@ -119,7 +120,7 @@ describe('festival map widget: embedded links', () => {
    */
   it('navigates in place on our own page', async () => {
     const wrapper = await widget(false)
-    const links = wrapper.findAll('.map-stall-rally a')
+    const links = wrapper.findAll('.festival-map-widget__stall-rally a')
     expect(links.length).toBe(2)
     for (const link of links) {
       expect(link.attributes('target')).toBeUndefined()
@@ -127,8 +128,8 @@ describe('festival map widget: embedded links', () => {
   })
 
   it('fills its frame only when embedded', async () => {
-    expect((await widget(true)).find('.map-embed').classes()).toContain('is-framed')
-    expect((await widget(false)).find('.map-embed').classes()).not.toContain('is-framed')
+    expect((await widget(true)).find('.festival-map-widget').classes()).toContain('is-framed')
+    expect((await widget(false)).find('.festival-map-widget').classes()).not.toContain('is-framed')
   })
 })
 
@@ -144,15 +145,15 @@ describe('festival map widget: the usage hint', () => {
       props: { map: festivalMap() },
       global: { plugins: [router()] },
     })
-    expect(wrapper.find('.map-hint').classes()).not.toContain('is-dismissed')
+    expect(wrapper.find('.festival-map-widget__hint').classes()).not.toContain('is-dismissed')
 
     vi.advanceTimersByTime(6999)
     await wrapper.vm.$nextTick()
-    expect(wrapper.find('.map-hint').classes()).not.toContain('is-dismissed')
+    expect(wrapper.find('.festival-map-widget__hint').classes()).not.toContain('is-dismissed')
 
     vi.advanceTimersByTime(1)
     await wrapper.vm.$nextTick()
-    expect(wrapper.find('.map-hint').classes()).toContain('is-dismissed')
+    expect(wrapper.find('.festival-map-widget__hint').classes()).toContain('is-dismissed')
   })
 
   it.each(['pointerdown', 'wheel', 'keydown'])(
@@ -162,8 +163,8 @@ describe('festival map widget: the usage hint', () => {
         props: { map: festivalMap() },
         global: { plugins: [router()] },
       })
-      await wrapper.find('.map-embed-stage').trigger(event)
-      expect(wrapper.find('.map-hint').classes()).toContain('is-dismissed')
+      await wrapper.find('.festival-map-widget__stage').trigger(event)
+      expect(wrapper.find('.festival-map-widget__hint').classes()).toContain('is-dismissed')
     },
   )
 
@@ -176,8 +177,8 @@ describe('festival map widget: the usage hint', () => {
       props: { map: festivalMap() },
       global: { plugins: [router()] },
     })
-    await wrapper.find('.map-toolbar').trigger('pointerdown')
-    expect(wrapper.find('.map-hint').classes()).toContain('is-dismissed')
+    await wrapper.find('.festival-map-widget__toolbar').trigger('pointerdown')
+    expect(wrapper.find('.festival-map-widget__hint').classes()).toContain('is-dismissed')
   })
 
   /** It is told about, never touched - so it must not be read out as a control. */
@@ -186,7 +187,7 @@ describe('festival map widget: the usage hint', () => {
       props: { map: festivalMap() },
       global: { plugins: [router()] },
     })
-    expect(wrapper.find('.map-hint').attributes('aria-hidden')).toBe('true')
+    expect(wrapper.find('.festival-map-widget__hint').attributes('aria-hidden')).toBe('true')
   })
 })
 
@@ -201,9 +202,24 @@ describe('festival map widget: the stamp artwork', () => {
     // Two blocks share this class - the raffle running here, and the rally. Pick
     // the rally's by what it says rather than by its position.
     const rally = wrapper
-      .findAll('.map-stall-rally')
+      .findAll('.festival-map-widget__stall-rally')
       .find((b) => b.text().includes('Lantern Rally'))
     expect(rally).toBeDefined()
     expect(rally?.find('img').attributes('src')).toContain('onigiri')
+  })
+})
+
+describe('festival map widget: accessibility', () => {
+  it('has nothing axe flags with the usage hint up', async () => {
+    const wrapper = mount(FestivalMapWidget, {
+      props: { map: festivalMap() },
+      global: { plugins: [router()] },
+    })
+    expect(await axeFindings(wrapper.element)).toEqual([])
+  })
+
+  it('has nothing axe flags with a stall open, on our page or embedded', async () => {
+    expect(await axeFindings((await widget(false)).element)).toEqual([])
+    expect(await axeFindings((await widget(true)).element)).toEqual([])
   })
 })

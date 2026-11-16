@@ -10,8 +10,8 @@
 
 <template>
   <div class="list-row">
-    <div v-if="$slots.media" class="list-row-media"><slot name="media" /></div>
-    <div class="list-row-body"><slot /></div>
-    <div v-if="$slots.actions" class="list-row-actions"><slot name="actions" /></div>
+    <div v-if="$slots.media" class="list-row__media"><slot name="media" /></div>
+    <div class="list-row__body"><slot /></div>
+    <div v-if="$slots.actions" class="list-row__actions"><slot name="actions" /></div>
   </div>
 </template>

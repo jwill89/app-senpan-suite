@@ -5,6 +5,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"io"
+	"slices"
 	"strings"
 )
 
@@ -25,8 +26,11 @@ import (
 //   - event-handler attributes (any name starting with "on") are removed
 //   - href/xlink:href/src are kept only when they are safe local fragment refs
 //     ("#id") - javascript:, data:, and external URLs are removed
-//   - style attributes containing javascript:, expression(), url(), or @import
-//     are removed
+//   - a style attribute is taken apart: each declaration naming an SVG
+//     presentation attribute, with a value that loads and runs nothing, becomes
+//     that attribute (the page's Content-Security-Policy refuses style attributes
+//     in the inlined markup, and a presentation attribute draws the same); the
+//     rest of the declarations are dropped
 //   - comments, processing instructions, and DTD/DOCTYPE directives are dropped
 //
 // Namespaces are flattened to literal prefixes on output so Go's xml encoder
@@ -141,10 +145,12 @@ func isDangerousAnimation(e xml.StartElement) bool {
 	return false
 }
 
-// sanitizeSVGAttrs drops event-handler, unsafe-reference, and dangerous-style
-// attributes and flattens the remaining names for verbatim re-encoding.
+// sanitizeSVGAttrs drops event-handler and unsafe-reference attributes, turns a
+// style attribute into presentation attributes, and flattens the remaining names
+// for verbatim re-encoding.
 func sanitizeSVGAttrs(attrs []xml.Attr) []xml.Attr {
 	cleaned := make([]xml.Attr, 0, len(attrs))
+	var styled []xml.Attr
 	for _, a := range attrs {
 		local := strings.ToLower(a.Name.Local)
 		if strings.HasPrefix(local, "on") { // onload, onclick, onmouseover, ...
@@ -156,13 +162,62 @@ func sanitizeSVGAttrs(attrs []xml.Attr) []xml.Attr {
 				continue
 			}
 		case "style":
-			if hasDangerousCSS(a.Value) {
-				continue
+			if a.Name.Space == "" {
+				styled = presentationAttrs(a.Value)
 			}
+			continue
 		}
 		cleaned = append(cleaned, xml.Attr{Name: flattenXMLName(a.Name), Value: a.Value})
 	}
+	// A declaration in the style attribute outranks the attribute of the same name,
+	// so it replaces one already there.
+	for _, p := range styled {
+		cleaned = slices.DeleteFunc(cleaned, func(a xml.Attr) bool { return strings.EqualFold(a.Name.Local, p.Name.Local) })
+		cleaned = append(cleaned, p)
+	}
 	return cleaned
+}
+
+// presentationAttributes are the SVG presentation attributes a style declaration may
+// become: each takes the same value as the CSS property of its name.
+var presentationAttributes = map[string]bool{
+	"alignment-baseline": true, "baseline-shift": true, "clip-rule": true, "color": true,
+	"color-interpolation": true, "color-interpolation-filters": true, "direction": true,
+	"display": true, "dominant-baseline": true, "fill": true, "fill-opacity": true,
+	"fill-rule": true, "flood-color": true, "flood-opacity": true, "font-family": true,
+	"font-size": true, "font-size-adjust": true, "font-stretch": true, "font-style": true,
+	"font-variant": true, "font-weight": true, "image-rendering": true, "letter-spacing": true,
+	"lighting-color": true, "opacity": true, "overflow": true, "paint-order": true,
+	"pointer-events": true, "shape-rendering": true, "stop-color": true, "stop-opacity": true,
+	"stroke": true, "stroke-dasharray": true, "stroke-dashoffset": true, "stroke-linecap": true,
+	"stroke-linejoin": true, "stroke-miterlimit": true, "stroke-opacity": true,
+	"stroke-width": true, "text-anchor": true, "text-decoration": true, "text-rendering": true,
+	"unicode-bidi": true, "vector-effect": true, "visibility": true, "word-spacing": true,
+	"writing-mode": true,
+}
+
+// presentationAttrs reads a style attribute's declarations and returns, in order,
+// one attribute for each that names a presentation attribute with a safe value.
+func presentationAttrs(style string) []xml.Attr {
+	var attrs []xml.Attr
+	for declaration := range strings.SplitSeq(style, ";") {
+		name, value, ok := strings.Cut(declaration, ":")
+		if !ok {
+			continue
+		}
+		name = strings.ToLower(strings.TrimSpace(name))
+		value = strings.TrimSpace(value)
+		if i := strings.LastIndexByte(value, '!'); i >= 0 && strings.EqualFold(strings.TrimSpace(value[i+1:]), "important") {
+			value = strings.TrimSpace(value[:i])
+		}
+		if !presentationAttributes[name] || value == "" || hasDangerousCSS(value) ||
+			strings.ContainsAny(value, "\\\"<>{}") {
+			continue
+		}
+		attrs = slices.DeleteFunc(attrs, func(a xml.Attr) bool { return a.Name.Local == name })
+		attrs = append(attrs, xml.Attr{Name: xml.Name{Local: name}, Value: value})
+	}
+	return attrs
 }
 
 // isSafeSVGRef reports whether an href/src value is a safe local fragment
@@ -172,10 +227,10 @@ func isSafeSVGRef(v string) bool {
 	return strings.HasPrefix(strings.TrimSpace(v), "#")
 }
 
-// hasDangerousCSS reports whether an inline style value carries a script or
+// hasDangerousCSS reports whether a style declaration's value carries a script or
 // resource-loading vector: javascript:/expression() run script, while url() and
 // @import can pull in external resources or inject page-wide CSS when the SVG is
-// inlined. Any of them means the whole style attribute is dropped.
+// inlined. Any of them means the declaration is dropped.
 func hasDangerousCSS(v string) bool {
 	l := strings.ToLower(v)
 	return strings.Contains(l, "javascript:") ||

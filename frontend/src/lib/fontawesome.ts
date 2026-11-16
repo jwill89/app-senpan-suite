@@ -14,14 +14,16 @@
  * `<font-awesome-icon :icon="[prefix, name]" />` component (registered globally
  * in main.ts) - e.g. `:icon="['fad', 'gear']"` / `:icon="['fas', 'trash']"` /
  * `:icon="['fab', 'discord']"`. Vue owns the rendered <svg> directly, so there
- * is no `dom.watch()` / MutationObserver; core auto-injects its CSS, which
- * supplies the duotone primary/secondary layering.
+ * is no `dom.watch()` / MutationObserver. Core's CSS, which supplies the duotone
+ * primary/secondary layering, is bundled from its stylesheet rather than added as a
+ * <style> element at run time, which the page's Content-Security-Policy would refuse.
  *
  * To add an icon: import its `fa...` name from the matching style module below
  * (alias solid imports with the `Solid` suffix to avoid name clashes with the
  * duotone set), add it to `icons`, and reference it by `[prefix, name]`.
  */
-import { library, type IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { config, library, type IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import '@fortawesome/fontawesome-svg-core/styles.css'
 import {
   faAt,
   faBallot,
@@ -107,6 +109,7 @@ import {
   faArrowRotateRight as faArrowRotateRightSolid,
   faArrowUpRightFromSquare as faArrowUpRightFromSquareSolid,
   faBan as faBanSolid,
+  faBlockQuote as faBlockQuoteSolid,
   faBold as faBoldSolid,
   faCheck as faCheckSolid,
   faChevronDown as faChevronDownSolid,
@@ -127,12 +130,17 @@ import {
   faExpand as faExpandSolid,
   faEye as faEyeSolid,
   faEyeSlash as faEyeSlashSolid,
+  faFaceSmile as faFaceSmileSolid,
   faFileArrowDown as faFileArrowDownSolid,
   faFont as faFontSolid,
   faForwardStep as faForwardStepSolid,
+  faHorizontalRule as faHorizontalRuleSolid,
   faImage as faImageSolid,
   faItalic as faItalicSolid,
   faLink as faLinkSolid,
+  faLinkSlash as faLinkSlashSolid,
+  faListOl as faListOlSolid,
+  faListUl as faListUlSolid,
   faLock as faLockSolid,
   faLockOpen as faLockOpenSolid,
   faMagnifyingGlass as faMagnifyingGlassSolid,
@@ -148,6 +156,7 @@ import {
   faSliders as faSlidersSolid,
   faStamp as faStampSolid,
   faStar as faStarSolid,
+  faStrikethrough as faStrikethroughSolid,
   faSun as faSunSolid,
   faTableCellsLock as faTableCellsLockSolid,
   faTag as faTagSolid,
@@ -250,6 +259,7 @@ const icons: IconDefinition[] = [
   faArrowRotateRightSolid,
   faArrowUpRightFromSquareSolid,
   faBanSolid,
+  faBlockQuoteSolid,
   faBoldSolid,
   faCheckSolid,
   faChevronDownSolid,
@@ -271,11 +281,16 @@ const icons: IconDefinition[] = [
   faFileArrowDownSolid,
   faEyeSolid,
   faEyeSlashSolid,
+  faFaceSmileSolid,
   faFontSolid,
   faForwardStepSolid,
+  faHorizontalRuleSolid,
   faImageSolid,
   faItalicSolid,
   faLinkSolid,
+  faLinkSlashSolid,
+  faListOlSolid,
+  faListUlSolid,
   faLockSolid,
   faLockOpenSolid,
   faMagnifyingGlassSolid,
@@ -291,6 +306,7 @@ const icons: IconDefinition[] = [
   faSlidersSolid,
   faStampSolid,
   faStarSolid,
+  faStrikethroughSolid,
   faSunSolid,
   faTableCellsLockSolid,
   faTagSolid,
@@ -307,4 +323,5 @@ const icons: IconDefinition[] = [
   faDiscord,
 ]
 
+config.autoAddCss = false
 library.add(...icons)

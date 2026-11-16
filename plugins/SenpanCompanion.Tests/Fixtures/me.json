@@ -4,6 +4,7 @@
     "hasPassword": true,
     "id": 4,
     "isAdmin": false,
+    "owner": false,
     "permissions": ["bingo-game", "teahouse-raffles"],
     "username": "tataru"
   }

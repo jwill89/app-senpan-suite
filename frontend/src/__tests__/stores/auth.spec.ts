@@ -24,6 +24,7 @@ function account(overrides: Partial<Account> = {}): Account {
     isAdmin: false,
     permissions: [],
     hasPassword: true,
+    owner: false,
     ...overrides,
   }
 }

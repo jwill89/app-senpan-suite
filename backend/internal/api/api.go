@@ -40,7 +40,7 @@ const Prefix = "/api/v1"
 // ContractVersion is the API contract's own version, apart from the app's: it moves
 // only when the API surface changes, and the document carries it
 // as info.version.
-const ContractVersion = "5.2.0"
+const ContractVersion = "5.4.0"
 
 // SessionCookie is the session cookie's name, for the document's security scheme.
 const SessionCookie = "session"
@@ -90,6 +90,12 @@ type Deps struct {
 	Images *media.Images
 	Carrd  *media.Carrd
 	Fonts  *media.Fonts
+	// GoogleFonts is the Google Fonts families the server keeps in the data folder,
+	// fetched from Google the first time a page asks for one.
+	GoogleFonts *media.GoogleFonts
+	// GoogleFontLimit counts every request for a Google Fonts family the server
+	// doesn't keep yet, by client address.
+	GoogleFontLimit Limiter
 	// Game is the bingo game: its state, its commands, and the live events each one
 	// publishes.
 	Game *game.Service
@@ -109,6 +115,10 @@ type Deps struct {
 	DiscordLimit Limiter
 	// AniList looks titles up for the book clubs.
 	AniList *anilist.Client
+	// Owner reports whether the account named username is one of the owners the
+	// server's config names; nil names none. An owner is never deactivated, demoted,
+	// renamed or deleted, and only it sets its password or links its Discord account.
+	Owner func(username string) bool
 
 	// fonts is the Google Fonts list kept between requests; New makes it.
 	fonts *googleFontList
@@ -216,6 +226,7 @@ func New(mux *http.ServeMux, d Deps) huma.API {
 	h.registerImages(api)
 	h.registerCarrd(api)
 	h.registerFonts(api)
+	h.registerGoogleFontFiles(api)
 	h.registerLive(api)
 	return api
 }

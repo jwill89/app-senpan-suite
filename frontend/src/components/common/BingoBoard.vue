@@ -5,8 +5,8 @@
  *  - Winner verification: static, highlights pattern-hit cells (mode="preview").
  *  - Card preview: static board (mode="preview").
  *
- * Renders the `.board-wrap` / `.board-header` / `.board-grid` / `.board-cell`
- * markup that the board styles target.
+ * Renders the `.bingo-board` / `.bingo-board__header` / `.bingo-board__grid` /
+ * `.bingo-board__cell` markup that the board styles target.
  */
 import type { StyleValue } from 'vue'
 import CornerFlourish from '@/components/common/CornerFlourish.vue'
@@ -15,7 +15,7 @@ const props = defineProps<{
   board: number[][]
   /** 'player' = interactive + stamps; 'preview' = static. */
   mode?: 'player' | 'preview'
-  /** Adds the `.board-preview` modifier class (used in modals). */
+  /** Adds the `.bingo-board--preview` modifier class (used in modals). */
   preview?: boolean
   /** Player mode: is the cell stamped? */
   isStamped?: (ri: number, ci: number) => boolean
@@ -61,7 +61,7 @@ function usesSecondaryStamp(ri: number, ci: number): boolean {
 </script>
 
 <template>
-  <div class="board-wrap" :class="{ 'board-preview': preview }">
+  <div class="bingo-board" :class="{ 'bingo-board--preview': preview }">
     <!-- Decorative flourishes in each corner (player view only; captured into the
          exported card image). Mirrored per-corner via CSS transforms. -->
     <template v-if="mode === 'player'">
@@ -70,10 +70,10 @@ function usesSecondaryStamp(ri: number, ci: number): boolean {
       <CornerFlourish class="corner-flourish corner-flourish--bl" />
       <CornerFlourish class="corner-flourish corner-flourish--br" />
     </template>
-    <div class="board-header">
+    <div class="bingo-board__header">
       <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
     </div>
-    <div class="board-grid">
+    <div class="bingo-board__grid">
       <template v-for="(row, ri) in board" :key="ri">
         <!-- Player mode: interactive cells with stamps -->
         <template v-if="mode === 'player'">
@@ -81,7 +81,9 @@ function usesSecondaryStamp(ri: number, ci: number): boolean {
             v-for="(cell, ci) in row"
             :key="ri + '-' + ci"
             :class="
-              cellClass ? cellClass(ri, ci, cell) : ['board-cell', cell === 0 ? 'is-free' : '']
+              cellClass
+                ? cellClass(ri, ci, cell)
+                : ['bingo-board__cell', cell === 0 ? 'is-free' : '']
             "
             role="button"
             tabindex="0"
@@ -90,9 +92,9 @@ function usesSecondaryStamp(ri: number, ci: number): boolean {
             @keydown.enter="emit('cellClick', ri, ci, cell)"
             @keydown.space.prevent="emit('cellClick', ri, ci, cell)"
           >
-            <span class="cell-num">{{ cell === 0 ? 'FREE' : cell }}</span>
+            <span class="bingo-board__cell-num">{{ cell === 0 ? 'FREE' : cell }}</span>
             <div
-              class="stamp-mark"
+              class="bingo-board__stamp-mark"
               :style="
                 isStamped && isStamped(ri, ci)
                   ? usesSecondaryStamp(ri, ci)
@@ -106,7 +108,7 @@ function usesSecondaryStamp(ri: number, ci: number): boolean {
                 <img
                   v-if="stampShape === 'custom' && customStampImage"
                   :src="customStampImage"
-                  class="stamp-custom-img"
+                  class="bingo-board__stamp-custom-img"
                   alt="stamp"
                 />
                 <template v-else>{{ stampEmoji }}</template>
@@ -121,14 +123,14 @@ function usesSecondaryStamp(ri: number, ci: number): boolean {
             v-for="(cell, ci) in row"
             :key="ri + '-' + ci"
             :class="[
-              'board-cell',
+              'bingo-board__cell',
               cell === 0 ? 'is-free' : '',
-              isCellMatch && isCellMatch(ri, ci) ? 'pattern-hit' : '',
-              'board-cell--static',
+              isCellMatch && isCellMatch(ri, ci) ? 'bingo-board__cell--pattern-hit' : '',
+              'bingo-board__cell--static',
             ]"
           >
-            <span class="cell-num">{{ cell === 0 ? 'FREE' : cell }}</span>
-            <div v-if="cell === 0" class="stamp-mark"></div>
+            <span class="bingo-board__cell-num">{{ cell === 0 ? 'FREE' : cell }}</span>
+            <div v-if="cell === 0" class="bingo-board__stamp-mark"></div>
           </div>
         </template>
       </template>

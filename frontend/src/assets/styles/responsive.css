@@ -4,7 +4,7 @@
 
 /* ================================================================
    33. PHONE LAYOUT - small-screen tweaks (<=560px)
-   The board is handled by the self-limiting .board-cell --cell-size, and
+   The board is handled by the self-limiting .bingo-board__cell --cell-size, and
    these rules tighten the surrounding chrome and let the right column shrink
    below its 300px desktop min-width so nothing forces horizontal page overflow
    on a phone.
@@ -49,25 +49,25 @@
      keeps its enlarged desktop type (1.95rem) at wide widths, but on a phone the
      cells are far smaller, so bring the number/FREE type back down so it fits the
      cell instead of forcing the grid wider than the card. */
-  .board-header span {
+  .bingo-board__header span {
     font-size: 1.3rem;
   }
 
-  .player-col-board .board-cell {
+  .player-col-board .bingo-board__cell {
     font-size: 1.4rem;
   }
 
-  .player-col-board .board-header span {
+  .player-col-board .bingo-board__header span {
     font-size: 1.95rem;
   }
 
   /* Tighter board gutters on a phone - the delicate flourishes don't need the
      desktop gutter, and the extra width is better spent on the cells. */
-  .player-col-board .board-wrap {
+  .player-col-board .bingo-board {
     padding: 14px 14px 18px;
   }
 
-  .stamp-mark {
+  .bingo-board__stamp-mark {
     font-size: 2rem;
   }
 
@@ -91,12 +91,12 @@
 
 /* Respect reduced-motion: replace animations with a static indicator. */
 @media (prefers-reduced-motion: reduce) {
-  .spinner {
+  .loading-spinner__spinner {
     animation: none;
     border-top-color: var(--accent);
   }
 
-  .route-progress-bar {
+  .route-progress-bar__bar {
     animation: none;
     width: 100%;
     opacity: 0.8;

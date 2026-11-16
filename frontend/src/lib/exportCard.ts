@@ -2,7 +2,7 @@
  * Exports a bingo board to a downloadable PNG "card" image.
  *
  * The board itself is captured directly from the live, already-themed DOM
- * element (`.board-wrap`) so it follows the active custom theme - gradients,
+ * element (`.bingo-board`) so it follows the active custom theme - gradients,
  * colors, header font, and the player's stamps (emoji + custom data-URL images)
  * are preserved exactly as rendered.
  *
@@ -22,7 +22,7 @@
 import { triggerDownload } from '@/lib/download'
 
 export interface ExportCardOptions {
-  /** The `.board-wrap` element to capture (BingoBoard's root). */
+  /** The `.bingo-board` element to capture (BingoBoard's root). */
   element: HTMLElement
   /** Download file name (without extension). */
   fileName: string
@@ -280,8 +280,8 @@ function roundRectPath(
 export async function exportCardImage(opts: ExportCardOptions): Promise<void> {
   const { toCanvas } = await import('html-to-image')
 
-  // Make sure the (possibly Google-hosted) header font is ready so canvas text
-  // metrics + rendering use it.
+  // Make sure the header font (an uploaded font or a Google Fonts family, both
+  // served by this site) is ready so canvas text metrics + rendering use it.
   try {
     await document.fonts.ready
   } catch {
@@ -290,8 +290,7 @@ export async function exportCardImage(opts: ExportCardOptions): Promise<void> {
 
   // 1. Capture the live styled board. Try with web-font embedding first (so the
   //    header font matches the theme); fall back to skipping fonts if that
-  //    throws (cross-origin font CSS can occasionally fail) so the export still
-  //    succeeds.
+  //    throws (a font file that fails to load) so the export still succeeds.
   let boardCanvas: HTMLCanvasElement
   try {
     boardCanvas = await toCanvas(opts.element, { pixelRatio: SCALE, cacheBust: true })
@@ -437,7 +436,7 @@ export async function exportCardImage(opts: ExportCardOptions): Promise<void> {
 
   // -- Board (centered) -------------------------------------------------------
   // Clip to the board's own corner radius, read off the live element rather than
-  // hardcoded: `.board-wrap` follows `--radius`. Any
+  // hardcoded: `.bingo-board` follows `--radius`. Any
   // mismatch here would either round off cells or leave corner triangles of the
   // wrong fill, so the value comes from the element being captured. Then stroke a
   // border so the card stands out from the background instead of blending in.

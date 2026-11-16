@@ -20,14 +20,19 @@ function follow(a: UiAlert): void {
 </script>
 
 <template>
-  <div class="toast-stack">
-    <div v-for="a in ui.alerts" :key="a.id" class="toast toast--alert" role="alert">
-      <div class="toast-head">
-        <font-awesome-icon :icon="['fas', 'lock-open']" class="toast-icon" />
-        <strong class="toast-title">{{ a.title }}</strong>
+  <div class="toast-notification">
+    <div
+      v-for="a in ui.alerts"
+      :key="a.id"
+      class="toast-notification__toast toast-notification__toast--alert"
+      role="alert"
+    >
+      <div class="toast-notification__head">
+        <font-awesome-icon :icon="['fas', 'lock-open']" class="toast-notification__icon" />
+        <strong class="toast-notification__title">{{ a.title }}</strong>
         <button
           type="button"
-          class="toast-close"
+          class="toast-notification__close"
           aria-label="Dismiss"
           title="Dismiss"
           @click="ui.dismissAlert(a.id)"
@@ -35,8 +40,8 @@ function follow(a: UiAlert): void {
           <font-awesome-icon :icon="['fas', 'circle-xmark']" />
         </button>
       </div>
-      <p class="toast-body">{{ a.message }}</p>
-      <div v-if="a.action" class="toast-actions">
+      <p class="toast-notification__body">{{ a.message }}</p>
+      <div v-if="a.action" class="toast-notification__actions">
         <button type="button" class="btn-view btn-sm" @click="follow(a)">
           {{ a.action.label }}
         </button>
@@ -45,7 +50,7 @@ function follow(a: UiAlert): void {
     <!-- eslint-disable-next-line vuejs-accessibility/click-events-have-key-events, vuejs-accessibility/no-static-element-interactions -- a status live region that clears itself on a timer; click-to-dismiss is a pointer shortcut, and making it focusable would pull it out of the status role -->
     <div
       v-if="ui.toast.show"
-      :class="['toast', 'toast-' + ui.toast.type]"
+      :class="['toast-notification__toast', 'toast-notification__toast--' + ui.toast.type]"
       role="status"
       aria-live="polite"
       title="Click to dismiss"

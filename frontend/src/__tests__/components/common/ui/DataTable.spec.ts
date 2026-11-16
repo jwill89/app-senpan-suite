@@ -4,6 +4,7 @@ import DataTable, {
   type DataColumn,
   type DataTableView,
 } from '@/components/common/ui/DataTable.vue'
+import { axeFindings } from '@/__tests__/axe'
 
 interface Row {
   id: number
@@ -52,7 +53,7 @@ describe('DataTable', () => {
   it('does not sort on a non-sortable column', async () => {
     const wrapper = mount(DataTable, { props: { columns, rows, rowKey: 'id' } })
     await wrapper.findAll('thead th')[1]!.trigger('click')
-    expect(wrapper.find('.dt-sort-icon').exists()).toBe(false)
+    expect(wrapper.find('.data-table__sort-icon').exists()).toBe(false)
     expect(names(wrapper)).toEqual(['Alpha', 'Beta'])
   })
 
@@ -62,8 +63,8 @@ describe('DataTable', () => {
     })
     expect(names(wrapper)).toEqual(['Beta', 'Alpha'])
     const headers = wrapper.findAll('thead th')
-    expect(headers[0]!.find('.dt-sort-icon').exists()).toBe(true)
-    expect(headers[1]!.find('.dt-sort-icon').exists()).toBe(false)
+    expect(headers[0]!.find('.data-table__sort-icon').exists()).toBe(true)
+    expect(headers[1]!.find('.data-table__sort-icon').exists()).toBe(false)
   })
 
   it('points the sort icon in the sorted direction', () => {
@@ -74,8 +75,8 @@ describe('DataTable', () => {
       props: { columns, rows, rowKey: 'id', defaultSort: { key: 'name', dir: 'desc' as const } },
     })
     // The global stub exposes the rendered icon name as `data-icon`.
-    expect(asc.find('.dt-sort-icon').attributes('data-icon')).toBe('chevron-up')
-    expect(desc.find('.dt-sort-icon').attributes('data-icon')).toBe('chevron-down')
+    expect(asc.find('.data-table__sort-icon').attributes('data-icon')).toBe('chevron-up')
+    expect(desc.find('.data-table__sort-icon').attributes('data-icon')).toBe('chevron-down')
   })
 
   it('sorts numerically, not lexically, on a numeric column', async () => {
@@ -182,7 +183,7 @@ describe('DataTable', () => {
   it('is not expandable and rows are inert without a #detail slot', async () => {
     const wrapper = mount(DataTable, { props: { columns, rows, rowKey: 'id' } })
     const firstRow = wrapper.findAll('tbody tr')[0]!
-    expect(firstRow.classes()).not.toContain('dt-expandable')
+    expect(firstRow.classes()).not.toContain('data-table__expandable')
     await firstRow.trigger('click')
     expect(wrapper.findAll('tbody tr')).toHaveLength(2) // no detail row inserted
   })
@@ -192,7 +193,7 @@ describe('DataTable', () => {
       props: { columns, rows, rowKey: 'id' },
       slots: { detail: '<span class="detail">D</span>' },
     })
-    expect(wrapper.findAll('tbody tr')[0]!.classes()).toContain('dt-expandable')
+    expect(wrapper.findAll('tbody tr')[0]!.classes()).toContain('data-table__expandable')
     expect(wrapper.findAll('.detail')).toHaveLength(0)
     await wrapper.findAll('tbody tr')[0]!.trigger('click')
     expect(wrapper.findAll('.detail')).toHaveLength(1)
@@ -369,12 +370,12 @@ describe('DataTable opt-in features', () => {
   // -- resizing ---------------------------------------------------------------
   it('resizable renders a grip per column, and only then', () => {
     const plain = mount(DataTable, { props: { columns: cols, rows: many, rowKey: 'id' } })
-    expect(plain.findAll('.dt-resizer')).toHaveLength(0)
+    expect(plain.findAll('.data-table__resizer')).toHaveLength(0)
 
     const wrapper = mount(DataTable, {
       props: { columns: cols, rows: many, rowKey: 'id', resizable: true },
     })
-    expect(wrapper.findAll('.dt-resizer')).toHaveLength(2)
+    expect(wrapper.findAll('.data-table__resizer')).toHaveLength(2)
   })
 
   it('resizable does not re-lay-out columns until one is actually dragged', () => {
@@ -398,8 +399,8 @@ describe('DataTable opt-in features', () => {
     const wrapper = mount(DataTable, {
       props: { columns: cols, rows: many, rowKey: 'id', resizable: true },
     })
-    await wrapper.findAll('.dt-resizer')[0]!.trigger('click')
-    expect(wrapper.find('.dt-sort-icon').exists()).toBe(false)
+    await wrapper.findAll('.data-table__resizer')[0]!.trigger('click')
+    expect(wrapper.find('.data-table__sort-icon').exists()).toBe(false)
   })
 
   // -- CSV --------------------------------------------------------------------
@@ -478,5 +479,42 @@ ${lead}`)
     expect(csv).toContain('Name')
     expect(csv).not.toContain('Count')
     expect(csv).not.toContain('7')
+  })
+})
+
+describe('DataTable accessibility', () => {
+  const withActions: DataColumn[] = [...columns, { key: 'actions', label: '', align: 'right' }]
+
+  it('has nothing axe flags, sorted and with a row-actions column', async () => {
+    const wrapper = mount(DataTable, {
+      props: { columns: withActions, rows, rowKey: 'id', defaultSort: { key: 'name', dir: 'asc' } },
+      slots: { 'cell-actions': '<button type="button">Delete</button>' },
+    })
+    expect(wrapper.find('thead .sr-only').text()).toBe('Actions')
+    expect(await axeFindings(wrapper.element)).toEqual([])
+  })
+
+  it('has nothing axe flags when selectable and resizable', async () => {
+    const wrapper = mount(DataTable, {
+      props: { columns, rows, rowKey: 'id', selectable: true, selected: [1], resizable: true },
+    })
+    expect(await axeFindings(wrapper.element)).toEqual([])
+  })
+
+  it('has nothing axe flags with a detail row open', async () => {
+    const wrapper = mount(DataTable, {
+      props: { columns, rows, rowKey: 'id' },
+      slots: { detail: '<span>Details</span>' },
+    })
+    await wrapper.find('tbody tr').trigger('click')
+    expect(await axeFindings(wrapper.element)).toEqual([])
+  })
+
+  it('has nothing axe flags with no rows', async () => {
+    const wrapper = mount(DataTable, {
+      props: { columns, rows: [], rowKey: 'id' },
+      slots: { empty: '<p>Nothing here yet.</p>' },
+    })
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

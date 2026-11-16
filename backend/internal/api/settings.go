@@ -38,6 +38,7 @@ type SettingsInput struct {
 	HideBingo               bool       `json:"hideBingo" doc:"Whether bingo is hidden from the public pages."`
 	HideCustomCards         bool       `json:"hideCustomCards" doc:"Whether the custom card request is hidden while the rest of bingo stays."`
 	TeaRoomOrigins          OriginList `json:"teaRoomOrigins" nullable:"false" doc:"The sites whose pages may read the public tea-room API from a browser, each as an origin such as https://senpan.cafe. https://*.example.com covers every subdomain of example.com. Empty for none."`
+	EmbedOrigins            OriginList `json:"embedOrigins" nullable:"false" doc:"The sites whose pages may show a festival map in a frame (/embed/festival-maps/...), each as an origin such as https://senpan.cafe. https://*.example.com covers every subdomain of example.com. Empty for none."`
 	UpdatedAt               string     `json:"updatedAt,omitempty" doc:"When the settings were last saved, as read. Sent with a save, it must still be the latest: a save made from an older copy is answered 409, so a page left open can't undo what was saved since. Left out, the save is not checked."`
 }
 
@@ -140,7 +141,8 @@ func (h handlers) registerSettings(api huma.API) {
 var siteKeys = []string{
 	settings.AppTitle, settings.DefaultDrawDelay, settings.FrequentWinnerThreshold, settings.FrequentWinnerHours,
 	settings.HeaderFont, settings.AniListAPIURL, settings.BingoJoinPrompt, settings.YoeverCooldownSeconds,
-	settings.CustomCardCost, settings.HideBingo, settings.HideCustomCards, settings.TeaRoomOrigins, settings.UpdatedAt,
+	settings.CustomCardCost, settings.HideBingo, settings.HideCustomCards, settings.TeaRoomOrigins, settings.EmbedOrigins,
+	settings.UpdatedAt,
 }
 
 // loadSettings reads the site's settings, each its default when never saved or
@@ -180,6 +182,7 @@ func loadSettings(ctx context.Context, q *db.Queries) (SettingsInput, error) {
 		HideBingo:               text(settings.HideBingo) == "1",
 		HideCustomCards:         text(settings.HideCustomCards) == "1",
 		TeaRoomOrigins:          OriginList(parseOrigins(stored[settings.TeaRoomOrigins])),
+		EmbedOrigins:            OriginList(parseOrigins(stored[settings.EmbedOrigins])),
 		UpdatedAt:               stored[settings.UpdatedAt],
 	}, nil
 }
@@ -202,6 +205,16 @@ func TeaRoomOriginAllowed(ctx context.Context, st *store.Store, origin string) b
 		return false
 	}
 	return origins.Allowed(parseOrigins(stored), origin)
+}
+
+// EmbedAncestors is the sites whose pages may show a festival map in a frame, by the
+// saved allowlist, each in its canonical form; none when it can't be read.
+func EmbedAncestors(ctx context.Context, st *store.Store) []string {
+	stored, err := db.New(st.ReadDB()).GetSetting(ctx, settings.EmbedOrigins)
+	if err != nil {
+		return nil
+	}
+	return normalizedOrigins(parseOrigins(stored))
 }
 
 func (h handlers) uploadedFonts(ctx context.Context) []UploadedFont {
@@ -242,6 +255,11 @@ func (in SettingsInput) check() []error {
 	for i, entry := range in.TeaRoomOrigins {
 		if _, err := origins.Normalize(entry); err != nil {
 			problems = append(problems, &huma.ErrorDetail{Location: "body.teaRoomOrigins[" + strconv.Itoa(i) + "]", Value: entry, Message: err.Error()})
+		}
+	}
+	for i, entry := range in.EmbedOrigins {
+		if _, err := origins.Normalize(entry); err != nil {
+			problems = append(problems, &huma.ErrorDetail{Location: "body.embedOrigins[" + strconv.Itoa(i) + "]", Value: entry, Message: err.Error()})
 		}
 	}
 	if in.UpdatedAt != "" {
@@ -288,6 +306,10 @@ func (h handlers) updateSettings(ctx context.Context, in *settingsInput) (*setti
 	if err != nil {
 		return nil, h.fail("encode the tea-room origins", err)
 	}
+	embedJSON, err := json.Marshal(normalizedOrigins(body.EmbedOrigins))
+	if err != nil {
+		return nil, h.fail("encode the embed origins", err)
+	}
 	flag := func(b bool) string {
 		if b {
 			return "1"
@@ -307,6 +329,7 @@ func (h handlers) updateSettings(ctx context.Context, in *settingsInput) (*setti
 		settings.HideBingo:               flag(body.HideBingo),
 		settings.HideCustomCards:         flag(body.HideCustomCards),
 		settings.TeaRoomOrigins:          string(allowedJSON),
+		settings.EmbedOrigins:            string(embedJSON),
 	}
 
 	// One transaction: the check against the latest save and every value land

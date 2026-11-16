@@ -31,9 +31,14 @@ defineProps<{
 </script>
 
 <template>
-  <div class="stamp-canvas">
-    <img v-if="cardImage" :src="assetUrl(cardImage)" class="stamp-canvas-bg" alt="Stamp card" />
-    <div v-else class="stamp-canvas-bg stamp-canvas-empty">
+  <div class="stamp-card-canvas">
+    <img
+      v-if="cardImage"
+      :src="assetUrl(cardImage)"
+      class="stamp-card-canvas__bg"
+      alt="Stamp card"
+    />
+    <div v-else class="stamp-card-canvas__bg stamp-card-canvas__bg--empty">
       <font-awesome-icon :icon="['fad', 'image']" />
     </div>
     <!-- Only items with art are drawn; empty slots fall through to the card design. -->
@@ -41,7 +46,7 @@ defineProps<{
       v-for="item in items"
       v-show="item.image"
       :key="item.key"
-      class="stamp-canvas-item"
+      class="stamp-card-canvas__item"
       :style="placementStyle(item.placement)"
     >
       <img v-if="item.image" :src="assetUrl(item.image)" alt="" />
@@ -50,21 +55,21 @@ defineProps<{
 </template>
 
 <style scoped>
-.stamp-canvas {
+.stamp-card-canvas {
   position: relative;
   width: 100%;
 
   /* Items are absolutely positioned in % of this box; the bg image sizes it. */
 }
 
-.stamp-canvas-bg {
+.stamp-card-canvas__bg {
   display: block;
   width: 100%;
   height: auto;
   border-radius: var(--radius);
 }
 
-.stamp-canvas-empty {
+.stamp-card-canvas__bg--empty {
   aspect-ratio: 16 / 10;
   display: flex;
   align-items: center;
@@ -75,14 +80,14 @@ defineProps<{
   border: 1px dashed var(--control-border);
 }
 
-.stamp-canvas-item {
+.stamp-card-canvas__item {
   position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.stamp-canvas-item img {
+.stamp-card-canvas__item img {
   width: 100%;
   height: 100%;
   object-fit: contain;

@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import ThemeTokenEditor from '@/components/admin/ThemeTokenEditor.vue'
 import { THEME_TOKENS, defaultTokens } from '@/lib/theme-tokens'
 import { auditTheme } from '@/lib/wcag'
+import { axeFindings } from '@/__tests__/axe'
 
 describe('ThemeTokenEditor', () => {
   it('renders one row per token plus the live preview', () => {
@@ -89,5 +90,14 @@ describe('ThemeTokenEditor', () => {
     expect(wrapper.findAll('input[type="color"]')).toHaveLength(solid)
     expect(wrapper.findAll('.token-row-color--btn')).toHaveLength(alpha)
     expect(alpha).toBeGreaterThan(0)
+  })
+
+  it('has nothing axe flags, for a passing theme or a failing one', async () => {
+    const passing = mount(ThemeTokenEditor, { props: { modelValue: defaultTokens() } })
+    expect(await axeFindings(passing.element)).toEqual([])
+
+    const broken = { ...defaultTokens(), text: '#1a1c17', 'page-bg': '#1a1c17' }
+    const failing = mount(ThemeTokenEditor, { props: { modelValue: broken } })
+    expect(await axeFindings(failing.element)).toEqual([])
   })
 })

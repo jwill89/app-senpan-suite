@@ -32,6 +32,16 @@ describe('useMarkdown', () => {
     expect(out).toContain('&lt;img')
   })
 
+  it('aligns table columns with classes, never a style attribute', async () => {
+    const render = await renderer()
+    const out = render('| a | b | c | d |\n|:--|:-:|--:|---|\n| 1 | 2 | 3 | 4 |')
+    expect(out).not.toContain('style=')
+    expect(out).toContain('<th class="ta-left">a</th>')
+    expect(out).toContain('<td class="ta-center">2</td>')
+    expect(out).toContain('<td class="ta-right">3</td>')
+    expect(out).toContain('<td>4</td>')
+  })
+
   it('linkifies bare URLs', async () => {
     const render = await renderer()
     expect(render('see https://example.com now')).toContain('href="https://example.com"')

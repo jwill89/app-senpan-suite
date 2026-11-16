@@ -235,7 +235,7 @@ func TestGameEndNamesItsGame(t *testing.T) {
 	}
 
 	other := newClient(t, env)
-	signInAs(t, other, env, seedAdminUser, seedAdminPass)
+	signInAs(t, other, env, adminUser, adminPass)
 	s := staffStream(t, env, other)
 
 	var end struct {
@@ -331,7 +331,7 @@ func TestGameHalftimePrompt(t *testing.T) {
 
 	first := staffStream(t, env, env.client)
 	other := newClient(t, env)
-	signInAs(t, other, env, seedAdminUser, seedAdminPass)
+	signInAs(t, other, env, adminUser, adminPass)
 	second := staffStream(t, env, other)
 
 	for range 7 {
@@ -360,7 +360,7 @@ func TestGameHalftimePrompt(t *testing.T) {
 	}
 	for _, s := range []*stream{first, second} {
 		e := s.expect("halftime_resolved", 3*time.Second)
-		if e.game() != g.ID || e.Payload["minigame"] != true || e.str("by") != seedAdminUser {
+		if e.game() != g.ID || e.Payload["minigame"] != true || e.str("by") != adminUser {
 			t.Errorf("halftime_resolved: %+v", e)
 		}
 	}

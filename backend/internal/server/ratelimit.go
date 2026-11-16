@@ -3,6 +3,7 @@ package server
 import (
 	"net"
 	"net/http"
+	"net/netip"
 	"strings"
 	"sync"
 	"time"
@@ -50,57 +51,82 @@ func newRateLimiter(maxFails int, window time.Duration) *rateLimiter {
 	return rl
 }
 
-// clientIP returns the authoritative client IP used as the per-IP key for the
-// login / passkey / registration (and public raffle / card-request) rate
-// limiters. It delegates to logClientIP so the throttle key and the IP the access
-// log records are always the SAME value.
-//
-// It uses logClientIP's loopback-gated trust rather than the "rightmost
-// X-Forwarded-For". Behind Cloudflare->Apache the header at the backend is
-// "<real client>, <cloudflare edge>", so the rightmost entry is the Cloudflare EDGE
-// IP - every user behind the same edge would share one throttle bucket (one victim
-// tripping the limit, or an attacker rotating edges, would poison everyone else).
-// logClientIP resolves the true origin (CF-Connecting-IP, then leftmost XFF) but
-// ONLY when the immediate peer is the loopback reverse proxy; a direct/off-proxy
-// peer falls back to the spoof-proof RemoteAddr host, so the header can't be
-// forged to mint a fresh key per request.
+// clientIP is the address the rate limiters count a request against: the same one
+// the access log records (logClientIP), so a throttled address can be found in the log.
 func clientIP(r *http.Request) string {
 	return logClientIP(r)
 }
 
-// logClientIP returns the best-guess real client IP for LOGGING/display only
-// (never for security decisions). Behind Cloudflare the authoritative client
-// address is CF-Connecting-IP (set by Cloudflare, overriding any client-supplied
-// value); fall back to the leftmost X-Forwarded-For entry (the original origin),
-// then the RemoteAddr host. This favors the true origin address for
-// human-readable logs; clientIP keys the rate limiters on the same value.
+// logClientIP is the visitor's address. The app listens on the loopback behind
+// Apache, which restores the visitor's address from Cloudflare (mod_remoteip) and
+// appends it to X-Forwarded-For, so the header's LAST entry is the one Apache wrote.
+// The entries before it are whatever the client sent and are never read, and nor is
+// CF-Connecting-IP: Apache has already turned it into the address it appends.
 //
-// Security: the proxy-supplied headers are honored ONLY when the immediate peer
-// (RemoteAddr) is the local reverse proxy - i.e. a loopback address, since Apache
-// ProxyPasses to localhost:8080. A client that can reach the backend directly (or
-// craft the header) could otherwise forge CF-Connecting-IP / X-Forwarded-For and
-// poison the access log's `ip` field. If the proxy is ever bound off-loopback,
-// widen this trusted set.
+// The header is read only when the peer is on the loopback, where only the proxy
+// reaches the app; any other peer is taken at its own address, so a client that
+// reaches the app directly can't name another. A last entry that is no address
+// leaves the peer's.
 func logClientIP(r *http.Request) string {
-	host := r.RemoteAddr
-	if h, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-		host = h
+	peer := r.RemoteAddr
+	if host, _, err := net.SplitHostPort(peer); err == nil {
+		peer = host
 	}
-	if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
-		if cf := strings.TrimSpace(r.Header.Get("CF-Connecting-IP")); cf != "" {
-			return cf
-		}
-		if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
-			if first := strings.TrimSpace(strings.Split(xff, ",")[0]); first != "" {
-				return first
-			}
+	addr, err := netip.ParseAddr(peer)
+	if err != nil {
+		return peer
+	}
+	if addr.Unmap().IsLoopback() {
+		if forwarded, ok := lastForwarded(r.Header.Values("X-Forwarded-For")); ok {
+			return forwarded.String()
 		}
 	}
-	return host
+	return canonical(addr).String()
+}
+
+// lastForwarded is the last address in the X-Forwarded-For lines, taken as one list.
+// An entry with a port ("192.0.2.1:443", "[2001:db8::1]:443") is read without it.
+func lastForwarded(lines []string) (netip.Addr, bool) {
+	list := strings.Join(lines, ",")
+	last := strings.TrimSpace(list[strings.LastIndexByte(list, ',')+1:])
+	if addr, err := netip.ParseAddr(last); err == nil {
+		return canonical(addr), true
+	}
+	if addrPort, err := netip.ParseAddrPort(last); err == nil {
+		return canonical(addrPort.Addr()), true
+	}
+	return netip.Addr{}, false
+}
+
+// canonical is addr in the one form each address is counted under: an IPv4 address
+// in IPv6 form as plain IPv4, with no IPv6 zone.
+func canonical(addr netip.Addr) netip.Addr {
+	return addr.Unmap().WithZone("")
+}
+
+// limitKey is the key a client's attempts are counted under: an IPv6 address counts by
+// its /64, the block one subscriber is usually given, so stepping through the addresses
+// of one network gains nothing; an IPv4 address, or a key that isn't an address, counts
+// as it is.
+func limitKey(key string) string {
+	addr, err := netip.ParseAddr(key)
+	if err != nil {
+		return key
+	}
+	addr = canonical(addr)
+	if !addr.Is6() {
+		return addr.String()
+	}
+	prefix, err := addr.Prefix(64)
+	if err != nil {
+		return key
+	}
+	return prefix.String()
 }
 
 // isLimited returns true if the given IP has exceeded the failure limit.
 func (rl *rateLimiter) isLimited(ip string) bool {
+	ip = limitKey(ip)
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 	info, ok := rl.attempts[ip]
@@ -116,6 +142,7 @@ func (rl *rateLimiter) isLimited(ip string) bool {
 
 // recordFailure increments the failure count for an IP.
 func (rl *rateLimiter) recordFailure(ip string) {
+	ip = limitKey(ip)
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 	info, ok := rl.attempts[ip]
@@ -128,6 +155,7 @@ func (rl *rateLimiter) recordFailure(ip string) {
 
 // resetFailures clears the failure count for an IP (on successful login).
 func (rl *rateLimiter) resetFailures(ip string) {
+	ip = limitKey(ip)
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 	delete(rl.attempts, ip)
@@ -136,6 +164,7 @@ func (rl *rateLimiter) resetFailures(ip string) {
 // RetryAfter is how long until key may try again: 0 when it may try at once, else the
 // rest of the window it used up (api.Limiter).
 func (rl *rateLimiter) RetryAfter(key string) time.Duration {
+	key = limitKey(key)
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 	info, ok := rl.attempts[key]

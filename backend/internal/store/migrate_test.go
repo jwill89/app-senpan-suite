@@ -7,6 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"app-suite/internal/auth"
 )
 
 // latestVersion is the newest migration's version.
@@ -38,7 +40,8 @@ func rawDB(t *testing.T, path string) *sql.DB {
 }
 
 // A fresh database migrates to the newest version, where user_version and goose's
-// version agree, with the bootstrap account and the first pattern category seeded.
+// version agree, with the first pattern category seeded and no account: the first
+// admin is made on the host.
 func TestFreshDatabaseMigratesToLatest(t *testing.T) {
 	s, err := New(t.Context(), filepath.Join(t.TempDir(), "fresh.db"))
 	if err != nil {
@@ -57,15 +60,15 @@ func TestFreshDatabaseMigratesToLatest(t *testing.T) {
 	if latest := latestVersion(t); int64(v) != latest || goose != latest {
 		t.Fatalf("user_version %d and goose's version %d, want both %d", v, goose, latest)
 	}
-	var admins, categories int
-	if err := s.read.QueryRowContext(t.Context(), `SELECT COUNT(*) FROM users WHERE username = 'admin' AND is_admin = 1 AND is_active = 1`).Scan(&admins); err != nil {
+	var users, categories int
+	if err := s.read.QueryRowContext(t.Context(), `SELECT COUNT(*) FROM users`).Scan(&users); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.read.QueryRowContext(t.Context(), `SELECT COUNT(*) FROM pattern_categories WHERE id = 1 AND name = 'Standard'`).Scan(&categories); err != nil {
 		t.Fatal(err)
 	}
-	if admins != 1 || categories != 1 {
-		t.Errorf("seeded %d bootstrap admins and %d Standard categories, want one of each", admins, categories)
+	if users != 0 || categories != 1 {
+		t.Errorf("seeded %d accounts and %d Standard categories, want no account and one category", users, categories)
 	}
 }
 
@@ -300,5 +303,69 @@ func TestEmaRequestsPermissionFoldsIntoEmaPlaques(t *testing.T) {
 		if got != want {
 			t.Errorf("user %d permissions = %s; want %s", id, got, want)
 		}
+	}
+}
+
+// Migration 78 clears the password of the account named admin while it is still
+// "admin", the password earlier releases seeded it with: the epoch moves on and its
+// token goes, so nothing signs in with a password everyone knows, while the account and
+// its passkey stay. Another account with that password, and an admin account whose
+// password was changed, are left alone.
+func TestBootstrapPasswordIsCleared(t *testing.T) {
+	known, err := auth.Hash("admin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	changed, err := auth.Hash("a-better-password")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	path := v71Database(t,
+		fmt.Sprintf(`INSERT INTO users (id, username, password_hash, is_admin, is_active, password_epoch) VALUES
+			(1, 'admin', '%s', 1, 1, 3),
+			(2, 'other', '%s', 0, 1, 0)`, known, known),
+		`INSERT INTO user_tokens (user_id, token_hash, token_prefix) VALUES (1, 'h1', 'pat_a'), (2, 'h2', 'pat_b')`,
+		`INSERT INTO user_passkeys (user_id, credential_id, credential) VALUES (1, 'c', 'x')`,
+	)
+	s, err := New(t.Context(), path)
+	if err != nil {
+		t.Fatalf("migrating a v71 database: %v", err)
+	}
+	t.Cleanup(func() { s.Close() })
+	for query, want := range map[string]string{
+		`SELECT password_hash = '' FROM users WHERE id = 1`:                        "1",
+		`SELECT password_epoch FROM users WHERE id = 1`:                            "4",
+		`SELECT is_admin AND is_active FROM users WHERE id = 1`:                    "1",
+		`SELECT COUNT(*) FROM user_tokens WHERE user_id = 1`:                       "0",
+		`SELECT COUNT(*) FROM user_passkeys WHERE user_id = 1`:                     "1",
+		`SELECT password_hash = '' OR password_epoch != 0 FROM users WHERE id = 2`: "0",
+		`SELECT COUNT(*) FROM user_tokens WHERE user_id = 2`:                       "1",
+	} {
+		var got string
+		if err := s.read.QueryRowContext(t.Context(), query).Scan(&got); err != nil {
+			t.Fatalf("%s: %v", query, err)
+		}
+		if got != want {
+			t.Errorf("%s = %q, want %q", query, got, want)
+		}
+	}
+
+	path = v71Database(t,
+		fmt.Sprintf(`INSERT INTO users (id, username, password_hash, is_admin, is_active) VALUES (1, 'admin', '%s', 1, 1)`, changed),
+		`INSERT INTO user_tokens (user_id, token_hash, token_prefix) VALUES (1, 'h1', 'pat_a')`,
+	)
+	s2, err := New(t.Context(), path)
+	if err != nil {
+		t.Fatalf("migrating a v71 database: %v", err)
+	}
+	t.Cleanup(func() { s2.Close() })
+	var hash string
+	var epoch, tokens int
+	if err := s2.read.QueryRowContext(t.Context(), `SELECT password_hash, password_epoch, (SELECT COUNT(*) FROM user_tokens) FROM users WHERE id = 1`).Scan(&hash, &epoch, &tokens); err != nil {
+		t.Fatal(err)
+	}
+	if hash != changed || epoch != 0 || tokens != 1 {
+		t.Errorf("a changed admin password: hash kept %v, epoch %d, tokens %d; want it untouched", hash == changed, epoch, tokens)
 	}
 }

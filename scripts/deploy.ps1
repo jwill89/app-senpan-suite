@@ -43,11 +43,15 @@
          this release, the page naming its entry script, that script, a picture and the
          plugin index. If any fails, the previous binary, unit, vhost and snapshot go back.
          Once they pass, the host records the release.
-      5. Check the daily database backup (Install-BackupTimer's shared job, run as the
-         service's user at 10:00 UTC: a VACUUM INTO copy in a backups folder beside the
-         database, named <service>-YYYY-MM-DD.sqlite.gz, 28 days kept), then pull an online
+      5. Check the daily backups (Install-BackupTimer's shared jobs, run as the service's
+         user at 10:00 UTC): the database's VACUUM INTO copy in a backups folder beside it,
+         named <service>-YYYY-MM-DD.sqlite.gz, 28 days kept; and the uploads' archive (the
+         data folder less the database, its backups, the plugin repository, the fonts'
+         WOFF2 copies and the kept Google Fonts) in <RemoteOptDir>/uploads-backups, 7 days
+         kept. Then pull an online
          snapshot of the live database into devdata/database.sqlite, keeping the three
-         previous local copies (skip with -NoDbPull).
+         previous local copies, and a fresh archive of each upload folder into
+         devdata/uploads/<folder>, three kept (skip both with -NoDbPull).
 
     plugin: build the release's plugin from clean and lay out its repository (latest.zip,
     and plugins/pluginmaster.json with ?v=<version> on its download links), refuse a
@@ -118,8 +122,8 @@
 
 .PARAMETER AppPort
     The port the app listens on, on the loopback address: the unit's -addr, the vhost's
-    proxy and the health check. If omitted, resolved from $env:DEPLOY_APP_PORT, then
-    $DeployAppPort, then 8080.
+    proxy and the health check. Required for an app deploy; if omitted, resolved from
+    $env:DEPLOY_APP_PORT, then $DeployAppPort.
 
 .PARAMETER SiteUrl
     The site's public address, fetched after the deploy as visitors reach it. If omitted,
@@ -140,8 +144,8 @@
     failure only stops the run. The database snapshot is still taken.
 
 .PARAMETER NoDbPull
-    Skip refreshing the local dev DB (devdata/database.sqlite) from live after an app
-    deploy.
+    Skip refreshing the local dev DB (devdata/database.sqlite) and the uploads' archives
+    (devdata/uploads/) from live after an app deploy.
 
 .EXAMPLE
     .\scripts\deploy.ps1                         # the app's newest release
@@ -207,11 +211,9 @@ $settings = Resolve-DeploySetting -ConfigPath $ConfigPath -Value @{
     EnvFile      = $EnvFile
     SiteUrl      = $SiteUrl
     CertName     = $CertName
-} -Required (@('VpsHost', 'VpsUser', 'KeyPath', 'ServiceName', 'ServiceUser', 'RemoteOptDir') + @(if ($Target -eq 'app') { 'CertName' })) -Default @{
+} -Required (@('VpsHost', 'VpsUser', 'KeyPath', 'ServiceName', 'ServiceUser', 'RemoteOptDir') + @(if ($Target -eq 'app') { 'CertName', 'AppPort' })) -Default @{
     # Public already (plugins/pluginmaster.json's download links), so not a host secret.
     SiteUrl = 'https://apps.senpan.cafe'
-    # The app's own default port (backend/main.go).
-    AppPort = '8080'
 }
 
 $service = $settings.ServiceName
@@ -223,7 +225,7 @@ if ($serviceUser -notmatch '^[a-z_][a-z0-9_-]*$' -or $serviceUser -eq 'root') {
 $optDir = $settings.RemoteOptDir.TrimEnd('/')
 if (-not (Test-RemotePath -Path $optDir)) { throw "RemoteOptDir '$optDir' is not a plain absolute path." }
 $port = [string]$settings.AppPort
-if ($port -notmatch '^\d{4,5}$' -or [int]$port -lt 1024 -or [int]$port -gt 65535) {
+if ($Target -eq 'app' -and ($port -notmatch '^\d{4,5}$' -or [int]$port -lt 1024 -or [int]$port -gt 65535)) {
     throw "AppPort must be a port from 1024 to 65535, not '$port'."
 }
 $site = $settings.SiteUrl.TrimEnd('/')
@@ -249,6 +251,8 @@ if (-not (Test-RemotePath -Path $envFile)) { throw "The env file '$envFile' is n
 $repoRoot = Split-Path -Path $PSScriptRoot -Parent
 # The dev database the pull refreshes; git-ignored, so this checkout's, never the release's.
 $devDb = Join-Path $repoRoot 'devdata\database.sqlite'
+# The data folder's host-only folders: the uploads and the sounds copied in by hand.
+$uploadFolders = 'images', 'fonts', 'carrd', 'sounds'
 # What the host records as running, for the next deploy to compare with.
 $record = 'senpan'
 
@@ -427,6 +431,9 @@ try {
     if ($names -notcontains 'APPSUITE_TURNSTILE_SECRET') {
         Write-Warning "$envFile sets no APPSUITE_TURNSTILE_SECRET, so the login bot check is off."
     }
+    if ($names -notcontains 'APPSUITE_OWNERS') {
+        Write-Warning "$envFile sets no APPSUITE_OWNERS, so every admin account can be deactivated, demoted or deleted by another admin."
+    }
     if ($found['dropins']) {
         Write-Warning "$service.service has a drop-in ($($found['dropins'])), which overrides the unit this deploy installs. Remove it so the host runs what the repo says."
     }
@@ -519,15 +526,31 @@ try {
     # whose pruning (the newest three <db>.pre-*) can never match them, and the backup's
     # pruning touches only its own dated names.
     Write-Step 'Checking the daily database backup...'
+    $backupName = ($service -replace '\.service$', '').ToLowerInvariant() -replace '[^a-z0-9-]', '-' -replace '^-+', ''
     try {
-        $backupName = ($service -replace '\.service$', '').ToLowerInvariant() -replace '[^a-z0-9-]', '-' -replace '^-+', ''
         Install-BackupTimer -Name $backupName -Database $db -Owner $serviceOwner -Description 'Senpan App Suite daily database backup'
     } catch {
         throw "Senpan $version is deployed and live, but its daily database backup is not: $($_.Exception.Message)"
     }
+    # The uploads, archived whole outside the data folder. Left out: the live database
+    # (its own timer copies it online), its backups and the deploy's snapshots, the plugin
+    # repository the plugin deploy rebuilds, the WOFF2 copies the app rebuilds at start,
+    # and the Google Fonts it keeps, which it fetches again when they're gone.
+    # Seven days, since pictures barely compress.
+    Write-Step 'Checking the daily uploads backup...'
+    try {
+        Install-BackupTimer -Name "$backupName-uploads" -Folder $data -Directory "$optDir/uploads-backups" -Owner $serviceOwner -Keep 7 `
+            -Exclude 'database.sqlite*', 'backups', 'plugin', 'plugin.old', 'plugin.failed', 'fonts/.woff2', 'google-fonts' `
+            -Description 'Senpan App Suite daily uploads backup'
+    } catch {
+        throw "Senpan $version is deployed and live, but its daily uploads backup is not: $($_.Exception.Message)"
+    }
 
     if (-not $NoDbPull) {
         $null = Copy-LiveDatabase -Database $db -Destination $devDb
+        foreach ($folder in $uploadFolders) {
+            $null = Copy-LiveFolder -Folder "$data/$folder" -Destination (Join-Path $repoRoot "devdata\uploads\$folder") -Owner $serviceOwner
+        }
     }
 } finally {
     Close-DeployConnection

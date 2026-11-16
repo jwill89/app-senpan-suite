@@ -8,6 +8,7 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { changelogPlugin } from './config/changelog-plugin.ts'
+import { vueColorStyleNonce } from './config/style-nonce-plugin.ts'
 import { vitestDefaults } from '../shared/test/web/vitest.js'
 
 // The build goes where the Go server embeds it (backend/internal/web, embed.FS):
@@ -65,9 +66,9 @@ function ogImageCacheBust(): Plugin {
 }
 
 // Heavy, rarely-changing vendor libs each get their own chunk so they cache
-// independently of app code (FontAwesome is only needed in the admin views;
-// Milkdown + the emoji picker are lazy-loaded). Vite 8 / Rolldown takes no object
-// form of `manualChunks`, so the grouping is a function that maps a module's
+// independently of app code (FontAwesome is only needed in the admin views; the
+// Markdown editor + the emoji picker are lazy-loaded). Vite 8 / Rolldown takes no
+// object form of `manualChunks`, so the grouping is a function that maps a module's
 // node_modules package to its chunk. Purely a caching/loading win - no behavioral
 // change.
 const vendorChunkGroups: readonly (readonly [string, readonly string[]])[] = [
@@ -75,8 +76,20 @@ const vendorChunkGroups: readonly (readonly [string, readonly string[]])[] = [
   ['fontawesome', ['@fortawesome']],
   ['markdown', ['markdown-it']],
   ['draggable', ['vue-draggable-plus', 'sortablejs']],
-  // Milkdown (Crepe) WYSIWYG editor + its ProseMirror/KaTeX engine.
-  ['milkdown', ['@milkdown', 'prosemirror-', 'katex']],
+  // The Markdown editor: Tiptap, the ProseMirror engine under it (and that engine's
+  // own small dependencies), the Markdown parser it reads with, and the link finder.
+  [
+    'editor',
+    [
+      '@tiptap',
+      'prosemirror-',
+      'orderedmap',
+      'rope-sequence',
+      'w3c-keyname',
+      'marked',
+      'linkifyjs',
+    ],
+  ],
   ['emojipicker', ['vue3-emoji-picker']],
 ]
 
@@ -102,8 +115,8 @@ function manualChunks(id: string): string | undefined {
 // Precaching is a SEPARATE question from code-splitting. The admin bundles are
 // lazy-loaded, so they never touch a player's initial page load - but `globPatterns`
 // sweeps every emitted file into the precache, so without this exclusion the service
-// worker would download them on first visit: ~1.2 MB of admin-only JavaScript plus
-// the KaTeX web faces, for visitors who cannot open the admin at all.
+// worker would download them on first visit: every admin view and the Markdown
+// editor's engine, for visitors who cannot open the admin at all.
 //
 // This is computed from the real module graph rather than from file-name
 // patterns, because the names do not carry the answer: `DataTable` is admin-only
@@ -155,8 +168,7 @@ function markAdminOnlyOutput(): Plugin {
         }
       }
 
-      // A chunk's stylesheet and the fonts that stylesheet pulls ride with it:
-      // the KaTeX faces (~546 kB) are reached only through Milkdown's CSS. A
+      // A chunk's stylesheet and the fonts that stylesheet pulls ride with it. A
       // sidecar shared with anything public stays precached.
       const sidecarsOf = (file: string) => [
         ...(chunks.get(file)?.viteMetadata?.importedCss ?? []),
@@ -184,8 +196,8 @@ function markAdminOnlyOutput(): Plugin {
 // It rests on two things that are not ours: that `generateBundle` runs before
 // vite-plugin-pwa's `closeBundle`, and that workbox still honours
 // `manifestTransforms`. If either stops holding, the precache silently returns to
-// carrying every admin bundle - no error, no visible symptom, just ~1.8 MB back
-// on every first visit. Registered AFTER VitePWA so sw.js exists by the time this
+// carrying every admin bundle - no error, no visible symptom, just the admin
+// views and the editor back on every first visit. Registered AFTER VitePWA so sw.js exists by the time this
 // runs; `closeBundle` hooks fire in plugin order.
 function verifyAdminNotPrecached(): Plugin {
   let outDir = 'dist'
@@ -252,6 +264,7 @@ export default defineConfig({
   plugins: [
     vue(),
     changelogPlugin(),
+    vueColorStyleNonce(),
     // Must precede VitePWA: it fills `adminOnlyOutput` in `generateBundle`, which
     // the PWA plugin's manifest transform reads later, at `closeBundle`.
     markAdminOnlyOutput(),
@@ -349,13 +362,11 @@ export default defineConfig({
   // `npm run test:coverage` fails below the floor: a little under what the specs reach.
   // Raise it as specs land; never lower it.
   test: {
-    // jsdom, mocks and stubbed globals put back after each test, and v8 coverage over all of src.
     ...vitestDefaults({
-      environment: 'jsdom',
       include: ['src/__tests__/**/*.spec.ts'],
       // Stubs the globally registered <font-awesome-icon> for every mount.
       setupFiles: ['./vitest.setup.ts'],
-      floor: { statements: 35.5, branches: 25.5, functions: 28, lines: 35.5 },
+      floor: { statements: 43, branches: 30.5, functions: 32.5, lines: 43 },
     }),
     // Test helpers (describe/it/expect/vi) are imported explicitly per file so
     // type-checking works without extra global type config.
@@ -371,6 +382,11 @@ export default defineConfig({
   // rather than relative to the current path. The server serves the SPA at the
   // site's root and falls back to index.html for unknown paths (internal/web).
   base: '/',
+  // The server answers every page with a fresh nonce in its Content-Security-Policy and
+  // puts the same nonce where this placeholder stands (internal/web). Vite writes it on
+  // the tags it adds to index.html and in a <meta property="csp-nonce">, from which the
+  // app reads it for the <style> and <script> elements it adds itself (src/lib/csp.ts).
+  html: { cspNonce: '__CSP_NONCE__' },
   server: {
     port: 5173,
     proxy: {
@@ -381,21 +397,25 @@ export default defineConfig({
         target: process.env.VITE_API_TARGET || 'http://localhost:8080',
         changeOrigin: true,
       },
+      // The Carrd projects, which the Carrd Upload tab previews from this site.
+      '/carrd/': {
+        target: process.env.VITE_API_TARGET || 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
   build: {
     outDir,
     emptyOutDir: true,
     sourcemap: false,
-    // The largest chunk (the Milkdown editor ~620 kB) is a monolithic
-    // third-party library already split into its own lazy-loaded chunk (fetched
-    // only when an admin opens a view that needs it) - it never touches the
-    // initial player/home load. It can't be split further (it ships as one
-    // bundle), so we lift the advisory warning to 650 kB: above this intentional
-    // vendor chunk, but still low enough to flag genuinely new bloat.
+    // The largest intentional vendor chunk is the Markdown editor's (Tiptap and
+    // ProseMirror, ~440 kB minified), split into its own lazy-loaded chunk that an
+    // admin fetches only when a view with an editor opens - it never touches the
+    // initial player/home load. The advisory warning sits at 650 kB: above the
+    // vendor chunks, but still low enough to flag genuinely new bloat.
     chunkSizeWarningLimit: 650,
     rollupOptions: {
-      // Vendor-chunk grouping lives in `manualChunks` above (Milkdown and the
+      // Vendor-chunk grouping lives in `manualChunks` above (the editor and the
       // emoji picker are additionally lazy-loaded by MarkdownEditor.vue /
       // StampShapePicker.vue, so they're fetched only when those views open).
       output: { manualChunks },

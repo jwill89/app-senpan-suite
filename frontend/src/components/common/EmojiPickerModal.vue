@@ -38,8 +38,9 @@ function onSelect(e: EmojiExt): void {
     :box-style="{ maxWidth: 'fit-content' }"
     @close="emit('close')"
   >
-    <div class="emoji-picker-head">
-      <h3><font-awesome-icon :icon="['fad', 'face-smile']" /> Pick an Emoji</h3>
+    <div class="emoji-picker-modal__head">
+      <!-- An h4, since the picker heads its emoji groups with h5. -->
+      <h4 class="text-lg"><font-awesome-icon :icon="['fad', 'face-smile']" /> Pick an Emoji</h4>
       <button
         v-if="allowClear"
         type="button"
@@ -49,14 +50,14 @@ function onSelect(e: EmojiExt): void {
         No emoji
       </button>
     </div>
-    <div class="emoji-picker-wrap">
+    <div class="emoji-picker-modal__wrap">
       <EmojiPicker set="native" theme="dark" recent="recent" @select="onSelect" />
     </div>
   </ModalOverlay>
 </template>
 
 <style scoped>
-.emoji-picker-head {
+.emoji-picker-modal__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -64,7 +65,7 @@ function onSelect(e: EmojiExt): void {
   margin-bottom: 12px;
 }
 
-.emoji-picker-wrap {
+.emoji-picker-modal__wrap {
   display: flex;
   justify-content: center;
 }
@@ -72,7 +73,7 @@ function onSelect(e: EmojiExt): void {
 /* The picker ships its own dark theme, but the app's global `input` rule would
    otherwise override the search field - re-skin it to the app surface so it
    stays legible and on-theme. */
-.emoji-picker-wrap :deep(input) {
+.emoji-picker-modal__wrap :deep(input) {
   background: var(--panel-bg);
   color: var(--text);
   border-color: var(--panel-raised-bg);

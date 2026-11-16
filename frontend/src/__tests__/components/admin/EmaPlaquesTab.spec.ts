@@ -19,6 +19,7 @@ vi.mock('@/api/client', async (importOriginal) => ({
 import EmaPlaquesTab from '@/components/admin/EmaPlaquesTab.vue'
 import EmaRequestPostModal from '@/components/admin/EmaRequestPostModal.vue'
 import { useEmaStore } from '@/stores/ema'
+import { axeFindings } from '@/__tests__/axe'
 
 function window(id: number, label: string, artistLimit: number, artistCount: number) {
   return {
@@ -185,5 +186,29 @@ describe("a board's artist requests", () => {
     const wrapper = await openBoard()
     expect(wrapper.text()).toContain('No plaque requests yet.')
     expect(wrapper.find('.ema-request-text').exists()).toBe(false)
+  })
+})
+
+describe('the Ema Plaques tab', () => {
+  it('has nothing axe flags on the list of boards', async () => {
+    await useEmaStore().loadBoards()
+    const wrapper = mount(EmaPlaquesTab)
+    await flushPromises()
+    expect(await axeFindings(wrapper.element)).toEqual([])
+  })
+
+  it("has nothing axe flags on a board's page", async () => {
+    const wrapper = await openBoard()
+    expect(await axeFindings(wrapper.element)).toEqual([])
+  })
+
+  it('has nothing axe flags with the post dialog open', async () => {
+    const wrapper = await openBoard()
+    const first = wrapper.find('.ema-request-text').element.closest('tr')!
+    const post = [...first.querySelectorAll('button')].find((b) => b.textContent.includes('Post'))!
+    post.click()
+    await flushPromises()
+    expect(wrapper.findComponent(EmaRequestPostModal).exists()).toBe(true)
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

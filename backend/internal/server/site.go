@@ -1,6 +1,12 @@
 package server
 
-import "net/http"
+import (
+	"context"
+	"net/http"
+
+	"app-suite/internal/api"
+	"app-suite/internal/web"
+)
 
 // What the server answers outside /api/: GET /healthz, the data folder's public files,
 // and the SPA for every other path. The API's own routes are the operations in
@@ -37,6 +43,11 @@ func (s *Server) siteRoutes() {
 
 // SetSite gives the server the SPA to serve outside /api/ (internal/web's handler on
 // the embedded build). Without one, those paths answer 404, as in the API's tests.
+// internal/web's handler reads the sites that may frame the festival map's embed from
+// the saved settings.
 func (s *Server) SetSite(site http.Handler) {
+	if h, ok := site.(*web.Handler); ok && h.EmbedAncestors == nil {
+		h.EmbedAncestors = func(ctx context.Context) []string { return api.EmbedAncestors(ctx, s.store) }
+	}
 	s.site = site
 }

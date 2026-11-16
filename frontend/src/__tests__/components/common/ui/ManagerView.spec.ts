@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ManagerView from '@/components/common/ui/ManagerView.vue'
+import { axeFindings } from '@/__tests__/axe'
 
 describe('ManagerView', () => {
   it('renders title + icon in the header', () => {
@@ -28,14 +29,26 @@ describe('ManagerView', () => {
         pagination: '<nav class="pg">pages</nav>',
       },
     })
-    expect(wrapper.find('.manager-actions .act').exists()).toBe(true)
+    expect(wrapper.find('.manager-view__actions .act').exists()).toBe(true)
     expect(wrapper.find('.manager-toolbar .tb').exists()).toBe(true)
     expect(wrapper.find('.pg').exists()).toBe(true)
   })
 
   it('omits the actions/toolbar wrappers when those slots are absent', () => {
     const wrapper = mount(ManagerView, { props: { title: 'X' } })
-    expect(wrapper.find('.manager-actions').exists()).toBe(false)
+    expect(wrapper.find('.manager-view__actions').exists()).toBe(false)
     expect(wrapper.find('.manager-toolbar').exists()).toBe(false)
+  })
+
+  it('has nothing axe flags', async () => {
+    const wrapper = mount(ManagerView, {
+      props: { title: 'Patterns', icon: ['fad', 'grid'] },
+      slots: {
+        actions: '<button type="button">New</button>',
+        toolbar: '<input type="search" aria-label="Search" />',
+        default: '<ul><li>Item</li></ul>',
+      },
+    })
+    expect(await axeFindings(wrapper.element)).toEqual([])
   })
 })

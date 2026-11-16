@@ -27,14 +27,27 @@ const app = useAppStore()
 const auth = useAuthStore()
 const fonts = useFontsStore()
 
+/** One origin per line, as the allowlists' textareas show them. */
+function originLines(text: string): string[] {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+}
+
 /** The allowed tea-room API sites as the textarea shows them: one per line. */
 const teaRoomOrigins = computed({
   get: () => app.settings.teaRoomOrigins.join('\n'),
   set: (text: string) => {
-    app.settings.teaRoomOrigins = text
-      .split('\n')
-      .map((line) => line.trim())
-      .filter((line) => line !== '')
+    app.settings.teaRoomOrigins = originLines(text)
+  },
+})
+
+/** The sites that may frame a festival map, as the textarea shows them: one per line. */
+const embedOrigins = computed({
+  get: () => app.settings.embedOrigins.join('\n'),
+  set: (text: string) => {
+    app.settings.embedOrigins = originLines(text)
   },
 })
 
@@ -148,6 +161,17 @@ watch(
               rows="3"
               placeholder="https://senpan.cafe&#10;https://*.senpan.cafe"
               aria-label="Allowed sites for the public tea-room API"
+            ></textarea>
+          </FormField>
+          <FormField
+            label="Sites that may show a festival map in a frame"
+            help="Sites whose pages may embed a festival map (the snippet the Festival Map page hands out), one origin per line, such as https://senpan.cafe. https://*.example.com covers every subdomain. Leave empty to allow none."
+          >
+            <textarea
+              v-model="embedOrigins"
+              rows="3"
+              placeholder="https://senpan.cafe&#10;https://*.senpan.cafe"
+              aria-label="Sites that may show a festival map in a frame"
             ></textarea>
           </FormField>
           <FormField

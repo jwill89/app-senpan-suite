@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import ChangelogModal from '@/components/admin/ChangelogModal.vue'
 import { changelog } from '@/lib/changelog'
+import { axeFindings } from '@/__tests__/axe'
 
 // Structural/navigation checks against the real parsed CHANGELOG.md (via the
 // virtual:changelog plugin). Text rendered through markdown-it loads async and is
@@ -57,5 +58,12 @@ describe('ChangelogModal', () => {
     expect(wrapper.find('.changelog-install').exists()).toBe(false)
     expect(wrapper.find('.changelog-entry').exists()).toBe(true)
     expect(wrapper.find('.changelog-detail-title').text()).toContain(`v${changelog.plugin.latest}`)
+  })
+
+  it('has nothing axe flags on a version or on the install view', async () => {
+    const app = mount(ChangelogModal, { props: { component: 'app' } })
+    expect(await axeFindings(app.element)).toEqual([])
+    const plugin = mount(ChangelogModal, { props: { component: 'plugin' } })
+    expect(await axeFindings(plugin.element)).toEqual([])
   })
 })

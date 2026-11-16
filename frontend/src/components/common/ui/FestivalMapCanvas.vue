@@ -468,13 +468,13 @@ defineExpose({ zoomBy, reset, zoom })
 <template>
   <div
     ref="viewportRef"
-    class="map-viewport"
+    class="festival-map-canvas"
     :class="{ 'is-dragging': dragging }"
     :style="viewportStyle"
     @wheel="onWheel"
     @pointerdown="onPointerDown"
   >
-    <div class="map-pan" :style="panStyle">
+    <div class="festival-map-canvas__pan" :style="panStyle">
       <div ref="canvasRef" class="map-canvas">
         <!-- @load is what triggers the first fit: the canvas has no height until
              the plan has loaded, and that height is the whole input to it. -->
@@ -557,7 +557,7 @@ defineExpose({ zoomBy, reset, zoom })
                the one mark on the plan that is about them rather than the stall. -->
           <span
             v-if="isStamped(stall)"
-            class="map-stall-stamp"
+            class="festival-map-canvas__stamp"
             :class="{ 'is-collected': isCollected(stall) }"
             aria-hidden="true"
           >
