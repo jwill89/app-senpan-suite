@@ -1,4 +1,5 @@
 {
   "extends": ["./tsconfig.app.json", "@jwill89/lint-web/tsconfig.vitest.json"],
-  "include": ["src/**/*.ts", "src/**/*.vue"]
+  // env.d.ts declares the build's globals and virtual modules, as tsconfig.app.json takes it in.
+  "include": ["env.d.ts", "src/**/*.ts", "src/**/*.vue"]
 }
