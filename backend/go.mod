@@ -8,7 +8,7 @@ require (
 	github.com/alexedwards/scs/v2 v2.9.0
 	github.com/danielgtaylor/huma/v2 v2.40.0
 	github.com/go-webauthn/webauthn v0.18.2
-	github.com/pressly/goose/v3 v3.30.0
+	github.com/pressly/goose/v3 v3.30.1
 	github.com/tdewolff/font v0.0.0-20261010204837-88a7f6b56918
 	golang.org/x/crypto v0.59.0
 	golang.org/x/image v0.48.0
@@ -28,7 +28,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.20.4 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
-	github.com/mfridman/interpolate v0.0.2 // indirect
+	github.com/mfridman/interpolate v0.2.0 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
 	github.com/philhofer/fwd v1.2.1 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
