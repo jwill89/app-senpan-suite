@@ -464,16 +464,15 @@ try {
 
     # The database snapshot is the way back from a migration: starting the new binary
     # migrates the live database, and the previous binary refuses a schema newer than its
-    # own, so a rollback puts the snapshot back with the binary. -Umask 077 keeps the
-    # snapshot (live accounts, tokens, webhooks) for root. The binary belongs to the
-    # service's own account, not the SSH user's.
+    # own, so a rollback puts the snapshot back with the binary. The module writes the
+    # snapshot (live accounts, tokens, webhooks) as the database's own account, readable by
+    # it alone. The binary belongs to the service's own account, not the SSH user's.
     $install = @{
         ServiceName               = $service
         Binary                    = $remoteBinary
         Owner                     = $serviceOwner
         Unit                      = $unitFile
         Database                  = $db
-        Umask                     = '077'
         RestoreDatabaseOnRollback = $true
         HealthUrl                 = "http://$addr/healthz"
         Vhost                     = 'apache-vhost.conf'
