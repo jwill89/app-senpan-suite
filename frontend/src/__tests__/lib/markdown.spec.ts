@@ -1,11 +1,12 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { normalizeHardBreaks, useMarkdown } from '@/lib/markdown'
+import { soon } from '../../../../shared/test/web/wait.js'
 
 // markdown-it is lazy-loaded on first use; wait for the reactive `ready` flag
 // to flip before asserting on rendered output.
 async function renderer() {
   const { render, ready } = useMarkdown()
-  await vi.waitFor(() => expect(ready.value).toBe(true))
+  await soon(() => expect(ready.value).toBe(true))
   return render
 }
 

@@ -59,6 +59,7 @@ import { usePlayerStore } from '@/stores/player'
 import { useUiStore } from '@/stores/ui'
 import { useYoeverStore } from '@/stores/yoever'
 import type { Account, Card, Game } from '@/api/client'
+import { soon } from '../../../../shared/test/web/wait.js'
 
 /** A game running, as a console or a board holds it. */
 function liveGame(id: number): Game {
@@ -258,7 +259,7 @@ describe('the board', () => {
     useUiStore().notify = vi.fn()
     player.cardExists = vi.fn(async () => false)
     open().opts.onRefused!()
-    await vi.waitFor(() => expect(h.push).toHaveBeenCalledWith({ name: 'home' }))
+    await soon(() => expect(h.push).toHaveBeenCalledWith({ name: 'home' }))
   })
 
   it("keeps the board when the refusal wasn't about its card", async () => {

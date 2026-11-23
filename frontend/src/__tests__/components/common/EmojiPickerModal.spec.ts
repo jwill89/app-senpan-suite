@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
 import EmojiPickerModal from '@/components/common/EmojiPickerModal.vue'
 import { axeFindings } from '@/__tests__/axe'
+import { soon } from '../../../../../shared/test/web/wait.js'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -16,7 +17,7 @@ describe('EmojiPickerModal', () => {
     const warn = vi.spyOn(console, 'warn')
     const wrapper = mount(EmojiPickerModal, { attachTo: document.body })
     let emoji: HTMLElement | null = null
-    await vi.waitFor(async () => {
+    await soon(async () => {
       await flushPromises()
       emoji = document.querySelector<HTMLElement>('.v3-emojis [data-i]')
       expect(emoji).not.toBeNull()

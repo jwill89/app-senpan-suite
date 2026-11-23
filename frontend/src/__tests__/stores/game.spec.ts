@@ -20,6 +20,7 @@ vi.mock('@/api/client', async (importOriginal) => ({
 import type { Game, GameState } from '@/api/client'
 import { useGameStore } from '@/stores/game'
 import { useUiStore } from '@/stores/ui'
+import { soon } from '../../../../shared/test/web/wait.js'
 
 /** A page of the winners log, as GET /winners-log answers it. */
 const winnersPage = (entries: { id: number }[], total: number) =>
@@ -307,7 +308,7 @@ describe('ending a game', () => {
     )
     await game.endGame()
     expect(ui.notify).toHaveBeenCalledWith('That game has already ended.', 'error')
-    await vi.waitFor(() => expect(game.currentGame?.id).toBe(5))
+    await soon(() => expect(game.currentGame?.id).toBe(5))
   })
 })
 

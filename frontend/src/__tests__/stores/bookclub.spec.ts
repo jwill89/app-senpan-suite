@@ -17,6 +17,7 @@ vi.mock('@/api/client', async (importOriginal) => ({
 
 import { useBookclubStore } from '@/stores/bookclub'
 import { useUiStore } from '@/stores/ui'
+import { soon } from '../../../../shared/test/web/wait.js'
 
 const HOOK = 'https://discord.com/api/webhooks/1/x'
 
@@ -58,7 +59,7 @@ describe('openClub (per-club freshness)', () => {
     s.openClub('yaoi')
     expect(calls('GET', listsPath)).toHaveLength(1)
     expect(calls('GET', listsPath)[0]![1]).toEqual({ params: { path: { club: 'yaoi' } } })
-    await vi.waitFor(() => expect(s.webhookUrl).toBe(HOOK))
+    await soon(() => expect(s.webhookUrl).toBe(HOOK))
     s.openClub('yaoi') // within TTL -> no refetch
     expect(calls('GET', listsPath)).toHaveLength(1)
   })

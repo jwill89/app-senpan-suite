@@ -216,7 +216,8 @@ tasks:
     cmds:
       # The version CI runs.
       - cd backend && go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
-      - cd frontend && npm audit --audit-level=high --omit=dev
+      - task: shared:web:audit
+        vars: { DIR: frontend }
       - task: shared:vuln
 
   check:
