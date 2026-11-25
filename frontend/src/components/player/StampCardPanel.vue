@@ -9,6 +9,8 @@
  *
  * It renders the stamp-rally store's loaded public card, so the card page
  * (views/StampCardView) and the festival dashboard show one and the same thing.
+ * Given the room (the dashboard), the card and its password box sit beside the
+ * stall list rather than above it.
  */
 import { computed, ref } from 'vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -137,97 +139,107 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <div v-if="card">
-    <p class="lead-line">
-      <font-awesome-icon :icon="['fad', 'id-card']" /> Card for
-      <strong>{{ card.participantName }}</strong>
-    </p>
+  <div v-if="card" class="two-pane">
+    <div class="two-pane-grid">
+      <div class="two-pane-main">
+        <p class="lead-line">
+          <font-awesome-icon :icon="['fad', 'id-card']" /> Card for
+          <strong>{{ card.participantName }}</strong>
+        </p>
 
-    <!-- Completion banner -->
-    <div v-if="card.completed" class="callout">
-      <font-awesome-icon :icon="['fad', 'champagne-glasses']" /> Your card is complete! Your prizes
-      are revealed below.<template v-if="canCollectMore">
-        You can still collect the stamps you haven't picked up yet.</template
-      >
-    </div>
-    <!-- Progress: one tally per required type when the rally counts types,
-         otherwise the whole card. -->
-    <p v-else class="lead-line lead-line--tally">
-      <template v-for="(part, i) in progressParts" :key="part.label"
-        ><template v-if="i > 0"> - </template><strong>{{ part.have }}</strong>
-        {{ part.label }}</template
-      >
-      collected
-    </p>
-
-    <!-- A requirement that closed stalls put out of reach -->
-    <p v-if="!card.completed && unreachable" class="callout callout--warning">
-      <font-awesome-icon :icon="['fad', 'triangle-exclamation']" /> The stalls this card still needs
-      have closed, so it can't be finished now. Show a staff member what you collected.
-    </p>
-
-    <!-- The card -->
-    <div class="stamp-canvas-wrap">
-      <StampCardCanvas :card-image="card.rally.cardImage" :items="items" />
-    </div>
-
-    <!-- Password entry (until complete, or while optional stalls remain) -->
-    <form v-if="!card.completed || canCollectMore" class="stamp-entry" @submit.prevent="submit">
-      <input
-        v-model="password"
-        class="stamp-entry-input"
-        placeholder="Enter a stamp password"
-        aria-label="Stamp password"
-        autocomplete="off"
-        :disabled="store.submitting"
-      />
-      <button class="btn-confirm" type="submit" :disabled="store.submitting || !password.trim()">
-        <LoadingSpinner v-if="store.submitting" label="Stamping..." />
-        <template v-else><font-awesome-icon :icon="['fad', 'stamp']" /> Stamp</template>
-      </button>
-    </form>
-
-    <!-- Details (markdown) -->
-    <MarkdownText
-      v-if="showDetails && card.rally.details"
-      class="game-details mb-16"
-      :source="card.rally.details"
-    />
-
-    <!-- Stalls + availability -->
-    <h3 class="section-heading"><font-awesome-icon :icon="['fad', 'stamp']" /> Stalls</h3>
-    <ul class="list-stack mb-16">
-      <li v-for="s in card.stamps" :key="s.id" class="stamp-stall">
-        <span class="stamp-stall-name">{{ stallName(s.affiliateName) }}</span>
-        <span class="badge badge--muted">{{ stampTypeShort(s.stampType) }}</span>
-        <span v-if="windowText(s)" class="stamp-stall-window text-muted text-xs">{{
-          windowText(s)
-        }}</span>
-        <span :class="['status-badge', 'stamp-stall-status', stampStatus(s).modifier]">
-          <font-awesome-icon v-if="s.collected" :icon="['fas', 'circle-check']" />
-          {{ stampStatus(s).label }}
-        </span>
-      </li>
-    </ul>
-
-    <!-- Prizes + redeem instructions (once complete) -->
-    <template v-if="card.completed">
-      <h3 class="section-heading"><font-awesome-icon :icon="['fad', 'gift']" /> Your Prizes</h3>
-      <div v-if="card.prizes.length" class="stamp-prizes mb-16">
-        <div v-for="p in card.prizes" :key="p.id" class="stamp-prize">
-          <img v-if="p.image" :src="assetUrl(p.image)" alt="" />
-          <span>{{ p.name }}</span>
+        <!-- Completion banner -->
+        <div v-if="card.completed" class="callout">
+          <font-awesome-icon :icon="['fad', 'champagne-glasses']" /> Your card is complete! Your
+          prizes are revealed below.<template v-if="canCollectMore">
+            You can still collect the stamps you haven't picked up yet.</template
+          >
         </div>
+        <!-- Progress: one tally per required type when the rally counts types,
+         otherwise the whole card. -->
+        <p v-else class="lead-line lead-line--tally">
+          <template v-for="(part, i) in progressParts" :key="part.label"
+            ><template v-if="i > 0"> - </template><strong>{{ part.have }}</strong>
+            {{ part.label }}</template
+          >
+          collected
+        </p>
+
+        <!-- A requirement that closed stalls put out of reach -->
+        <p v-if="!card.completed && unreachable" class="callout callout--warning">
+          <font-awesome-icon :icon="['fad', 'triangle-exclamation']" /> The stalls this card still
+          needs have closed, so it can't be finished now. Show a staff member what you collected.
+        </p>
+
+        <!-- The card -->
+        <div class="stamp-canvas-wrap">
+          <StampCardCanvas :card-image="card.rally.cardImage" :items="items" />
+        </div>
+
+        <!-- Password entry (until complete, or while optional stalls remain) -->
+        <form v-if="!card.completed || canCollectMore" class="stamp-entry" @submit.prevent="submit">
+          <input
+            v-model="password"
+            class="stamp-entry-input"
+            placeholder="Enter a stamp password"
+            aria-label="Stamp password"
+            autocomplete="off"
+            :disabled="store.submitting"
+          />
+          <button
+            class="btn-confirm"
+            type="submit"
+            :disabled="store.submitting || !password.trim()"
+          >
+            <LoadingSpinner v-if="store.submitting" label="Stamping..." />
+            <template v-else><font-awesome-icon :icon="['fad', 'stamp']" /> Stamp</template>
+          </button>
+        </form>
       </div>
-      <MarkdownText
-        v-if="card.rally.redeemInstructions"
-        class="game-details"
-        :source="card.rally.redeemInstructions"
-      />
-      <figure v-if="card.rally.redeemImage" class="captioned-figure">
-        <figcaption>Where to redeem</figcaption>
-        <img :src="assetUrl(card.rally.redeemImage)" alt="Where to redeem your card" />
-      </figure>
-    </template>
+
+      <div class="two-pane-aside">
+        <!-- Details (markdown) -->
+        <MarkdownText
+          v-if="showDetails && card.rally.details"
+          class="game-details mb-16"
+          :source="card.rally.details"
+        />
+
+        <!-- Stalls + availability -->
+        <h3 class="section-heading"><font-awesome-icon :icon="['fad', 'stamp']" /> Stalls</h3>
+        <ul class="list-stack mb-16">
+          <li v-for="s in card.stamps" :key="s.id" class="stamp-stall">
+            <span class="stamp-stall-name">{{ stallName(s.affiliateName) }}</span>
+            <span class="badge badge--muted">{{ stampTypeShort(s.stampType) }}</span>
+            <span v-if="windowText(s)" class="stamp-stall-window text-muted text-xs">{{
+              windowText(s)
+            }}</span>
+            <span :class="['status-badge', 'stamp-stall-status', stampStatus(s).modifier]">
+              <font-awesome-icon v-if="s.collected" :icon="['fas', 'circle-check']" />
+              {{ stampStatus(s).label }}
+            </span>
+          </li>
+        </ul>
+
+        <!-- Prizes + redeem instructions (once complete) -->
+        <template v-if="card.completed">
+          <h3 class="section-heading"><font-awesome-icon :icon="['fad', 'gift']" /> Your Prizes</h3>
+          <div v-if="card.prizes.length" class="stamp-prizes mb-16">
+            <div v-for="p in card.prizes" :key="p.id" class="stamp-prize">
+              <img v-if="p.image" :src="assetUrl(p.image)" alt="" />
+              <span>{{ p.name }}</span>
+            </div>
+          </div>
+          <MarkdownText
+            v-if="card.rally.redeemInstructions"
+            class="game-details"
+            :source="card.rally.redeemInstructions"
+          />
+          <figure v-if="card.rally.redeemImage" class="captioned-figure">
+            <figcaption>Where to redeem</figcaption>
+            <img :src="assetUrl(card.rally.redeemImage)" alt="Where to redeem your card" />
+          </figure>
+        </template>
+      </div>
+    </div>
   </div>
 </template>

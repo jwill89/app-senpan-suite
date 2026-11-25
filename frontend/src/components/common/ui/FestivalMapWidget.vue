@@ -19,7 +19,12 @@ import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from
 import MarkdownText from '@/components/common/MarkdownText.vue'
 import FestivalMapCanvas from '@/components/common/ui/FestivalMapCanvas.vue'
 import { assetUrl } from '@/lib/assets'
-import { formatEventRange, occupantMapLabel, occupantsOnDay, stallCaption } from '@/lib/festivalmap'
+import {
+  formatEventRange,
+  occupantListLabel,
+  occupantsOnDay,
+  stallCaption,
+} from '@/lib/festivalmap'
 import type {
   EventTime,
   PublicFestivalMap,
@@ -409,11 +414,9 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
             <div class="festival-map-widget__stall-panel-head">
               <div>
                 <!-- The affiliate leads, because that is who the visitor is
-                     looking for; a stall title is optional and only ADDS to it. -->
-                <h3>
-                  {{ occupantMapLabel(occupant) }}
-                  <template v-if="occupant.title.trim()"> - {{ occupant.title.trim() }} </template>
-                </h3>
+                     looking for; a stall title is optional and only ADDS to it,
+                     so a title that would repeat the name is left out. -->
+                <h3>{{ occupantListLabel(occupant) }}</h3>
                 <!-- On its own row rather than trailing the name: whether the
                      stall is open right now is the first thing a visitor wants,
                      and inline it is easy to miss at the end of a long name that

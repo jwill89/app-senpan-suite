@@ -4,8 +4,9 @@
  * takes part in everything filed under a festival - the plan, the stamp rally,
  * the garapon and the raffles - without being sent off to a page for each.
  *
- * A wide screen shows every section at once: the plan across the top, the rest in
- * columns under it. A phone shows one at a time, picked from the tiles, which
+ * A wide screen shows every section at once, one under another at the page's full
+ * width - the stamp card and the drum need the room to be read - and each folds
+ * away from its heading. A phone shows one at a time, picked from the tiles, which
  * double as the at-a-glance summary on both - stamps collected, draws left,
  * raffles entered.
  *
@@ -20,6 +21,7 @@ import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import MarkdownText from '@/components/common/MarkdownText.vue'
 import TurnstileWidget from '@/components/common/TurnstileWidget.vue'
 import WorldPicker from '@/components/common/ui/WorldPicker.vue'
+import FestivalDashSection from '@/components/player/FestivalDashSection.vue'
 import FestivalEmaSection from '@/components/player/FestivalEmaSection.vue'
 import FestivalRaffleCard from '@/components/player/FestivalRaffleCard.vue'
 import GaraponPanel from '@/components/player/GaraponPanel.vue'
@@ -28,7 +30,7 @@ import { useFestivalDashboardStore } from '@/stores/festivalDashboard'
 import { useGaraponsStore } from '@/stores/garapons'
 import { useStampRalliesStore } from '@/stores/stampRallies'
 import { api, unwrap } from '@/api/client'
-import { formatEventTime } from '@/lib/festivalmap'
+import { formatEventRange } from '@/lib/festivalmap'
 import { participantLabel } from '@/lib/participant'
 
 // The route param is the festival's shortcode OR its numeric id - the server
@@ -45,6 +47,14 @@ const garapons = useGaraponsStore()
 const turnstileSiteKey = ref('')
 /** The section a phone shows; on a wide screen, the one last jumped to. */
 const current = ref<Section>('map')
+/** The sections folded away on a wide screen. */
+const collapsed = ref(new Set<Section>())
+
+function toggle(section: Section): void {
+  if (!collapsed.value.delete(section)) {
+    collapsed.value.add(section)
+  }
+}
 
 onMounted(async () => {
   void store.open(props.id)
@@ -59,6 +69,7 @@ watch(
   () => props.id,
   (id) => {
     current.value = 'map'
+    collapsed.value.clear()
     void store.open(id)
   },
 )
@@ -86,6 +97,16 @@ const garapon = computed(() => data.value?.garapon ?? null)
 const raffles = computed(() =>
   // Running ones first: they are the ones a visitor can still do something about.
   [...(data.value?.raffles ?? [])].sort((a, b) => Number(b.running) - Number(a.running)),
+)
+
+// -- The festival's days ----------------------------------------------------------
+
+/** Each day as its name and its hours, set apart so the name can lead. */
+const days = computed(() =>
+  (store.map?.times ?? []).map((t, i) => ({
+    label: t.label.trim() || `Day ${String(i + 1)}`,
+    when: formatEventRange(t.start, t.end),
+  })),
 )
 
 // -- The tiles ------------------------------------------------------------------
@@ -165,9 +186,15 @@ const tiles = computed(() => {
   return list
 })
 
-/** Shows a section (a phone) or brings it into view (a wide screen). */
+/** Each section's tally, for its heading as well as its tile. */
+const tally = computed(
+  () => Object.fromEntries(tiles.value.map((t) => [t.key, t.value])) as Record<Section, string>,
+)
+
+/** Shows a section (a phone) or brings it into view, unfolded (a wide screen). */
 async function goTo(section: Section, anchor?: string): Promise<void> {
   current.value = section
+  collapsed.value.delete(section)
   await nextTick()
   document
     .getElementById(anchor ?? `festival-${section}`)
@@ -274,23 +301,30 @@ function goBack(): void {
       <template v-else>
         <!-- The festival, and who is visiting it -->
         <header class="festival-dash-header">
-          <ul v-if="store.map.times.length" class="map-times">
-            <li v-for="(t, i) in store.map.times" :key="i">
-              <font-awesome-icon :icon="['fad', 'calendar-days']" /> {{ formatEventTime(t) }}
-            </li>
-          </ul>
-          <span v-if="store.map.isActive" class="status-badge status-badge-open">
-            happening now
-          </span>
+          <div class="festival-dash-when">
+            <span v-if="store.map.isActive" class="status-badge status-badge-open m-0">
+              Happening now
+            </span>
+            <dl v-if="days.length" class="festival-dash-days">
+              <div v-for="(day, i) in days" :key="i" class="festival-dash-day">
+                <dt>
+                  <font-awesome-icon :icon="['fad', 'calendar-days']" class="text-highlight" />
+                  {{ day.label }}
+                </dt>
+                <dd>{{ day.when }}</dd>
+              </div>
+            </dl>
+          </div>
+
           <details v-if="store.map.description" class="festival-dash-about">
             <summary>About this festival</summary>
-            <MarkdownText :source="store.map.description" />
+            <MarkdownText class="game-details" :source="store.map.description" />
           </details>
 
           <div class="festival-dash-visitor">
             <template v-if="visitorLabel && !editingVisitor">
               <span>
-                <font-awesome-icon :icon="['fad', 'user']" /> Visiting as
+                <font-awesome-icon :icon="['fad', 'user']" class="text-highlight" /> Visiting as
                 <strong>{{ visitorLabel }}</strong>
               </span>
               <span class="festival-dash-visitor-actions">
@@ -355,13 +389,16 @@ function goBack(): void {
           </button>
         </nav>
 
-        <div class="festival-dash-grid">
+        <div class="festival-dash-sections">
           <!-- The plan -->
-          <section
-            id="festival-map"
-            class="festival-dash-section festival-dash-section--wide"
-            :class="{ 'is-current': current === 'map' }"
-            aria-label="Festival map"
+          <FestivalDashSection
+            id="map"
+            title="Festival Map"
+            icon="map-location-dot"
+            :summary="tally.map"
+            :collapsed="collapsed.has('map')"
+            :current="current === 'map'"
+            @toggle="toggle('map')"
           >
             <FestivalMapWidget
               :map="store.map"
@@ -409,20 +446,19 @@ function goBack(): void {
                 </button>
               </template>
             </FestivalMapWidget>
-          </section>
+          </FestivalDashSection>
 
           <!-- The stamp rally -->
-          <section
+          <FestivalDashSection
             v-if="rally"
-            id="festival-stamps"
-            class="festival-dash-section"
-            :class="{ 'is-current': current === 'stamps' }"
-            aria-labelledby="festival-stamps-title"
+            id="stamps"
+            :title="rally.title"
+            icon="stamp"
+            :summary="tally.stamps"
+            :collapsed="collapsed.has('stamps')"
+            :current="current === 'stamps'"
+            @toggle="toggle('stamps')"
           >
-            <h3 id="festival-stamps-title" class="festival-dash-section-title">
-              <font-awesome-icon :icon="['fad', 'stamp']" /> {{ rally.title }}
-            </h3>
-
             <StampCardPanel v-if="store.card" :token="store.cardToken" :show-details="false" />
 
             <template v-else>
@@ -500,19 +536,19 @@ function goBack(): void {
                 </div>
               </div>
             </template>
-          </section>
+          </FestivalDashSection>
 
           <!-- The garapon -->
-          <section
+          <FestivalDashSection
             v-if="garapon"
-            id="festival-garapon"
-            class="festival-dash-section"
-            :class="{ 'is-current': current === 'garapon' }"
-            aria-labelledby="festival-garapon-title"
+            id="garapon"
+            :title="garapon.garapon.title"
+            icon="ferris-wheel"
+            :summary="tally.garapon"
+            :collapsed="collapsed.has('garapon')"
+            :current="current === 'garapon'"
+            @toggle="toggle('garapon')"
           >
-            <h3 id="festival-garapon-title" class="festival-dash-section-title">
-              <font-awesome-icon :icon="['fad', 'ferris-wheel']" /> {{ garapon.garapon.title }}
-            </h3>
             <!-- Without the drawing link there is nothing to spin: say why, and
                  how to get there. -->
             <p v-if="!garapon.player" class="form-alert form-alert-info" role="status">
@@ -534,20 +570,20 @@ function goBack(): void {
               <span v-else>Draws come with a stamp card from staff.</span>
             </p>
             <GaraponPanel :token="store.garaponToken" :show-details="!garapon.player" />
-          </section>
+          </FestivalDashSection>
 
           <!-- The raffles -->
-          <section
+          <FestivalDashSection
             v-if="raffles.length"
-            id="festival-raffles"
-            class="festival-dash-section"
-            :class="{ 'is-current': current === 'raffles' }"
-            aria-labelledby="festival-raffles-title"
+            id="raffles"
+            title="Raffles"
+            icon="ticket"
+            :summary="tally.raffles"
+            :collapsed="collapsed.has('raffles')"
+            :current="current === 'raffles'"
+            @toggle="toggle('raffles')"
           >
-            <h3 id="festival-raffles-title" class="festival-dash-section-title">
-              <font-awesome-icon :icon="['fad', 'ticket']" /> Raffles
-            </h3>
-            <div class="list-stack">
+            <div class="festival-raffle-grid">
               <FestivalRaffleCard
                 v-for="row in raffles"
                 :key="row.raffle.id"
@@ -555,22 +591,21 @@ function goBack(): void {
                 :turnstile-site-key="turnstileSiteKey"
               />
             </div>
-          </section>
+          </FestivalDashSection>
 
           <!-- Ema plaques -->
-          <section
+          <FestivalDashSection
             v-if="data?.ema"
-            id="festival-ema"
-            class="festival-dash-section festival-dash-section--wide"
-            :class="{ 'is-current': current === 'ema' }"
-            aria-labelledby="festival-ema-title"
+            id="ema"
+            :title="data.ema.title || 'Ema Plaques'"
+            icon="torii-gate"
+            :summary="tally.ema"
+            :collapsed="collapsed.has('ema')"
+            :current="current === 'ema'"
+            @toggle="toggle('ema')"
           >
-            <h3 id="festival-ema-title" class="festival-dash-section-title">
-              <font-awesome-icon :icon="['fad', 'torii-gate']" />
-              {{ data.ema.title || 'Ema Plaques' }}
-            </h3>
             <FestivalEmaSection :ema="data.ema" :turnstile-site-key="turnstileSiteKey" />
-          </section>
+          </FestivalDashSection>
         </div>
       </template>
     </div>

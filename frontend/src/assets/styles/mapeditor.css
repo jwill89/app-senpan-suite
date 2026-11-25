@@ -212,10 +212,15 @@
      A single fixed colour cannot serve every fill an admin might pick. */
   color: var(--stall-text, #fff);
   pointer-events: none;
-  overflow-wrap: anywhere;
+
+  /* Lines break between words, never inside one: "SENPA / N TEA HOUSE" is
+     unreadable. A word too long for its pitch overflows instead, which is what
+     tells the fit (below) to shrink the label until it doesn't. */
+  overflow-wrap: normal;
 
   /* The label, not the stall, is what clips - so a long title stays inside its
-     shape without taking the drag handles with it. */
+     shape without taking the drag handles with it. With the fit, clipping is the
+     last resort for a name no size will fit. */
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;
@@ -227,16 +232,24 @@
      The `2.2N - 1.2` divisor is what a pitch's TENANT COUNT costs it: at one
      tenant it is exactly 1, so a normal pitch is untouched; at two the ceiling
      drops to a third, because two tenants and the rule between them do not fit in
-     the room written for one, and the label clips rather than overflowing. The
-     0.2 over a flat halving is the clearance a centred label needs, which spills
-     equally top and bottom when it overruns.
+     the room written for one.
      Sizing straight off the box (`26cqh` alone) would make a tall pitch and a
      short one on the same plan draw their names at wildly different sizes, and
      dragging a resize handle would rescale the text the whole way. As a ceiling,
      it engages only below roughly 5% of the map's height.
+     --label-fit is the rest of the trim, and the part CSS cannot work out: how
+     far this pitch's longest word and its line count need the label shrunk to
+     fit the pitch whole. useStallLabelFit measures it after layout and writes it
+     only on a label that overflows, so a label that fits keeps the plan's size.
+     There is no floor. The plan zooms by a transform, so a label is laid out at
+     the plan's unzoomed size: a floor would hold a phone's labels too big for
+     their pitches and clip them however far the visitor zooms in, where a label
+     drawn to scale is small at first and reads once zoomed.
      Dropping the declaration on an engine without `cqh` leaves the plain
      inherited size, which is already the uniform one. */
-  font-size: max(0.34rem, min(1em, calc(42cqh / (2.2 * var(--stall-occupants, 1) - 1.2))));
+  font-size: calc(
+    min(1em, calc(42cqh / (2.2 * var(--stall-occupants, 1) - 1.2))) * var(--label-fit, 1)
+  );
 }
 
 /* One occupant's TWO LINES inside a pitch - its title, then the caption naming
@@ -294,6 +307,31 @@
 .map-stall--round .map-stall-label {
   max-width: 70%;
   max-height: 70%;
+}
+
+/* Room for the stamp-rally mark (.festival-map-canvas__stamp), so it never sits on
+   the name. The mark is a square of min(19%, 15px) in the pitch's top-right
+   corner; the label keeps clear of it by the same amount on BOTH sides, so it stays
+   centred, and takes that room from the pitch's longer side, where it costs the
+   name least: the width of a wide pitch, the height of a tall one. The fit
+   (useStallLabelFit) then sizes the name to what is left. `cqw` here is the
+   pitch's own width: the label's nearest size container is the .map-stall. */
+@container (orientation: landscape) {
+  .map-stall:has(> .festival-map-canvas__stamp) > .map-stall-label {
+    max-width: calc(100% - 2 * (min(19cqw, 15px) + 2px));
+  }
+}
+
+@container (orientation: portrait) {
+  .map-stall:has(> .festival-map-canvas__stamp) > .map-stall-label {
+    max-height: calc(100% - 2 * (min(19cqw, 15px) + 2px));
+  }
+}
+
+/* A circle's mark sits at the top of the disc, 5% down, so the label's band ends
+   clear of it top and bottom: 100% less 5% and the mark on each side. */
+.map-stall--round:has(> .festival-map-canvas__stamp) > .map-stall-label {
+  max-height: min(70%, calc(90% - 2 * (min(19cqw, 15px) + 2px)));
 }
 
 /* -- Festival map: public interactive view ---------------------------------- */

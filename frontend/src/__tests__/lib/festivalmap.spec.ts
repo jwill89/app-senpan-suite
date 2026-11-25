@@ -352,6 +352,23 @@ describe('map labelling', () => {
     expect(occupantListLabel({ affiliateName: 'Lunaria', title: 'lunaria' })).toBe('Lunaria')
   })
 
+  it('lets a title that opens with the affiliate name stand alone', () => {
+    // "Lunaria - Lunaria (Day 2)" says the name twice; the title alone says both.
+    expect(occupantListLabel({ affiliateName: 'Lunaria', title: 'Lunaria (Day 2)' })).toBe(
+      'Lunaria (Day 2)',
+    )
+    expect(
+      occupantListLabel({ affiliateName: 'Senpan Tea House', title: 'senpan tea house booth' }),
+    ).toBe('senpan tea house booth')
+    // Only the WHOLE name: a title that merely starts with the same letters is a
+    // different word, and the affiliate still leads it.
+    expect(occupantListLabel({ affiliateName: 'Tea', title: 'Teacups' })).toBe('Tea - Teacups')
+    // Nor a title that only mentions the name further in.
+    expect(occupantListLabel({ affiliateName: 'Lunaria', title: 'Moon & Lunaria' })).toBe(
+      'Lunaria - Moon & Lunaria',
+    )
+  })
+
   it('does not repeat a title after itself in a list label', () => {
     // With no affiliate the title IS the name.
     expect(occupantListLabel({ affiliate: null, title: 'Atelier YAO' })).toBe('Atelier YAO')

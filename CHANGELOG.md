@@ -10,6 +10,21 @@ The app's major version rises for a breaking change to the JSON API or the live 
 
 ## [Unreleased]
 
+## [5.6.0] - 2026-11-25
+
+### Changed
+
+- The festival dashboard gives each section the page's full width, one under another, and each folds away from its heading while still showing its tally. The stamp card and the garapon drum sit beside their stall and prize lists, and the raffles sit side by side.
+- The festival dashboard's header puts the days first, then a folded description set as readable text, then who is visiting.
+- The festival map fills its section on the dashboard.
+
+### Fixed
+
+- A stall's name on a festival map no longer breaks in the middle of a word or loses lines off its edge: a name that doesn't fit its stall is drawn smaller until it does, on the public map and in the admin editor.
+- The stamp-rally mark on a festival map stall no longer covers the end of the stall's name.
+- A festival map stall's details no longer repeat its name, as in "Atelier Yao - Atelier Yao", when the stall is titled after its affiliate, has no affiliate, or its title starts with the affiliate's name.
+- In the admin map editor, a stall with no affiliate shows its title, as the public map does, instead of no name.
+
 ## [5.5.0] - 2026-11-16
 
 Needs one-time steps at deploy (docs/ops.md, Upgrading to 5.5.0).
@@ -654,7 +669,8 @@ Needs a one-time step at deploy (docs/ops.md, Upgrading to 5.2.0).
 
 - The CodeMirror free-form CSS theme editor; themes are now structured tokens.
 
-[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/v5.5.0...HEAD
+[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/v5.6.0...HEAD
+[5.6.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.4.0...v5.5.0
 [5.4.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.3.0...v5.4.0
 [5.3.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.2.0...v5.3.0

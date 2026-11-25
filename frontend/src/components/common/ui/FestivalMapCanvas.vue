@@ -15,6 +15,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue'
 import { assetUrl } from '@/lib/assets'
+import { useStallLabelFit } from '@/composables/useStallLabelFit'
 import {
   clampPan as clampPanTo,
   fitZoom as fitZoomFor,
@@ -84,6 +85,8 @@ const MAX_ZOOM = 6
 
 const viewportRef = useTemplateRef<HTMLElement>('viewportRef')
 const canvasRef = useTemplateRef<HTMLElement>('canvasRef')
+// Names that would break mid-word or run off their pitch are shrunk to fit it.
+const { refit: refitLabels } = useStallLabelFit(canvasRef)
 const zoom = ref(1)
 const panX = ref(0)
 const panY = ref(0)
@@ -237,6 +240,9 @@ async function onImageLoad(e: Event): Promise<void> {
   // leaves the plan inset inside a frame that was about to fit it exactly.
   await nextTick()
   measureCanvas()
+  // The pitches have their height only now; an observer may not report it while
+  // the page is hidden.
+  refitLabels()
 }
 
 /**

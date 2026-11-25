@@ -16,6 +16,7 @@ import { assetUrl } from '@/lib/assets'
 import { isCircle, occupantMapLabel, stallCaption, stallColor, stallStyle } from '@/lib/festivalmap'
 import { useFestivalMapsStore } from '@/stores/festivalMaps'
 import { usePlacementDrag, type DragMode } from '@/composables/usePlacementDrag'
+import { useStallLabelFit } from '@/composables/useStallLabelFit'
 import type { FestivalStallForm, FestivalStallOccupantForm } from '@/types/api'
 import type { Placement } from '@/api/client'
 
@@ -33,6 +34,9 @@ const emit = defineEmits<{
 
 const canvasRef = useTemplateRef<HTMLElement>('canvasRef')
 
+// The labels fit their pitches exactly as the public map fits them.
+const { refit: refitLabels } = useStallLabelFit(canvasRef)
+
 const store = useFestivalMapsStore()
 
 /**
@@ -41,12 +45,12 @@ const store = useFestivalMapsStore()
  * and the map never uses one.
  *
  * The form holds an affiliate ID rather than a name, so it is resolved against the
- * same list the affiliate picker offers. No match (or none chosen) is the venue's
- * own booth, which occupantMapLabel names.
+ * same list the affiliate picker offers. An occupant with no affiliate (or one not
+ * in the list) is named by its own title, as the public map names it.
  */
 function editorLabel(occupant: FestivalStallOccupantForm): string {
   const affiliate = store.affiliates.find((a) => a.id === occupant.affiliateId)
-  return occupantMapLabel({ affiliateName: affiliate?.name ?? '' })
+  return occupantMapLabel({ title: occupant.title, affiliateName: affiliate?.name ?? '' })
 }
 
 const { beginDrag: startDrag } = usePlacementDrag<number>(canvasRef, (uid, placement) =>
@@ -100,6 +104,7 @@ function onCanvasPointerDown(e: PointerEvent): void {
         class="map-canvas-bg"
         alt="Festival map"
         draggable="false"
+        @load="refitLabels"
       />
       <div v-else class="map-canvas-bg map-canvas-empty">
         <font-awesome-icon :icon="['fad', 'image']" /> Pick a base map image

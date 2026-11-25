@@ -588,8 +588,8 @@ export function occupantDayNote(
 
 /**
  * How an occupant is named in a LIST - an admin's stall table, or a picker that
- * attaches a raffle or a stamp to one: "Affiliate - Title", or just the affiliate
- * where there is no title.
+ * attaches a raffle or a stamp to one - and at the head of its detail panel on the
+ * public map: "Affiliate - Title", or just the affiliate where there is no title.
  *
  * Distinct from occupantMapLabel, which is the affiliate alone because that is what
  * the map draws. A list has room for both, and needs it: two pitches held by the
@@ -614,6 +614,12 @@ export function occupantListLabel(occupant: {
   // it is common, and "Lunaria - Lunaria" reads as a mistake.
   if (!title || title.toLowerCase() === affiliate.toLowerCase()) {
     return affiliate
+  }
+  // A title that opens with the affiliate's whole name already says both, as in
+  // "Lunaria (Day 2)": "Lunaria - Lunaria (Day 2)" would only say it twice.
+  const rest = title.slice(affiliate.length)
+  if (title.toLowerCase().startsWith(affiliate.toLowerCase()) && !/^[\p{L}\p{N}]/u.test(rest)) {
+    return title
   }
   return `${affiliate} - ${title}`
 }

@@ -9,7 +9,8 @@
  * It renders the garapon store's loaded public state, so the drawing page
  * (views/GaraponView) and the festival dashboard show one and the same drum. The
  * dashboard may load a drum with no player - the visitor has no drawing link on
- * this device - and then the panel is the prize list alone.
+ * this device - and then the panel is the prize list alone. Given the room (the
+ * dashboard), the drum sits beside the prizes rather than above them.
  */
 import { computed } from 'vue'
 import MarkdownText from '@/components/common/MarkdownText.vue'
@@ -51,117 +52,130 @@ function onSettled(resp: GaraponDrawResult): void {
   emit('drawn', resp)
 }
 
+/** Whether there is a drum or a standing to show beside the prizes. */
+const hasStage = computed(() => !!garapons.publicPlayer || isClosed.value || !!garapons.lastWin)
+
 function when(ts: string | null): string {
   return ts ? formatServerTimestamp(ts) : ''
 }
 </script>
 
 <template>
-  <div v-if="garapons.publicGarapon">
-    <!-- Whose link this is -->
-    <p v-if="garapons.publicPlayer" class="lead-line">
-      <font-awesome-icon :icon="['fad', 'user']" /> Drawing for
-      <strong>{{ garapons.publicPlayer.playerName }}</strong>
-    </p>
+  <div v-if="garapons.publicGarapon" :class="{ 'two-pane': hasStage }">
+    <div class="two-pane-grid">
+      <div v-if="hasStage" class="two-pane-main">
+        <!-- Whose link this is -->
+        <p v-if="garapons.publicPlayer" class="lead-line">
+          <font-awesome-icon :icon="['fad', 'user']" /> Drawing for
+          <strong>{{ garapons.publicPlayer.playerName }}</strong>
+        </p>
 
-    <!-- Status / remaining draws. With no player there is no allowance to state:
+        <!-- Status / remaining draws. With no player there is no allowance to state:
          the dashboard shows a drum before the visitor has a link for it. -->
-    <p v-if="garapons.publicPlayer || isClosed" class="lead-line lead-line--tally">
-      <template v-if="isClosed">
-        <font-awesome-icon :icon="['fad', 'lock']" /> This garapon has closed.
-      </template>
-      <template v-else-if="garapons.drawsRemaining > 0">
-        <strong>{{ garapons.drawsRemaining }}</strong> of
-        {{ garapons.publicPlayer?.maxDraws }} draw{{
-          garapons.publicPlayer?.maxDraws === 1 ? '' : 's'
-        }}
-        remaining
-      </template>
-      <template v-else>
-        <font-awesome-icon :icon="['fad', 'circle-check']" /> You've used all your draws.
-      </template>
-    </p>
+        <p v-if="garapons.publicPlayer || isClosed" class="lead-line lead-line--tally">
+          <template v-if="isClosed">
+            <font-awesome-icon :icon="['fad', 'lock']" /> This garapon has closed.
+          </template>
+          <template v-else-if="garapons.drawsRemaining > 0">
+            <strong>{{ garapons.drawsRemaining }}</strong> of
+            {{ garapons.publicPlayer?.maxDraws }} draw{{
+              garapons.publicPlayer?.maxDraws === 1 ? '' : 's'
+            }}
+            remaining
+          </template>
+          <template v-else>
+            <font-awesome-icon :icon="['fad', 'circle-check']" /> You've used all your draws.
+          </template>
+        </p>
 
-    <!-- Congratulations banner -->
-    <div v-if="garapons.lastWin" class="callout">
-      <BallSwatch :color="garapons.lastWin.ballColor" />
-      <font-awesome-icon :icon="['fad', 'champagne-glasses']" /> Congratulations, you've won
-      <strong>{{ garapons.lastWin.prizeName }}</strong>!
-    </div>
+        <!-- Congratulations banner -->
+        <div v-if="garapons.lastWin" class="callout">
+          <BallSwatch :color="garapons.lastWin.ballColor" />
+          <font-awesome-icon :icon="['fad', 'champagne-glasses']" /> Congratulations, you've won
+          <strong>{{ garapons.lastWin.prizeName }}</strong>!
+        </div>
 
-    <!-- The drum (open + a link to draw with) -->
-    <div v-if="!isClosed && garapons.publicPlayer" class="garapon-wheel-wrap">
-      <GaraponWheel :disabled="!garapons.canDraw" :perform-draw="onDraw" @settled="onSettled" />
-    </div>
-
-    <!-- Grand prize showcase -->
-    <div v-if="garapons.grandPrize" class="mb-16">
-      <h3 class="section-heading"><font-awesome-icon :icon="['fad', 'trophy']" /> Grand Prize</h3>
-      <div class="garapon-grand">
-        <img
-          v-if="garapons.publicGarapon.grandPrizeImage"
-          :src="assetUrl(garapons.publicGarapon.grandPrizeImage)"
-          class="garapon-grand-img"
-          alt="Grand prize"
-        />
-        <div class="garapon-grand-meta">
-          <BallSwatch :color="garapons.grandPrize.ballColor" size="lg" />
-          <span class="garapon-grand-name">{{ garapons.grandPrize.name }}</span>
+        <!-- The drum (open + a link to draw with) -->
+        <div v-if="!isClosed && garapons.publicPlayer" class="garapon-wheel-wrap">
+          <GaraponWheel :disabled="!garapons.canDraw" :perform-draw="onDraw" @settled="onSettled" />
         </div>
       </div>
-    </div>
 
-    <!-- Details (markdown) -->
-    <MarkdownText
-      v-if="showDetails && garapons.publicGarapon.details"
-      class="game-details mb-16"
-      :source="garapons.publicGarapon.details"
-    />
+      <div class="two-pane-aside">
+        <!-- Grand prize showcase -->
+        <div v-if="garapons.grandPrize" class="mb-16">
+          <h3 class="section-heading">
+            <font-awesome-icon :icon="['fad', 'trophy']" /> Grand Prize
+          </h3>
+          <div class="garapon-grand">
+            <img
+              v-if="garapons.publicGarapon.grandPrizeImage"
+              :src="assetUrl(garapons.publicGarapon.grandPrizeImage)"
+              class="garapon-grand-img"
+              alt="Grand prize"
+            />
+            <div class="garapon-grand-meta">
+              <BallSwatch :color="garapons.grandPrize.ballColor" size="lg" />
+              <span class="garapon-grand-name">{{ garapons.grandPrize.name }}</span>
+            </div>
+          </div>
+        </div>
 
-    <!-- Other prizes -->
-    <div v-if="garapons.otherPrizes.length" class="mb-16">
-      <h3 class="section-heading"><font-awesome-icon :icon="['fad', 'gift']" /> Other Prizes</h3>
-      <table class="data-table w-full">
-        <thead>
-          <tr>
-            <th class="ta-center">Ball</th>
-            <th>Prize</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in garapons.otherPrizes" :key="p.id">
-            <td class="ta-center">
-              <BallSwatch :color="p.ballColor" />
-            </td>
-            <td>{{ p.name }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        <!-- Details (markdown) -->
+        <MarkdownText
+          v-if="showDetails && garapons.publicGarapon.details"
+          class="game-details mb-16"
+          :source="garapons.publicGarapon.details"
+        />
 
-    <!-- Player's record -->
-    <div v-if="garapons.publicDraws.length" class="mb-16">
-      <h3 class="section-heading">
-        <font-awesome-icon :icon="['fad', 'clipboard-list']" /> Your Prizes
-      </h3>
-      <table class="data-table w-full">
-        <thead>
-          <tr>
-            <th class="ta-center">Ball</th>
-            <th>Prize</th>
-            <th class="ta-right">When</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="(d, i) in garapons.publicDraws" :key="i">
-            <td class="ta-center">
-              <BallSwatch :color="d.ballColor" />
-            </td>
-            <td>{{ d.prizeName }}</td>
-            <td class="ta-right text-sm text-muted">{{ when(d.drawnAt) }}</td>
-          </tr>
-        </tbody>
-      </table>
+        <!-- Other prizes -->
+        <div v-if="garapons.otherPrizes.length" class="mb-16">
+          <h3 class="section-heading">
+            <font-awesome-icon :icon="['fad', 'gift']" /> Other Prizes
+          </h3>
+          <table class="data-table w-full">
+            <thead>
+              <tr>
+                <th class="ta-center">Ball</th>
+                <th>Prize</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in garapons.otherPrizes" :key="p.id">
+                <td class="ta-center">
+                  <BallSwatch :color="p.ballColor" />
+                </td>
+                <td>{{ p.name }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Player's record -->
+        <div v-if="garapons.publicDraws.length" class="mb-16">
+          <h3 class="section-heading">
+            <font-awesome-icon :icon="['fad', 'clipboard-list']" /> Your Prizes
+          </h3>
+          <table class="data-table w-full">
+            <thead>
+              <tr>
+                <th class="ta-center">Ball</th>
+                <th>Prize</th>
+                <th class="ta-right">When</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="(d, i) in garapons.publicDraws" :key="i">
+                <td class="ta-center">
+                  <BallSwatch :color="d.ballColor" />
+                </td>
+                <td>{{ d.prizeName }}</td>
+                <td class="ta-right text-sm text-muted">{{ when(d.drawnAt) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </div>
 </template>
