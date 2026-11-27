@@ -1,0 +1,42 @@
+{
+  "signups": [
+    {
+      "assignableStarts": [],
+      "boothId": 3,
+      "calledAt": null,
+      "characterName": "Aya Lantern",
+      "createdAt": "2026-08-01T12:00:00Z",
+      "id": 8,
+      "minutes": 15,
+      "paid": true,
+      "position": 0,
+      "price": 50000,
+      "slotEnd": "2026-08-01T18:15:00Z",
+      "slotStart": "2026-08-01T18:00:00Z",
+      "status": "no_show",
+      "typeId": 1,
+      "typeName": "Solo",
+      "waitlisted": false,
+      "world": "Gilgamesh"
+    },
+    {
+      "assignableStarts": ["2026-08-01T18:00:00Z", "2026-08-01T18:15:00Z"],
+      "boothId": 3,
+      "calledAt": "2026-08-01T17:58:00Z",
+      "characterName": "Bo Koi",
+      "createdAt": "2026-08-01T12:05:00Z",
+      "id": 9,
+      "minutes": 15,
+      "paid": false,
+      "position": 1,
+      "price": 0,
+      "slotEnd": null,
+      "slotStart": null,
+      "status": "waiting",
+      "typeId": null,
+      "typeName": "Solo",
+      "waitlisted": true,
+      "world": "Sargatanas"
+    }
+  ]
+}

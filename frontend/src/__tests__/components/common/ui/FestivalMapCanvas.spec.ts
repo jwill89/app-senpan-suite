@@ -143,6 +143,7 @@ function stall(over: Partial<PublicStallOccupant> = {}, id = 1): PublicFestivalS
         rallyTitle: '',
         stampImage: '',
         raffle: null,
+        gposeBooth: null,
         ...over,
       },
     ],

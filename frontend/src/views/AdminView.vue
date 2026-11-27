@@ -30,6 +30,7 @@ import { useRafflesStore } from '@/stores/raffles'
 import { useStampRalliesStore } from '@/stores/stampRallies'
 import { useGaraponsStore } from '@/stores/garapons'
 import { useEmaStore } from '@/stores/ema'
+import { useGposeStore } from '@/stores/gpose'
 import { useFestivalMapsStore } from '@/stores/festivalMaps'
 import { useUiStore } from '@/stores/ui'
 import { armAudioOnFirstGesture } from '@/lib/sound'
@@ -52,6 +53,7 @@ const stampRallies = useStampRalliesStore()
 const garapons = useGaraponsStore()
 const festivalMaps = useFestivalMapsStore()
 const ema = useEmaStore()
+const gpose = useGposeStore()
 const ui = useUiStore()
 
 onMounted(async () => {
@@ -82,6 +84,9 @@ onMounted(async () => {
     }
     if (auth.hasPermission('festival-map')) {
       loads.push(festivalMaps.loadMaps())
+    }
+    if (auth.hasPermission('festival-gpose')) {
+      loads.push(gpose.loadBooths())
     }
     if (auth.hasPermission('festival-ema')) {
       loads.push(ema.loadBoards())

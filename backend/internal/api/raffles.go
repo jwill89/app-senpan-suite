@@ -653,33 +653,39 @@ func (h handlers) columns(in RaffleInput) (db.CreateRaffleParams, error) {
 }
 
 // resolveStall settles a raffle's festival and its assigned stall against what
-// exists. A raffle naming no festival has its stall cleared, since a stall would
-// claim a festival link it doesn't have; a festival that is gone is a 422; and a stall
-// that isn't on the festival is dropped rather than failing the save, since the
-// raffle is still a good raffle, only not pinned to a pitch.
+// exists (settleFestivalStall).
 func (h handlers) resolveStall(ctx context.Context, p *db.CreateRaffleParams) error {
-	if !p.FestivalMapID.Valid {
-		p.OccupantID = sql.NullInt64{}
+	return h.settleFestivalStall(ctx, &p.FestivalMapID, &p.OccupantID, "raffle")
+}
+
+// settleFestivalStall settles the festival a raffle or booth is filed under and the
+// stall it is pinned to against what exists. One naming no festival has its stall
+// cleared, since a stall would claim a festival link it doesn't have; a festival that
+// is gone is a 422; and a stall that isn't on the festival is dropped rather than
+// failing the save, since the item is still good, only not pinned to a pitch.
+func (h handlers) settleFestivalStall(ctx context.Context, mapID, occupantID *sql.NullInt64, what string) error {
+	if !mapID.Valid {
+		*occupantID = sql.NullInt64{}
 		return nil
 	}
-	m, err := h.findFestivalMap(ctx, h.read(), p.FestivalMapID.Int64)
+	m, err := h.findFestivalMap(ctx, h.read(), mapID.Int64)
 	if err != nil {
-		return h.fail("read a festival for a raffle", err)
+		return h.fail("read a festival for a "+what, err)
 	}
 	if m == nil {
-		return unknown("body.festivalMapId", p.FestivalMapID.Int64, "festival")
+		return unknown("body.festivalMapId", mapID.Int64, "festival")
 	}
-	if !p.OccupantID.Valid {
+	if !occupantID.Valid {
 		return nil
 	}
 	for _, stall := range m.Stalls {
 		for _, o := range stall.Occupants {
-			if o.ID == p.OccupantID.Int64 {
+			if o.ID == occupantID.Int64 {
 				return nil
 			}
 		}
 	}
-	p.OccupantID = sql.NullInt64{}
+	*occupantID = sql.NullInt64{}
 	return nil
 }
 

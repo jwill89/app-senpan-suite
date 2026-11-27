@@ -35,6 +35,7 @@ public sealed class MainWindow : Window, IDisposable
     private readonly RaffleTab raffle;
     private readonly GaraponTab garapon;
     private readonly StampRallyTab stampRally;
+    private readonly GposeTab gpose;
     private readonly RollsTab rolls;
     private readonly TimedMacrosTab timedMacros;
 
@@ -90,6 +91,7 @@ public sealed class MainWindow : Window, IDisposable
         this.raffle = new RaffleTab(api, nearby);
         this.garapon = new GaraponTab(api, nearby, config, chat);
         this.stampRally = new StampRallyTab(api, nearby, config, chat);
+        this.gpose = new GposeTab(api);
         this.rolls = new RollsTab(rollTracker);
         this.timedMacros = new TimedMacrosTab(config, timedMacroRunner);
         this.live.Opened += this.OnStreamOpened;
@@ -230,7 +232,8 @@ public sealed class MainWindow : Window, IDisposable
             this.NavItem("Tea Rooms", Page.TeaRooms, s.Has(Perms.TeahouseTeaRooms));
         }
 
-        var showFestival = s.Has(Perms.TeahouseRaffles) || s.Has(Perms.FestivalGarapon) || s.Has(Perms.FestivalStampRally);
+        var showFestival = s.Has(Perms.TeahouseRaffles) || s.Has(Perms.FestivalGarapon) || s.Has(Perms.FestivalStampRally)
+            || s.Has(Perms.FestivalGpose);
         if (showFestival && ImGui.CollapsingHeader("Festival###secFestival", ImGuiTreeNodeFlags.DefaultOpen))
         {
             this.NavItem("Raffles", Page.Raffles, s.Has(Perms.TeahouseRaffles));
@@ -238,6 +241,7 @@ public sealed class MainWindow : Window, IDisposable
             this.NavItem("Garapon Draw Log", Page.GaraponLog, s.Has(Perms.FestivalGarapon));
             this.NavItem("Stamp Rally", Page.StampRally, s.Has(Perms.FestivalStampRally));
             this.NavItem("Stamp Rally Log", Page.StampRallyLog, s.Has(Perms.FestivalStampRally));
+            this.NavItem("Gpose Booth", Page.Gpose, s.Has(Perms.FestivalGpose));
         }
 
         // Account-free tools live under their own always-visible group, mirroring the
@@ -312,6 +316,10 @@ public sealed class MainWindow : Window, IDisposable
                 this.stampRally.EnsureLoaded();
                 this.stampRally.DrawLog();
                 break;
+            case Page.Gpose:
+                this.gpose.EnsureLoaded();
+                this.gpose.Draw();
+                break;
             case Page.Rolls:
                 this.rolls.Draw();
                 break;
@@ -343,6 +351,7 @@ public sealed class MainWindow : Window, IDisposable
         Page.Raffles => this.session.Has(Perms.TeahouseRaffles),
         Page.Garapon or Page.GaraponLog => this.session.Has(Perms.FestivalGarapon),
         Page.StampRally or Page.StampRallyLog => this.session.Has(Perms.FestivalStampRally),
+        Page.Gpose => this.session.Has(Perms.FestivalGpose),
         Page.Rolls or Page.TimedMacros or Page.Settings or Page.About => true,
         _ => false,
     };
@@ -352,7 +361,8 @@ public sealed class MainWindow : Window, IDisposable
         Page[] order =
         {
             Page.BingoGame, Page.BingoCards, Page.BingoWinners, Page.TeaRooms, Page.Raffles,
-            Page.Garapon, Page.GaraponLog, Page.StampRally, Page.StampRallyLog, Page.Rolls, Page.TimedMacros, Page.Settings,
+            Page.Garapon, Page.GaraponLog, Page.StampRally, Page.StampRallyLog, Page.Gpose, Page.Rolls, Page.TimedMacros,
+            Page.Settings,
         };
         foreach (var p in order)
         {
@@ -374,6 +384,7 @@ public sealed class MainWindow : Window, IDisposable
         GaraponLog,
         StampRally,
         StampRallyLog,
+        Gpose,
         Rolls,
         TimedMacros,
         Settings,
@@ -415,7 +426,8 @@ public sealed class MainWindow : Window, IDisposable
         var anyPanel = this.session.Has(Perms.BingoGame) || this.session.Has(Perms.BingoCards)
             || this.session.Has(Perms.BingoWinnersLog) || this.session.Has(Perms.TeahouseTeaRooms)
             || this.session.Has(Perms.TeahouseRaffles)
-            || this.session.Has(Perms.FestivalGarapon) || this.session.Has(Perms.FestivalStampRally);
+            || this.session.Has(Perms.FestivalGarapon) || this.session.Has(Perms.FestivalStampRally)
+            || this.session.Has(Perms.FestivalGpose);
         if (!anyPanel)
             UiText.WrappedDisabled("Your account has no Senpan panel permissions - ask an admin to grant access.");
     }
@@ -655,6 +667,7 @@ public sealed class MainWindow : Window, IDisposable
         this.raffle.MarkStale();
         this.garapon.MarkStale();
         this.stampRally.MarkStale();
+        this.gpose.MarkStale();
     }
 
     /// <summary>
@@ -684,6 +697,9 @@ public sealed class MainWindow : Window, IDisposable
                 break;
             case "tea-rooms":
                 this.teaRooms.MarkStale();
+                break;
+            case "gpose-booths":
+                this.gpose.MarkStale();
                 break;
             case "winners-log":
                 this.winnersLog.MarkStale();

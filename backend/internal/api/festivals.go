@@ -16,8 +16,8 @@ import (
 )
 
 // The festival dashboard: one page where a participant follows everything filed under
-// a festival (the plan, their stamp card, their garapon draws, their raffle entries
-// and the plaque board) and acts on each. It is only the read that depends on who is
+// a festival (the plan, their stamp card, their garapon draws, their raffle entries,
+// the plaque board and the gpose booths) and acts on each. It is only the read that depends on who is
 // looking; the plan is the public map, and every action goes through the operation
 // that already owns it.
 
@@ -71,6 +71,7 @@ type FestivalDashboard struct {
 	Garapon         *FestivalDashboardGarapon `json:"garapon" doc:"The garapon serving the rally; null when there is none."`
 	Raffles         []FestivalRaffle          `json:"raffles" nullable:"false" doc:"The festival's raffles a visitor may see, newest first."`
 	Ema             *FestivalEma              `json:"ema" doc:"The festival's open plaque board; null when it has none."`
+	GposeBooths     []FestivalGposeBooth      `json:"gposeBooths" nullable:"false" doc:"The festival's open gpose booths, oldest first, each with the visitor's own sign-ups."`
 }
 
 type festivalDashboardInput struct {
@@ -124,7 +125,7 @@ func (h handlers) readFestivalDashboard(ctx context.Context, in *festivalDashboa
 	}
 	name, world := strings.TrimSpace(in.Body.CharacterName), strings.TrimSpace(in.Body.World)
 	now := time.Now().UTC()
-	out := FestivalDashboard{Raffles: []FestivalRaffle{}}
+	out := FestivalDashboard{Raffles: []FestivalRaffle{}, GposeBooths: []FestivalGposeBooth{}}
 
 	// The drawing link first: it is the stronger secret, and it carries its paired card,
 	// so a device holding only the drawing link still gets the card.
@@ -204,6 +205,9 @@ func (h handlers) readFestivalDashboard(ctx context.Context, in *festivalDashboa
 	}
 	if out.Ema, err = h.buildFestivalEma(ctx, q, m.ID, out.ParticipantName, out.World, now); err != nil {
 		return nil, h.fail("read a festival's plaque board", err)
+	}
+	if out.GposeBooths, err = h.dashboardGpose(ctx, q, m.ID, out.ParticipantName, out.World, now); err != nil {
+		return nil, err
 	}
 	return &festivalDashboardOutput{Body: out}, nil
 }

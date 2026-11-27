@@ -77,6 +77,12 @@ type Server struct {
 	// Public Ema plaque submissions (designs and artist requests share it). A visitor
 	// sends one or two a festival, so this only stops a flood.
 	emaLimiter *rateLimiter
+	// Public gpose booth sign-ups, every one counted: a visitor books one or two shoots.
+	gposeSignupLimiter *rateLimiter
+	// A visitor's look at their own gpose sign-ups. The festival dashboard and the booth
+	// page read it every half minute while a sign-up waits, so a staff call reaches
+	// them, which this allows with room to spare.
+	gposeLookupLimiter *rateLimiter
 	// Discord sign-ins started and admins' Discord links opened. Each start leaves a
 	// state in the session store until it expires, so every one counts; a person who
 	// cancels at Discord and tries again a few times stays well under it.
@@ -250,6 +256,8 @@ func New(ctx context.Context, st *store.Store, hub *live.Hub, dataDir string, al
 		passkeyBeginLimiter: newRateLimiter(30, 10*time.Minute),
 		dashboardLimiter:    newRateLimiter(120, 10*time.Minute),
 		emaLimiter:          newRateLimiter(10, 10*time.Minute),
+		gposeSignupLimiter:  newRateLimiter(15, 10*time.Minute),
+		gposeLookupLimiter:  newRateLimiter(150, 10*time.Minute),
 		discordLimiter:      newRateLimiter(30, 10*time.Minute),
 		googleFontLimiter:   newRateLimiter(30, 10*time.Minute),
 		discordOAuth:        &discord.OAuth{},
@@ -279,6 +287,8 @@ func New(ctx context.Context, st *store.Store, hub *live.Hub, dataDir string, al
 		RallyLimit:        s.rallyLimiter,
 		DashboardLimit:    s.dashboardLimiter,
 		EmaLimit:          s.emaLimiter,
+		GposeSignupLimit:  s.gposeSignupLimiter,
+		GposeLookupLimit:  s.gposeLookupLimiter,
 		DataDir:           dataDir,
 		Images:            s.images,
 		Carrd:             s.carrd,
@@ -757,6 +767,12 @@ func adminMutationResource(path string) (string, bool) {
 			return "", false
 		}
 		return "raffles", true
+	case "gpose-booths", "gpose-types":
+		// A visitor's sign-up tells the page itself, and a visitor's lookup changes nothing.
+		if strings.HasSuffix(path, "/sign-up") || strings.HasSuffix(path, "/lookup") {
+			return "", false
+		}
+		return "gpose-booths", true
 	case "announcements", "announcement-types", "announcement-roles":
 		return "announcements", true
 	case "book-clubs":

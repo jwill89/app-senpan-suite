@@ -1099,14 +1099,15 @@ func TestFestivalMap_WritesTellTheMapsAndWhatTheyLink(t *testing.T) {
 
 	d := env.mapDetail(t, id)
 	decodeInto(t, env.saveMap(t, id, mapBody("Obon Matsuri 2026", map[string]any{"stalls": inputStalls(d)})), http.StatusOK, nil)
-	// The stall names show on the stamp cards and the raffles.
-	if got := told(t, s, 3); !got["festival-maps"] || !got["stamp-rallies"] || !got["raffles"] {
-		t.Errorf("an update told %v; want festival-maps, stamp-rallies and raffles", got)
+	// The stall names show on the stamp cards, the raffles and the gpose booths.
+	if got := told(t, s, 4); !got["festival-maps"] || !got["stamp-rallies"] || !got["raffles"] || !got["gpose-booths"] {
+		t.Errorf("an update told %v; want festival-maps, stamp-rallies, raffles and gpose-booths", got)
 	}
 
 	resp := env.del(t, mapPathOf(id))
 	resp.Body.Close()
-	if got := told(t, s, 4); !got["festival-maps"] || !got["stamp-rallies"] || !got["raffles"] || !got["ema-boards"] {
+	if got := told(t, s, 5); !got["festival-maps"] || !got["stamp-rallies"] || !got["raffles"] || !got["ema-boards"] ||
+		!got["gpose-booths"] {
 		t.Errorf("a delete told %v; want the map and everything it unlinked", got)
 	}
 }

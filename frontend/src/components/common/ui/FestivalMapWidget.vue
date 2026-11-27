@@ -59,6 +59,8 @@ defineSlots<{
   'rally-action'?: (props: { occupant: PublicStallOccupant; collected: boolean }) => unknown
   /** Replaces the stall panel's "View the raffle" link. */
   'raffle-action'?: (props: { occupant: PublicStallOccupant }) => unknown
+  /** Replaces the stall panel's link to the gpose booth's page. */
+  'gpose-action'?: (props: { occupant: PublicStallOccupant }) => unknown
 }>()
 
 /** Whether the visitor holds this occupant's rally stamp. */
@@ -529,6 +531,28 @@ const linkTarget = computed(() => (props.embedded ? '_blank' : undefined))
                   </RouterLink>
                 </p>
                 <slot name="raffle-action" :occupant="occupant" />
+              </div>
+            </div>
+
+            <!-- A gpose booth taking sign-ups at this stall (only an open one is sent). -->
+            <div v-if="occupant.gposeBooth" class="festival-map-widget__stall-rally">
+              <div class="festival-map-widget__stall-rally-body">
+                <strong>
+                  <font-awesome-icon :icon="['fad', 'camera-retro']" />
+                  {{ occupant.gposeBooth.title }}
+                </strong>
+                <p class="text-sm text-muted">
+                  A gpose booth is taking sign-ups here.
+                  <RouterLink
+                    v-if="!$slots['gpose-action']"
+                    class="link-btn"
+                    :to="{ name: 'gpose-booth', params: { id: String(occupant.gposeBooth.id) } }"
+                    :target="linkTarget"
+                  >
+                    Sign up
+                  </RouterLink>
+                </p>
+                <slot name="gpose-action" :occupant="occupant" />
               </div>
             </div>
 

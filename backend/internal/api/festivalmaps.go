@@ -142,6 +142,12 @@ type PublicStallRaffle struct {
 	PrizeImage string `json:"prizeImage" doc:"The prize's picture."`
 }
 
+// PublicStallGpose is a gpose booth taking sign-ups at a stall.
+type PublicStallGpose struct {
+	ID    int64  `json:"id" doc:"The booth's id."`
+	Title string `json:"title" doc:"The booth's title."`
+}
+
 // PublicStallOccupant is an occupant as a visitor sees it.
 type PublicStallOccupant struct {
 	ID           int64                 `json:"id" doc:"The occupant's id."`
@@ -158,6 +164,7 @@ type PublicStallOccupant struct {
 	RallyTitle   string                `json:"rallyTitle" doc:"That rally's title; empty when none."`
 	StampImage   string                `json:"stampImage" doc:"The stamp's picture; empty when none."`
 	Raffle       *PublicStallRaffle    `json:"raffle" doc:"A raffle running at this stall now; null when none."`
+	GposeBooth   *PublicStallGpose     `json:"gposeBooth" doc:"An open gpose booth at this stall; null when none."`
 }
 
 // PublicFestivalStall is a pitch as a visitor sees it.
@@ -246,9 +253,10 @@ func (h handlers) registerFestivalMaps(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "list-festival-maps", Method: http.MethodGet, Path: "/festival-maps",
 		Summary:     "Every festival map",
-		Description: "Also open to the staff of the Ema page, whose board editor picks its festival from this list.",
+		Description: "Also open to the staff of the Ema and Gpose Booth pages, whose editors pick a festival from this list.",
 		Tags:        festivalMapTags, Security: secured,
-		Middlewares: huma.Middlewares{h.permitted(api, permissions.FestivalMap, permissions.FestivalEma)}, Errors: guarded,
+		Middlewares: huma.Middlewares{h.permitted(api, permissions.FestivalMap, permissions.FestivalEma, permissions.FestivalGpose)},
+		Errors:      guarded,
 	}, h.listFestivalMaps)
 	huma.Register(api, huma.Operation{
 		OperationID: "create-festival-map", Method: http.MethodPost, Path: "/festival-maps",
@@ -270,7 +278,10 @@ func (h handlers) registerFestivalMaps(api huma.API) {
 	}, h.getPublicFestivalMap)
 	huma.Register(api, huma.Operation{
 		OperationID: "get-festival-map", Method: http.MethodGet, Path: "/festival-maps/{id}",
-		Summary: "One festival map with its pitches", Tags: festivalMapTags, Security: secured, Middlewares: page, Errors: notFound,
+		Summary:     "One festival map with its pitches",
+		Description: "Also open to the staff of the Gpose Booth page, whose booth editor picks a stall from it.",
+		Tags:        festivalMapTags, Security: secured,
+		Middlewares: huma.Middlewares{h.permitted(api, permissions.FestivalMap, permissions.FestivalGpose)}, Errors: notFound,
 	}, h.getFestivalMap)
 	huma.Register(api, huma.Operation{
 		OperationID: "update-festival-map", Method: http.MethodPut, Path: "/festival-maps/{id}",
@@ -291,7 +302,7 @@ func (h handlers) registerFestivalMaps(api huma.API) {
 	huma.Register(api, huma.Operation{
 		OperationID: "delete-festival-map", Method: http.MethodDelete, Path: "/festival-maps/{id}",
 		Summary: "Delete a festival map",
-		Description: "Its pitches go with it. The stamp rallies and raffles filed under it stay, unlinked, and the stamps " +
+		Description: "Its pitches go with it. The stamp rallies, raffles and gpose booths filed under it stay, unlinked, and the stamps " +
 			"that named its occupants fall back to their affiliates. Its plaque board is deleted with the plaques still " +
 			"waiting for review.",
 		Tags: festivalMapTags, DefaultStatus: http.StatusNoContent, Security: secured, Middlewares: page, Errors: notFound,
@@ -594,6 +605,9 @@ func saveStalls(ctx context.Context, q *db.Queries, mapID int64, stalls []stallS
 		if err := q.ClearStallRaffleOccupants(ctx, id); err != nil {
 			return err
 		}
+		if err := q.ClearStallGposeOccupants(ctx, id); err != nil {
+			return err
+		}
 		if err := q.DeleteFestivalStall(ctx, id); err != nil {
 			return err
 		}
@@ -640,6 +654,9 @@ func saveOccupants(ctx context.Context, q *db.Queries, stallID int64, occupants 
 			return err
 		}
 		if err := q.ClearOccupantRaffles(ctx, sql.NullInt64{Int64: id, Valid: true}); err != nil {
+			return err
+		}
+		if err := q.ClearOccupantGposeBooths(ctx, sql.NullInt64{Int64: id, Valid: true}); err != nil {
 			return err
 		}
 		if err := q.DeleteStallOccupant(ctx, id); err != nil {
@@ -721,9 +738,10 @@ func (h handlers) updateFestivalMap(ctx context.Context, in *festivalMapSaveInpu
 	if err != nil {
 		return nil, err
 	}
-	// The stall names show on the stamp cards and the raffles.
+	// The stall names show on the stamp cards, the raffles and the gpose booths.
 	ResourceChanged(h.Live, "stamp-rallies")
 	ResourceChanged(h.Live, "raffles")
+	ResourceChanged(h.Live, "gpose-booths")
 	return &festivalMapOutput{Body: m}, nil
 }
 
@@ -764,6 +782,9 @@ func (h handlers) deleteFestivalMap(ctx context.Context, in *festivalMapIDInput)
 		if err := q.ClearMapRaffles(ctx, sql.NullInt64{Int64: in.ID, Valid: true}); err != nil {
 			return err
 		}
+		if err := q.ClearMapGposeBooths(ctx, sql.NullInt64{Int64: in.ID, Valid: true}); err != nil {
+			return err
+		}
 		if err := q.ClearMapRallies(ctx, sql.NullInt64{Int64: in.ID, Valid: true}); err != nil {
 			return err
 		}
@@ -781,7 +802,7 @@ func (h handlers) deleteFestivalMap(ctx context.Context, in *festivalMapIDInput)
 		h.removePlaqueImage(img)
 	}
 	// The middleware tells the maps; these pages showed what the delete unlinked or removed.
-	for _, resource := range []string{"stamp-rallies", "raffles", "ema-boards"} {
+	for _, resource := range []string{"stamp-rallies", "raffles", "ema-boards", "gpose-booths"} {
 		ResourceChanged(h.Live, resource)
 	}
 	return nil, nil
@@ -931,6 +952,14 @@ func (h handlers) getPublicFestivalMap(ctx context.Context, in *publicMapInput) 
 	for _, r := range rows {
 		stallRaffles[r.OccupantID.Int64] = r
 	}
+	booths, err := q.ListStallGposeBooths(ctx, row.ID)
+	if err != nil {
+		return nil, h.fail("list a festival map's gpose booths", err)
+	}
+	stallBooths := make(map[int64]*PublicStallGpose, len(booths))
+	for _, b := range booths {
+		stallBooths[b.OccupantID.Int64] = &PublicStallGpose{ID: b.ID, Title: b.Title}
+	}
 
 	affiliates, err := h.publicAffiliates(ctx, q, m)
 	if err != nil {
@@ -976,6 +1005,7 @@ func (h handlers) getPublicFestivalMap(ctx context.Context, in *publicMapInput) 
 			if r, found := stallRaffles[o.ID]; found && raffles.Running(r.Status, deref(r.AvailableFrom), deref(r.AvailableTo), now) {
 				po.Raffle = &PublicStallRaffle{ID: r.ID, Title: r.Title, PrizeImage: r.PrizeImage}
 			}
+			po.GposeBooth = stallBooths[o.ID]
 			ps.Occupants = append(ps.Occupants, po)
 		}
 		out.Stalls = append(out.Stalls, ps)

@@ -87,6 +87,7 @@ function dashboard(over: Partial<FestivalDashboard> = {}): FestivalDashboard {
     garapon: null,
     raffles: [],
     ema: null,
+    gposeBooths: [],
     ...over,
   }
 }

@@ -145,6 +145,39 @@ public class ClientTests
     }
 
     [Fact]
+    public async Task A_gpose_booths_sign_ups_read_as_the_server_sends_them_and_a_change_sends_only_what_it_sets()
+    {
+        var signups = FakeServer.Fixture("gpose-signups.json");
+        var one = JObject.Parse(signups)["signups"]![1]!.ToString();
+        var server = new FakeServer()
+            .Answer("gpose-booths/3/signups", "gpose-signups.json")
+            .AnswerWith("gpose-booths/3/signups/9", one)
+            .AnswerWith("gpose-booths/3/signups/9/call", one);
+        var (api, http) = server.Client();
+        using (http)
+        {
+            var ct = TestContext.Current.CancellationToken;
+            var list = await api.ListGposeSignupsAsync(3, ct);
+            var (noShow, waiting) = (list.Signups[0], list.Signups[1]);
+            Assert.Equal(GposeSignupStatus.No_show, noShow.Status);
+            Assert.Equal(new DateTimeOffset(2026, 8, 1, 18, 0, 0, TimeSpan.Zero), noShow.SlotStart);
+            Assert.True(waiting.Waitlisted);
+            Assert.Null(waiting.TypeId);
+            Assert.Equal(new DateTimeOffset(2026, 8, 1, 17, 58, 0, TimeSpan.Zero), waiting.CalledAt);
+            Assert.Equal(["2026-08-01T18:00:00Z", "2026-08-01T18:15:00Z"], waiting.AssignableStarts);
+
+            await api.ChangeGposeSignupAsync(3, 9, new GposeSignupChange { Status = GposeSignupChangeStatus.No_show }, ct);
+            await api.ChangeGposeSignupAsync(3, 9, new GposeSignupChange { SlotStart = new DateTimeOffset(2026, 8, 1, 18, 0, 0, TimeSpan.Zero) }, ct);
+            await api.CallGposeSignupAsync(3, 9, ct);
+
+            var sent = server.Requests.Skip(1).ToArray();
+            Assert.Equal(["PATCH", "PATCH", "POST"], sent.Select(s => s.Method));
+            Assert.Equal(new JObject { ["status"] = "no_show" }, JsonConvert.DeserializeObject<JObject>(sent[0].Body!, SenpanApi.Reading));
+            Assert.Equal("2026-08-01T18:00:00+00:00", JsonConvert.DeserializeObject<JObject>(sent[1].Body!, SenpanApi.Reading)!.Value<string>("slotStart"));
+        }
+    }
+
+    [Fact]
     public async Task A_change_sends_only_what_it_sets()
     {
         const string room = "{\"color\":\"\",\"costPerHalfHour\":1,\"createdAt\":null,\"description\":\"\",\"discounted\":false,\"hashtags\":\"\",\"id\":1,\"image\":\"\",\"lockable\":true,\"locked\":true,\"lockedUntil\":null,\"name\":\"R\",\"open\":true,\"roomNumber\":\"1\",\"roomOwner\":\"\",\"seasonal\":false,\"sortOrder\":0,\"subtitle\":\"\"}";

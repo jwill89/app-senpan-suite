@@ -16,6 +16,7 @@ import { useGaraponsStore } from './garapons'
 import { useStampRalliesStore } from './stampRallies'
 import { useFestivalMapsStore } from './festivalMaps'
 import { useEmaStore } from './ema'
+import { useGposeStore } from './gpose'
 import { useBookclubStore } from './bookclub'
 import { useStylesStore } from './styles'
 import { useAppStore } from './app'
@@ -51,6 +52,7 @@ export type AdminTab =
   | 'festival-garapon'
   | 'festival-stamp-rally'
   | 'festival-ema'
+  | 'festival-gpose'
   | 'atelier-fonts'
   | 'atelier-carrd'
   | 'system-settings'
@@ -80,6 +82,7 @@ const TAB_RESOURCE: Partial<Record<AdminTab, string>> = {
   'festival-garapon': 'garapons',
   'festival-stamp-rally': 'stamp-rallies',
   'festival-ema': 'ema-boards',
+  'festival-gpose': 'gpose-booths',
   'atelier-fonts': 'fonts',
   'atelier-carrd': 'carrd',
   'system-settings': 'integrations',
@@ -98,6 +101,7 @@ const TAB_KEYS = [
   'tea-rooms',
   'stamp-rallies',
   'ema-boards',
+  'gpose-booths',
   'announcements',
   'styles',
   'settings',
@@ -213,6 +217,14 @@ export const useAdminStore = defineStore('admin', () => {
       ema.boardForm = null
       loadFresh('ema-boards', () => {
         void ema.loadBoards()
+      })
+    }
+    if (tab === 'festival-gpose') {
+      const gpose = useGposeStore()
+      gpose.selectedBooth = null
+      gpose.boothForm = null
+      loadFresh('gpose-booths', () => {
+        void gpose.loadBooths()
       })
     }
     // openClub manages its own per-club freshness (and preserves the open list /
@@ -348,6 +360,17 @@ export const useAdminStore = defineStore('admin', () => {
           void ema.loadBoards()
           if (ema.selectedBoard) {
             void ema.loadPlaques(ema.selectedBoard.id)
+          }
+        })
+        break
+      case 'gpose-booths':
+        // A visitor's sign-up, or another console marking one done: the open booth's
+        // list moves at once, so two gposers never call the same person.
+        apply('gpose-booths', tab === 'festival-gpose', () => {
+          const gpose = useGposeStore()
+          void gpose.loadBooths()
+          if (gpose.selectedBooth) {
+            void gpose.loadSignups(gpose.selectedBooth.id)
           }
         })
         break

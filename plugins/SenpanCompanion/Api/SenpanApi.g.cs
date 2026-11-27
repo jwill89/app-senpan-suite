@@ -2051,6 +2051,548 @@ namespace SenpanCompanion.Api
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <summary>
+        /// Every gpose booth
+        /// </summary>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<GposeBoothList> ListGposeBoothsAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "gpose-booths"
+                    urlBuilder_.Append("gpose-booths");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<GposeBoothList>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// A gpose booth's sign-ups
+        /// </summary>
+        /// <remarks>
+        /// In the order they were made, with each one's place in line and, for the waitlist of a timeslot booth, the times their shoot could be fitted in now.
+        /// </remarks>
+        /// <param name="id">The booth's id.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<GposeSignupList> ListGposeSignupsAsync(long id, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Method = new System.Net.Http.HttpMethod("GET");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "gpose-booths/{id}/signups"
+                    urlBuilder_.Append("gpose-booths/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/signups");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<GposeSignupList>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Mark a sign-up completed, a no-show or canceled, record it paid, or give it a slot
+        /// </summary>
+        /// <remarks>
+        /// At a basic booth, a sign-up that gives up its place (a no-show or canceled) moves the longest-waiting person on the waitlist into it. At a timeslot booth, slotStart books someone into a slot, the waitlist's way into one a no-show freed.
+        /// </remarks>
+        /// <param name="id">The booth's id.</param>
+        /// <param name="signupId">The sign-up's id.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<GposeSignup> ChangeGposeSignupAsync(long id, long signupId, GposeSignupChange body, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            if (signupId == null)
+                throw new System.ArgumentNullException("signupId");
+
+            if (body == null)
+                throw new System.ArgumentNullException("body");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(body, JsonSerializerSettings);
+                    var content_ = new System.Net.Http.StringContent(json_);
+                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
+                    request_.Content = content_;
+                    request_.Method = new System.Net.Http.HttpMethod("PATCH");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "gpose-booths/{id}/signups/{signupId}"
+                    urlBuilder_.Append("gpose-booths/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/signups/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(signupId, System.Globalization.CultureInfo.InvariantCulture)));
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<GposeSignup>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 409)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Conflict", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
+        /// Call a person up
+        /// </summary>
+        /// <remarks>
+        /// Their festival dashboard and booth page alert them (a sound, a vibration, the tab's title) until they dismiss it; calling again alerts them again. Only someone waiting can be called (409).
+        /// </remarks>
+        /// <param name="id">The booth's id.</param>
+        /// <param name="signupId">The sign-up's id.</param>
+        /// <returns>OK</returns>
+        /// <exception cref="ApiException">A server side error occurred.</exception>
+        public virtual async System.Threading.Tasks.Task<GposeSignup> CallGposeSignupAsync(long id, long signupId, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        {
+            if (id == null)
+                throw new System.ArgumentNullException("id");
+
+            if (signupId == null)
+                throw new System.ArgumentNullException("signupId");
+
+            var client_ = _httpClient;
+            var disposeClient_ = false;
+            try
+            {
+                using (var request_ = new System.Net.Http.HttpRequestMessage())
+                {
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
+                    request_.Method = new System.Net.Http.HttpMethod("POST");
+                    request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
+
+                    var urlBuilder_ = new System.Text.StringBuilder();
+                
+                    // Operation Path: "gpose-booths/{id}/signups/{signupId}/call"
+                    urlBuilder_.Append("gpose-booths/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(id, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/signups/");
+                    urlBuilder_.Append(System.Uri.EscapeDataString(ConvertToString(signupId, System.Globalization.CultureInfo.InvariantCulture)));
+                    urlBuilder_.Append("/call");
+
+                    PrepareRequest(client_, request_, urlBuilder_);
+
+                    var url_ = urlBuilder_.ToString();
+                    request_.RequestUri = new System.Uri(url_, System.UriKind.RelativeOrAbsolute);
+
+                    PrepareRequest(client_, request_, url_);
+
+                    var response_ = await client_.SendAsync(request_, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
+                    var disposeResponse_ = true;
+                    try
+                    {
+                        var headers_ = new System.Collections.Generic.Dictionary<string, System.Collections.Generic.IEnumerable<string>>();
+                        foreach (var item_ in response_.Headers)
+                            headers_[item_.Key] = item_.Value;
+                        if (response_.Content != null && response_.Content.Headers != null)
+                        {
+                            foreach (var item_ in response_.Content.Headers)
+                                headers_[item_.Key] = item_.Value;
+                        }
+
+                        ProcessResponse(client_, response_);
+
+                        var status_ = (int)response_.StatusCode;
+                        if (status_ == 200)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<GposeSignup>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Unauthorized", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 403)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Forbidden", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 404)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Not Found", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 409)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Conflict", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 422)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Unprocessable Entity", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 500)
+                        {
+                            var objectResponse_ = await ReadObjectResponseAsync<ErrorModel>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            if (objectResponse_.Object == null)
+                            {
+                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
+                            }
+                            throw new ApiException<ErrorModel>("Internal Server Error", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        {
+                            var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
+                        }
+                    }
+                    finally
+                    {
+                        if (disposeResponse_)
+                            response_.Dispose();
+                    }
+                }
+            }
+            finally
+            {
+                if (disposeClient_)
+                    client_.Dispose();
+            }
+        }
+
+        /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
+        /// <summary>
         /// Who is signed in
         /// </summary>
         /// <remarks>
@@ -7321,6 +7863,12 @@ namespace SenpanCompanion.Api
         public FestivalDashboardGarapon? Garapon { get; set; } = default!;
 
         /// <summary>
+        /// The festival's open gpose booths, oldest first, each with the visitor's own sign-ups.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("gposeBooths", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<FestivalGposeBooth> GposeBooths { get; set; } = new System.Collections.Generic.List<FestivalGposeBooth>();
+
+        /// <summary>
         /// Who the visitor is: the card's participant, else the drawing link's, else the name they sent.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("participantName", Required = Newtonsoft.Json.Required.Always)]
@@ -7535,6 +8083,24 @@ namespace SenpanCompanion.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("windows", Required = Newtonsoft.Json.Required.Always)]
         public System.Collections.Generic.IReadOnlyList<PublicEmaWindow> Windows { get; set; } = new System.Collections.Generic.List<PublicEmaWindow>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class FestivalGposeBooth
+    {
+
+        /// <summary>
+        /// The booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("booth", Required = Newtonsoft.Json.Required.Always)]
+        public PublicGposeBooth Booth { get; set; } = new PublicGposeBooth();
+
+        /// <summary>
+        /// The visitor's own sign-ups, on their whole name and world; empty when they have none or sent no name.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("signups", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<PublicGposeSignup> Signups { get; set; } = new System.Collections.Generic.List<PublicGposeSignup>();
 
     }
 
@@ -9020,6 +9586,575 @@ namespace SenpanCompanion.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeBooth
+    {
+
+        /// <summary>
+        /// Sign-ups holding a place or slot: waiting or completed, off the waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("bookedCount", Required = Newtonsoft.Json.Required.Always)]
+        public long BookedCount { get; set; } = default!;
+
+        /// <summary>
+        /// When it was made, RFC 3339 in UTC.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Always)]
+        public System.DateTimeOffset CreatedAt { get; set; } = default!;
+
+        /// <summary>
+        /// What it is about and how to pay (Markdown).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Always)]
+        public string Description { get; set; } = default!;
+
+        /// <summary>
+        /// The festival it belongs to; null for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("festivalMapId", Required = Newtonsoft.Json.Required.AllowNull)]
+        public long? FestivalMapId { get; set; } = default!;
+
+        /// <summary>
+        /// The festival's title; empty for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("festivalMapName", Required = Newtonsoft.Json.Required.Always)]
+        public string FestivalMapName { get; set; } = default!;
+
+        /// <summary>
+        /// The booth's id.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        public long Id { get; set; } = default!;
+
+        /// <summary>
+        /// The most sign-ups a basic booth takes; 0 at a timeslot booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("maxSignups", Required = Newtonsoft.Json.Required.Always)]
+        public long MaxSignups { get; set; } = default!;
+
+        /// <summary>
+        /// The most people its waitlist holds; 0 for no waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("maxWaitlist", Required = Newtonsoft.Json.Required.Always)]
+        public long MaxWaitlist { get; set; } = default!;
+
+        /// <summary>
+        /// basic takes sign-ups in order up to maxSignups, then a waitlist. timeslot books start times inside its open times, with a waitlist beside them.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("mode", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public GposeBoothMode Mode { get; set; } = default!;
+
+        /// <summary>
+        /// The stall on that festival's plan it is pinned to; null for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("occupantId", Required = Newtonsoft.Json.Required.AllowNull)]
+        public long? OccupantId { get; set; } = default!;
+
+        /// <summary>
+        /// The most sign-ups one character may have waiting at once.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("perPerson", Required = Newtonsoft.Json.Required.Always)]
+        public long PerPerson { get; set; } = default!;
+
+        /// <summary>
+        /// Minutes between the start times a timeslot booth offers.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slotStep", Required = Newtonsoft.Json.Required.Always)]
+        public long SlotStep { get; set; } = default!;
+
+        /// <summary>
+        /// The stall's title; empty for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("stallName", Required = Newtonsoft.Json.Required.Always)]
+        public string StallName { get; set; } = default!;
+
+        /// <summary>
+        /// An open booth takes sign-ups and is on the public pages; a closed one is neither, and its sign-ups stay workable.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public GposeBoothStatus Status { get; set; } = default!;
+
+        /// <summary>
+        /// The booth's title.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("title", Required = Newtonsoft.Json.Required.Always)]
+        public string Title { get; set; } = default!;
+
+        /// <summary>
+        /// The types it offers, in order. Empty in a list.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("types", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<GposeBoothType> Types { get; set; } = new System.Collections.Generic.List<GposeBoothType>();
+
+        /// <summary>
+        /// Sign-ups not yet completed, a no-show or canceled, the waitlist included.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("waitingCount", Required = Newtonsoft.Json.Required.Always)]
+        public long WaitingCount { get; set; } = default!;
+
+        /// <summary>
+        /// People waiting on the waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("waitlistCount", Required = Newtonsoft.Json.Required.Always)]
+        public long WaitlistCount { get; set; } = default!;
+
+        /// <summary>
+        /// When a timeslot booth is open, in order. Empty in a list and at a basic booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("windows", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<GposeWindow> Windows { get; set; } = new System.Collections.Generic.List<GposeWindow>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeBoothInput
+    {
+
+        /// <summary>
+        /// What it is about and how to pay (Markdown); empty for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Always)]
+        public string Description { get; set; } = default!;
+
+        /// <summary>
+        /// The festival to file it under; null or left out for none. One that doesn't exist is refused.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("festivalMapId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public long? FestivalMapId { get; set; } = default!;
+
+        /// <summary>
+        /// The most sign-ups a basic booth takes, at least 1; ignored at a timeslot booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("maxSignups", Required = Newtonsoft.Json.Required.Always)]
+        public long MaxSignups { get; set; } = default!;
+
+        /// <summary>
+        /// The most people its waitlist holds; 0 for no waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("maxWaitlist", Required = Newtonsoft.Json.Required.Always)]
+        public long MaxWaitlist { get; set; } = default!;
+
+        /// <summary>
+        /// basic or timeslot. A booth that has sign-ups can't change it.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("mode", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public GposeBoothInputMode Mode { get; set; } = default!;
+
+        /// <summary>
+        /// The stall on that festival's plan to pin it to; null or left out for none. A stall that isn't on the festival is dropped.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("occupantId", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public long? OccupantId { get; set; } = default!;
+
+        /// <summary>
+        /// The most sign-ups one character may have waiting at once.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("perPerson", Required = Newtonsoft.Json.Required.Always)]
+        public long PerPerson { get; set; } = default!;
+
+        /// <summary>
+        /// Minutes between the start times a timeslot booth offers, 5 to 240; ignored at a basic booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slotStep", Required = Newtonsoft.Json.Required.Always)]
+        public long SlotStep { get; set; } = default!;
+
+        /// <summary>
+        /// The booth's title.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("title", Required = Newtonsoft.Json.Required.Always)]
+        public string Title { get; set; } = default!;
+
+        /// <summary>
+        /// The types it offers, in order, each once.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("types", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<GposeBoothTypeInput> Types { get; set; } = new System.Collections.Generic.List<GposeBoothTypeInput>();
+
+        /// <summary>
+        /// When a timeslot booth is open, at least one; ignored at a basic booth. Sign-ups already booked keep their times when these change.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("windows", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<GposeWindowInput> Windows { get; set; } = new System.Collections.Generic.List<GposeWindowInput>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeBoothList
+    {
+
+        /// <summary>
+        /// Newest first, with their counts and without their types or open times.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("booths", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<GposeBooth> Booths { get; set; } = new System.Collections.Generic.List<GposeBooth>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeBoothType
+    {
+
+        /// <summary>
+        /// How long one takes at a timeslot booth; 0 at a basic booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("minutes", Required = Newtonsoft.Json.Required.Always)]
+        public long Minutes { get; set; } = default!;
+
+        /// <summary>
+        /// The type's name.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        public string Name { get; set; } = default!;
+
+        /// <summary>
+        /// What it costs in gil; 0 for no price.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("price", Required = Newtonsoft.Json.Required.Always)]
+        public long Price { get; set; } = default!;
+
+        /// <summary>
+        /// The type's id.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("typeId", Required = Newtonsoft.Json.Required.Always)]
+        public long TypeId { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeBoothTypeInput
+    {
+
+        /// <summary>
+        /// How long one takes, 1 to 600 minutes at a timeslot booth; ignored at a basic booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("minutes", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public long? Minutes { get; set; } = default!;
+
+        /// <summary>
+        /// What it costs in gil; 0 or left out for no price.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("price", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public long? Price { get; set; } = default!;
+
+        /// <summary>
+        /// The type's id. One that doesn't exist is refused.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("typeId", Required = Newtonsoft.Json.Required.Always)]
+        public long TypeId { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeLookup
+    {
+
+        /// <summary>
+        /// Theirs, oldest first; empty when they have none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("signups", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<PublicGposeSignup> Signups { get; set; } = new System.Collections.Generic.List<PublicGposeSignup>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeLookupInput
+    {
+
+        /// <summary>
+        /// Their character, the whole name they signed up with (case doesn't matter).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("characterName", Required = Newtonsoft.Json.Required.Always)]
+        public string CharacterName { get; set; } = default!;
+
+        /// <summary>
+        /// Their home world.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("world", Required = Newtonsoft.Json.Required.Always)]
+        public string World { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeSignUpInput
+    {
+
+        /// <summary>
+        /// Their character.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("characterName", Required = Newtonsoft.Json.Required.Always)]
+        public string CharacterName { get; set; } = default!;
+
+        /// <summary>
+        /// At a timeslot booth, the start time to book, one of the type's offered starts. Left out with waitlist set, it joins the waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slotStart", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset? SlotStart { get; set; } = default!;
+
+        /// <summary>
+        /// The Cloudflare Turnstile response; needed only when the bot check is on.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("turnstileToken", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public string? TurnstileToken { get; set; } = default!;
+
+        /// <summary>
+        /// The type of gpose, one the booth offers.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("typeId", Required = Newtonsoft.Json.Required.Always)]
+        public long TypeId { get; set; } = default!;
+
+        /// <summary>
+        /// At a timeslot booth, join the waitlist instead of booking a time. A basic booth puts them on its waitlist by itself once its places are taken.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("waitlist", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Waitlist { get; set; } = default!;
+
+        /// <summary>
+        /// Their home world.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("world", Required = Newtonsoft.Json.Required.Always)]
+        public string World { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeSignup
+    {
+
+        /// <summary>
+        /// For someone waiting on a timeslot booth's waitlist, the start times their shoot fits now, one under way included; empty for anyone else.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("assignableStarts", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<string> AssignableStarts { get; set; } = new System.Collections.Generic.List<string>();
+
+        /// <summary>
+        /// The booth it is at.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("boothId", Required = Newtonsoft.Json.Required.Always)]
+        public long BoothId { get; set; } = default!;
+
+        /// <summary>
+        /// When staff last called them up, RFC 3339 in UTC; null when never.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("calledAt", Required = Newtonsoft.Json.Required.AllowNull)]
+        public System.DateTimeOffset? CalledAt { get; set; } = default!;
+
+        /// <summary>
+        /// The character.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("characterName", Required = Newtonsoft.Json.Required.Always)]
+        public string CharacterName { get; set; } = default!;
+
+        /// <summary>
+        /// When they signed up, RFC 3339 in UTC.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Always)]
+        public System.DateTimeOffset CreatedAt { get; set; } = default!;
+
+        /// <summary>
+        /// The sign-up's id.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        public long Id { get; set; } = default!;
+
+        /// <summary>
+        /// How long it takes, as it was when they signed up; 0 at a basic booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("minutes", Required = Newtonsoft.Json.Required.Always)]
+        public long Minutes { get; set; } = default!;
+
+        /// <summary>
+        /// Whether staff recorded the price as paid.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("paid", Required = Newtonsoft.Json.Required.Always)]
+        public bool Paid { get; set; } = default!;
+
+        /// <summary>
+        /// Where they stand while waiting: their place in line at a basic booth, or on the waitlist; 0 for a booked slot or once they are no longer waiting.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("position", Required = Newtonsoft.Json.Required.Always)]
+        public long Position { get; set; } = default!;
+
+        /// <summary>
+        /// Its price in gil, as it was when they signed up; 0 for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("price", Required = Newtonsoft.Json.Required.Always)]
+        public long Price { get; set; } = default!;
+
+        /// <summary>
+        /// When their slot ends, RFC 3339 in UTC; null with no slot.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slotEnd", Required = Newtonsoft.Json.Required.AllowNull)]
+        public System.DateTimeOffset? SlotEnd { get; set; } = default!;
+
+        /// <summary>
+        /// When their slot starts, RFC 3339 in UTC; null at a basic booth and on the waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slotStart", Required = Newtonsoft.Json.Required.AllowNull)]
+        public System.DateTimeOffset? SlotStart { get; set; } = default!;
+
+        /// <summary>
+        /// waiting holds their place or slot, and so does completed; no_show and canceled give it up.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public GposeSignupStatus Status { get; set; } = default!;
+
+        /// <summary>
+        /// The type signed up for; null once that type is deleted.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("typeId", Required = Newtonsoft.Json.Required.AllowNull)]
+        public long? TypeId { get; set; } = default!;
+
+        /// <summary>
+        /// The type's name, as it was when they signed up.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("typeName", Required = Newtonsoft.Json.Required.Always)]
+        public string TypeName { get; set; } = default!;
+
+        /// <summary>
+        /// Whether they are on the waitlist rather than in a place or a slot.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("waitlisted", Required = Newtonsoft.Json.Required.Always)]
+        public bool Waitlisted { get; set; } = default!;
+
+        /// <summary>
+        /// Their home world.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("world", Required = Newtonsoft.Json.Required.Always)]
+        public string World { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeSignupChange
+    {
+
+        /// <summary>
+        /// Whether the price is paid.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("paid", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public bool? Paid { get; set; } = default!;
+
+        /// <summary>
+        /// Books it into the slot starting then, taking it off the waitlist: a timeslot booth's only. The shoot must fit inside an open time without overlapping another booking; it may start between the offered times, or have started already.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slotStart", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        public System.DateTimeOffset? SlotStart { get; set; } = default!;
+
+        /// <summary>
+        /// Where it stands now. Waiting again undoes a mistake; at a timeslot booth, a slot another booking has taken since is a 409.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Default, NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public GposeSignupChangeStatus? Status { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeSignupList
+    {
+
+        /// <summary>
+        /// Every sign-up in the order they were made.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("signups", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<GposeSignup> Signups { get; set; } = new System.Collections.Generic.List<GposeSignup>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeType
+    {
+
+        /// <summary>
+        /// How many booths offer it; one that any booth offers can't be deleted.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("boothCount", Required = Newtonsoft.Json.Required.Always)]
+        public long BoothCount { get; set; } = default!;
+
+        /// <summary>
+        /// When it was made, RFC 3339 in UTC.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Always)]
+        public System.DateTimeOffset CreatedAt { get; set; } = default!;
+
+        /// <summary>
+        /// The type's id.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        public long Id { get; set; } = default!;
+
+        /// <summary>
+        /// What it is called, such as Solo or Couple.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        public string Name { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeTypeInput
+    {
+
+        /// <summary>
+        /// What it is called. Two types can't share a name, ignoring case.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        public string Name { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeTypeList
+    {
+
+        /// <summary>
+        /// Every type, oldest first.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("types", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<GposeType> Types { get; set; } = new System.Collections.Generic.List<GposeType>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeWindow
+    {
+
+        /// <summary>
+        /// When it closes, RFC 3339 in UTC; a shoot must end by then.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("endAt", Required = Newtonsoft.Json.Required.Always)]
+        public System.DateTimeOffset EndAt { get; set; } = default!;
+
+        /// <summary>
+        /// When it opens, RFC 3339 in UTC.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("startAt", Required = Newtonsoft.Json.Required.Always)]
+        public System.DateTimeOffset StartAt { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GposeWindowInput
+    {
+
+        /// <summary>
+        /// When it closes, RFC 3339; after it opens. Open times can't overlap.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("endAt", Required = Newtonsoft.Json.Required.Always)]
+        public System.DateTimeOffset EndAt { get; set; } = default!;
+
+        /// <summary>
+        /// When it opens, RFC 3339.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("startAt", Required = Newtonsoft.Json.Required.Always)]
+        public System.DateTimeOffset StartAt { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class Halftime
     {
 
@@ -10403,6 +11538,230 @@ namespace SenpanCompanion.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PublicGposeBooth
+    {
+
+        /// <summary>
+        /// What it is about and how to pay (Markdown).
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("description", Required = Newtonsoft.Json.Required.Always)]
+        public string Description { get; set; } = default!;
+
+        /// <summary>
+        /// The festival it belongs to; empty for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("festivalName", Required = Newtonsoft.Json.Required.Always)]
+        public string FestivalName { get; set; } = default!;
+
+        /// <summary>
+        /// The festival's shortcode or id for its page, when that festival is published; empty otherwise.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("festivalPath", Required = Newtonsoft.Json.Required.Always)]
+        public string FestivalPath { get; set; } = default!;
+
+        /// <summary>
+        /// The booth's id.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        public long Id { get; set; } = default!;
+
+        /// <summary>
+        /// The most sign-ups a basic booth takes; 0 at a timeslot booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("maxSignups", Required = Newtonsoft.Json.Required.Always)]
+        public long MaxSignups { get; set; } = default!;
+
+        /// <summary>
+        /// The most people its waitlist holds; 0 for no waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("maxWaitlist", Required = Newtonsoft.Json.Required.Always)]
+        public long MaxWaitlist { get; set; } = default!;
+
+        /// <summary>
+        /// basic or timeslot.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("mode", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public PublicGposeBoothMode Mode { get; set; } = default!;
+
+        /// <summary>
+        /// The most sign-ups one character may have waiting at once.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("perPerson", Required = Newtonsoft.Json.Required.Always)]
+        public long PerPerson { get; set; } = default!;
+
+        /// <summary>
+        /// The places a basic booth has left; 0 when full and at a timeslot booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("placesLeft", Required = Newtonsoft.Json.Required.Always)]
+        public long PlacesLeft { get; set; } = default!;
+
+        /// <summary>
+        /// The stall it is at; empty for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("stallName", Required = Newtonsoft.Json.Required.Always)]
+        public string StallName { get; set; } = default!;
+
+        /// <summary>
+        /// The booth's title.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("title", Required = Newtonsoft.Json.Required.Always)]
+        public string Title { get; set; } = default!;
+
+        /// <summary>
+        /// The types it offers, in order.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("types", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<PublicGposeType> Types { get; set; } = new System.Collections.Generic.List<PublicGposeType>();
+
+        /// <summary>
+        /// The room left on the waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("waitlistLeft", Required = Newtonsoft.Json.Required.Always)]
+        public long WaitlistLeft { get; set; } = default!;
+
+        /// <summary>
+        /// When a timeslot booth is open, in order; empty at a basic booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("windows", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<GposeWindow> Windows { get; set; } = new System.Collections.Generic.List<GposeWindow>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PublicGposeBoothList
+    {
+
+        /// <summary>
+        /// The open booths, newest first, without their start times.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("booths", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<PublicGposeBooth> Booths { get; set; } = new System.Collections.Generic.List<PublicGposeBooth>();
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PublicGposeSignup
+    {
+
+        /// <summary>
+        /// The booth it is at.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("boothId", Required = Newtonsoft.Json.Required.Always)]
+        public long BoothId { get; set; } = default!;
+
+        /// <summary>
+        /// When staff last called them up, RFC 3339 in UTC; null when never.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("calledAt", Required = Newtonsoft.Json.Required.AllowNull)]
+        public System.DateTimeOffset? CalledAt { get; set; } = default!;
+
+        /// <summary>
+        /// When they signed up, RFC 3339 in UTC.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("createdAt", Required = Newtonsoft.Json.Required.Always)]
+        public System.DateTimeOffset CreatedAt { get; set; } = default!;
+
+        /// <summary>
+        /// The sign-up's id.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        public long Id { get; set; } = default!;
+
+        /// <summary>
+        /// How long it takes; 0 at a basic booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("minutes", Required = Newtonsoft.Json.Required.Always)]
+        public long Minutes { get; set; } = default!;
+
+        /// <summary>
+        /// Whether the price is recorded as paid.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("paid", Required = Newtonsoft.Json.Required.Always)]
+        public bool Paid { get; set; } = default!;
+
+        /// <summary>
+        /// Their place in line at a basic booth, or on the waitlist, while waiting; 0 otherwise.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("position", Required = Newtonsoft.Json.Required.Always)]
+        public long Position { get; set; } = default!;
+
+        /// <summary>
+        /// Its price in gil; 0 for none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("price", Required = Newtonsoft.Json.Required.Always)]
+        public long Price { get; set; } = default!;
+
+        /// <summary>
+        /// When it ends; null with no slot.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slotEnd", Required = Newtonsoft.Json.Required.AllowNull)]
+        public System.DateTimeOffset? SlotEnd { get; set; } = default!;
+
+        /// <summary>
+        /// When their slot starts, RFC 3339 in UTC; null with no slot.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("slotStart", Required = Newtonsoft.Json.Required.AllowNull)]
+        public System.DateTimeOffset? SlotStart { get; set; } = default!;
+
+        /// <summary>
+        /// Where it stands.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("status", Required = Newtonsoft.Json.Required.Always)]
+        [Newtonsoft.Json.JsonConverter(typeof(Newtonsoft.Json.Converters.StringEnumConverter))]
+        public PublicGposeSignupStatus Status { get; set; } = default!;
+
+        /// <summary>
+        /// The type signed up for.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("typeName", Required = Newtonsoft.Json.Required.Always)]
+        public string TypeName { get; set; } = default!;
+
+        /// <summary>
+        /// Whether they are on the waitlist.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("waitlisted", Required = Newtonsoft.Json.Required.Always)]
+        public bool Waitlisted { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PublicGposeType
+    {
+
+        /// <summary>
+        /// How long one takes; 0 at a basic booth.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("minutes", Required = Newtonsoft.Json.Required.Always)]
+        public long Minutes { get; set; } = default!;
+
+        /// <summary>
+        /// The type's name.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("name", Required = Newtonsoft.Json.Required.Always)]
+        public string Name { get; set; } = default!;
+
+        /// <summary>
+        /// What it costs in gil; 0 for no price.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("price", Required = Newtonsoft.Json.Required.Always)]
+        public long Price { get; set; } = default!;
+
+        /// <summary>
+        /// At a timeslot booth, the times it can be booked now, RFC 3339 in UTC, in order; empty at a basic booth and in a list.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("starts", Required = Newtonsoft.Json.Required.Always)]
+        public System.Collections.Generic.IReadOnlyList<string> Starts { get; set; } = new System.Collections.Generic.List<string>();
+
+        /// <summary>
+        /// The type's id.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("typeId", Required = Newtonsoft.Json.Required.Always)]
+        public long TypeId { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PublicPrize
     {
 
@@ -10475,6 +11834,24 @@ namespace SenpanCompanion.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PublicStallGpose
+    {
+
+        /// <summary>
+        /// The booth's id.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("id", Required = Newtonsoft.Json.Required.Always)]
+        public long Id { get; set; } = default!;
+
+        /// <summary>
+        /// The booth's title.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("title", Required = Newtonsoft.Json.Required.Always)]
+        public string Title { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PublicStallOccupant
     {
 
@@ -10495,6 +11872,12 @@ namespace SenpanCompanion.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("eventCarrd", Required = Newtonsoft.Json.Required.Always)]
         public string EventCarrd { get; set; } = default!;
+
+        /// <summary>
+        /// An open gpose booth at this stall; null when none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("gposeBooth", Required = Newtonsoft.Json.Required.AllowNull)]
+        public PublicStallGpose? GposeBooth { get; set; } = default!;
 
         /// <summary>
         /// The occupant's id.
@@ -14303,6 +15686,78 @@ namespace SenpanCompanion.Api
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum GposeBoothMode
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"basic")]
+        Basic = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"timeslot")]
+        Timeslot = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum GposeBoothStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"open")]
+        Open = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"closed")]
+        Closed = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum GposeBoothInputMode
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"basic")]
+        Basic = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"timeslot")]
+        Timeslot = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum GposeSignupStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"waiting")]
+        Waiting = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"completed")]
+        Completed = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"no_show")]
+        No_show = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"canceled")]
+        Canceled = 3,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum GposeSignupChangeStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"waiting")]
+        Waiting = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"completed")]
+        Completed = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"no_show")]
+        No_show = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"canceled")]
+        Canceled = 3,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public enum HalftimePromptEventType
     {
 
@@ -14491,6 +15946,36 @@ namespace SenpanCompanion.Api
 
         [System.Runtime.Serialization.EnumMember(Value = @"closed")]
         Closed = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PublicGposeBoothMode
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"basic")]
+        Basic = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"timeslot")]
+        Timeslot = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum PublicGposeSignupStatus
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"waiting")]
+        Waiting = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"completed")]
+        Completed = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"no_show")]
+        No_show = 2,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"canceled")]
+        Canceled = 3,
 
     }
 

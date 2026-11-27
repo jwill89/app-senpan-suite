@@ -25,6 +25,7 @@ import { useStampRalliesStore } from '@/stores/stampRallies'
 import { useFestivalMapsStore } from '@/stores/festivalMaps'
 import { useGaraponsStore } from '@/stores/garapons'
 import { useEmaStore } from '@/stores/ema'
+import { useGposeStore } from '@/stores/gpose'
 import { BOOK_CLUBS } from '@/lib/constants'
 import AppVersions from '@/components/admin/AppVersions.vue'
 
@@ -46,6 +47,7 @@ const stampRallies = useStampRalliesStore()
 const festivalMaps = useFestivalMapsStore()
 const garapons = useGaraponsStore()
 const ema = useEmaStore()
+const gpose = useGposeStore()
 
 // "User Options" isn't tied to a route/tab, so it tracks its own accordion state.
 const userOptionsOpen = ref(false)
@@ -81,6 +83,7 @@ const showFestival = computed(() =>
     'festival-garapon',
     'festival-stamp-rally',
     'festival-ema',
+    'festival-gpose',
     'teahouse-raffles',
   ].some(can),
 )
@@ -320,6 +323,17 @@ function toggleSection(section: AdminSection): void {
         >
           <font-awesome-icon :icon="['fad', 'torii-gate']" /> Ema Plaques
           <span v-if="ema.waitingTotal" class="nav-count">({{ ema.waitingTotal }})</span>
+        </button>
+        <button
+          v-if="can('festival-gpose')"
+          type="button"
+          :class="{ 'is-active': admin.adminTab === 'festival-gpose' }"
+          @click="go('festival-gpose')"
+        >
+          <font-awesome-icon :icon="['fad', 'camera-retro']" /> Gpose Booth
+          <span v-if="gpose.openBooths.length" class="nav-count">
+            ({{ gpose.openBooths.length }})
+          </span>
         </button>
       </div>
     </div>

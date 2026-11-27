@@ -40,7 +40,7 @@ const Prefix = "/api/v1"
 // ContractVersion is the API contract's own version, apart from the app's: it moves
 // only when the API surface changes, and the document carries it
 // as info.version.
-const ContractVersion = "5.4.0"
+const ContractVersion = "5.7.0"
 
 // SessionCookie is the session cookie's name, for the document's security scheme.
 const SessionCookie = "session"
@@ -82,6 +82,9 @@ type Deps struct {
 	// EmaLimit counts every public plaque submission and artist request, by client
 	// address, before the request is read.
 	EmaLimit Limiter
+	// GposeSignupLimit counts every public gpose booth sign-up and GposeLookupLimit
+	// every look a visitor takes at their own sign-ups, each by client address.
+	GposeSignupLimit, GposeLookupLimit Limiter
 	// DataDir is the folder the uploads live under; the plaques waiting for review are
 	// kept in images/ema_plaques within it.
 	DataDir string
@@ -223,6 +226,7 @@ func New(mux *http.ServeMux, d Deps) huma.API {
 	h.registerFestivalMaps(api)
 	h.registerFestivals(api)
 	h.registerEma(api)
+	h.registerGpose(api)
 	h.registerImages(api)
 	h.registerCarrd(api)
 	h.registerFonts(api)

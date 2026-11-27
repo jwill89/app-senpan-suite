@@ -6,6 +6,12 @@ The plugin keeps its own version, apart from the app's, as Dalamud needs: the fo
 
 ## [Unreleased]
 
+## [4.1.0.0] - 2026-11-27
+
+### Added
+
+- Gpose Booth page (Festival): work a booth's sign-ups in game - mark them done, a no-show or canceled, record them paid, undo a mistake, call the next person up at a basic booth, and put someone from a timeslot booth's waitlist into a freed slot. Sign-ups themselves are made on the website. Needs app 5.7.0.
+
 ### Changed
 
 - Needs app 5.5.0, whose account answer says whether the account is an owner.
@@ -254,7 +260,8 @@ The plugin keeps its own version, apart from the app's, as Dalamud needs: the fo
 
 - Initial Dalamud plugin (Senpan Companion): operate bingo and raffle features from within the game, authenticated by a personal access token.
 
-[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/Plugin-v4.0.0.0...HEAD
+[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/Plugin-v4.1.0.0...HEAD
+[4.1.0.0]: https://github.com/jwill89/app-senpan-suite/compare/Plugin-v4.0.0.0...Plugin-v4.1.0.0
 [4.0.0.0]: https://github.com/jwill89/app-senpan-suite/compare/Plugin-v3.9.1.0...Plugin-v4.0.0.0
 [3.9.1.0]: https://github.com/jwill89/app-senpan-suite/compare/Plugin-v3.9.0.0...Plugin-v3.9.1.0
 [3.9.0.0]: https://github.com/jwill89/app-senpan-suite/compare/Plugin-v3.8.0.0...Plugin-v3.9.0.0

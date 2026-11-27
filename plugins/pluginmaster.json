@@ -3,10 +3,10 @@
     "Author": "MathDad",
     "Name": "Senpan Admin Companion",
     "InternalName": "SenpanCompanionAdmin",
-    "AssemblyVersion": "4.0.0.0",
+    "AssemblyVersion": "4.1.0.0",
     "Description": "Serves as an alternative to many of the web-interface functions, allowing staff to operate various systems from within the game.",
     "Punchline": "Allows Senpan Tea House staff to use various app services right from the game.",
-    "Changelog": "Works with the Senpan server from 5.0.0 on (and needs it). Live updates arrive over its event stream and pick up where they left off after a drop. A half-time prompt or End Game confirm closes when another console answers it, the draw delay is the one every console shares, and the raffle, garapon, stamp rally, tea room and winners pages refresh when their records change anywhere. A refused action shows the server's own reason.",
+    "Changelog": "Adds a Gpose Booth page under Festival: work a booth's sign-ups in game - mark them done, a no-show or canceled, record them paid, undo a mistake, call the next person up, and put someone from the waitlist into a freed slot. Needs the Senpan server 5.7.0 or later.",
     "Tags": ["bingo", "raffle", "venue", "senpan"],
     "RepoUrl": "https://github.com/jwill89/app-senpan-suite",
     "ApplicableVersion": "any",
@@ -19,7 +19,7 @@
     "DownloadLinkUpdate": "https://apps.senpan.cafe/plugin/SenpanCompanionAdmin/latest.zip",
     "DownloadLinkTesting": "https://apps.senpan.cafe/plugin/SenpanCompanionAdmin/latest.zip",
     "DownloadCount": 0,
-    "LastUpdate": 1794268800,
+    "LastUpdate": 1795737600,
     "AcceptsFeedback": true
   }
 ]

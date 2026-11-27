@@ -63,6 +63,7 @@ function festivalMap(): PublicFestivalMap {
             rallyId: 3,
             rallyTitle: 'Lantern Rally',
             stampImage: '/images/onigiri.png',
+            gposeBooth: null,
             affiliate: {
               name: 'Lunaria',
               subtitle: '',

@@ -18,6 +18,8 @@ export interface UiAlert {
   message: string
   /** Optional button that takes the reader to where they can act on it. */
   action?: { label: string; to: string }
+  /** The solid icon beside the title; an unlocked padlock when left out. */
+  icon?: string
 }
 
 /** Options for a themed confirm dialog (used instead of the native window.confirm). */

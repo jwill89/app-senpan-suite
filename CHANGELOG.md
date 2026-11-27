@@ -10,6 +10,17 @@ The app's major version rises for a breaking change to the JSON API or the live 
 
 ## [Unreleased]
 
+## [5.7.0] - 2026-11-27
+
+### Added
+
+- Gpose Booth, a new page under Festival: set up a booth with Basic Signup (people sign up in order up to a limit, then an optional waitlist) or Timeslot Signup (people book a start time inside the booth's open hours, with an optional waitlist), choosing which gpose types it offers and each one's gil price and, for a timeslot booth, its length.
+- Gpose types (Solo, Couple, Group and any others) are one list for the whole site, managed from the Gpose Booth page.
+- Staff see each booth's sign-ups in order (by time at a timeslot booth) and mark each one completed, a no-show or canceled, record it paid, and undo a mistake. At a basic booth a freed place goes to the next person on the waitlist; at a timeslot booth staff put someone from the waitlist into a slot a no-show freed.
+- Staff can call the next person up at a basic booth: their festival dashboard and booth page chime, vibrate on a phone and flash the tab until they dismiss it ("You're next in line for the gpose booth! Please be ready in 10-15 minutes!").
+- A timeslot booking at a festival's booth alerts the visitor on the festival dashboard the same way from 10 minutes before their slot.
+- Each open booth has its own sign-up page, listed from the home page, and a booth filed under a festival shows on its dashboard and, when pinned to a stall, in that stall's panel on the map.
+
 ## [5.6.0] - 2026-11-25
 
 ### Changed
@@ -669,7 +680,8 @@ Needs a one-time step at deploy (docs/ops.md, Upgrading to 5.2.0).
 
 - The CodeMirror free-form CSS theme editor; themes are now structured tokens.
 
-[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/v5.6.0...HEAD
+[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/v5.7.0...HEAD
+[5.7.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.6.0...v5.7.0
 [5.6.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.4.0...v5.5.0
 [5.4.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.3.0...v5.4.0

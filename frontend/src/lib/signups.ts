@@ -68,7 +68,22 @@ export interface SavedFestivalVisit {
   savedAt: number
 }
 
-export type SavedSignup = SavedRallySignup | SavedRaffleSignup | SavedFestivalVisit
+/**
+ * One gpose booth sign-up. No token, as with a raffle: what is kept is the name and
+ * world it was made under, which the booth page looks the sign-ups up by, so the
+ * visitor sees where they stand and hears it when staff call them up.
+ */
+export interface SavedGposeSignup {
+  kind: 'gpose'
+  boothId: number
+  boothTitle: string
+  name: string
+  world: string
+  savedAt: number
+}
+
+export type SavedSignup =
+  SavedRallySignup | SavedRaffleSignup | SavedFestivalVisit | SavedGposeSignup
 
 /** The id a saved entry is keyed on within its kind. */
 function entryId(entry: SavedSignup): number {
@@ -79,6 +94,8 @@ function entryId(entry: SavedSignup): number {
       return entry.raffleId
     case 'festival':
       return entry.mapId
+    case 'gpose':
+      return entry.boothId
   }
 }
 
@@ -136,6 +153,14 @@ function read(): SavedSignup[] {
         continue
       }
       kept.push({ ...(r as SavedRaffleSignup), ...splitName(r.name, r.world) })
+      continue
+    }
+    if (e.kind === 'gpose') {
+      const g = entry as Partial<SavedGposeSignup>
+      if (typeof g.boothId !== 'number' || typeof g.name !== 'string' || !g.name) {
+        continue
+      }
+      kept.push({ ...(g as SavedGposeSignup), ...splitName(g.name, g.world) })
       continue
     }
     if (e.kind === 'festival') {
@@ -216,6 +241,21 @@ export function saveFestivalVisit(
   const saved: SavedFestivalVisit = { ...entry, kind: 'festival', savedAt: Date.now() }
   put(saved)
   return saved
+}
+
+export function saveGposeSignup(
+  entry: Omit<SavedGposeSignup, 'kind' | 'savedAt'>,
+): SavedGposeSignup {
+  const saved: SavedGposeSignup = { ...entry, kind: 'gpose', savedAt: Date.now() }
+  put(saved)
+  return saved
+}
+
+/** Who this browser signed up at one gpose booth as, if it did. */
+export function savedGposeSignup(boothId: number): SavedGposeSignup | undefined {
+  return read().find(
+    (entry): entry is SavedGposeSignup => entry.kind === 'gpose' && entry.boothId === boothId,
+  )
 }
 
 /** Who this browser visits one festival as, if it said. */

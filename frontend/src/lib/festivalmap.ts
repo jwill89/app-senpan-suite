@@ -676,6 +676,7 @@ export function toPublicStalls(
       rallyTitle: '',
       stampImage: '',
       raffle: null,
+      gposeBooth: null,
       affiliate: o.affiliateName
         ? {
             name: o.affiliateName,

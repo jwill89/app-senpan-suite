@@ -21,6 +21,7 @@ const (
 	FestivalGarapon       = "festival-garapon"
 	FestivalStampRally    = "festival-stamp-rally"
 	FestivalEma           = "festival-ema"
+	FestivalGpose         = "festival-gpose"
 	AtelierFonts          = "atelier-fonts"
 	AtelierCarrd          = "atelier-carrd"
 	SystemSettings        = "system-settings"
@@ -46,7 +47,7 @@ func Valid() map[string]bool {
 	keys := []string{
 		BingoGame, BingoCards, BingoWinnersLog, BingoPatterns, BingoPresets,
 		TeahouseAnnouncements, TeahouseAffiliates, TeahouseTeaRooms, TeahouseRaffles,
-		FestivalMap, FestivalGarapon, FestivalStampRally, FestivalEma,
+		FestivalMap, FestivalGarapon, FestivalStampRally, FestivalEma, FestivalGpose,
 		AtelierFonts, AtelierCarrd,
 		SystemSettings, SystemThemes, SystemImages,
 	}

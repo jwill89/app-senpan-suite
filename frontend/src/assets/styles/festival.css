@@ -597,3 +597,35 @@
     display: none;
   }
 }
+
+/* -- Gpose booth -------------------------------------------------------------- */
+
+/* One booth on its page and the festival dashboard (GposeBoothPanel.vue). */
+.gpose-booth-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.gpose-booth-panel-title {
+  margin: 0;
+}
+
+.gpose-booth-panel-types {
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.gpose-booth-panel-mine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.gpose-booth-panel-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}

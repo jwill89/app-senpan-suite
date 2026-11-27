@@ -247,6 +247,62 @@ type GaraponPrize struct {
 	SortOrder int64
 }
 
+type GposeBooth struct {
+	ID            int64
+	Title         string
+	Description   string
+	Mode          string
+	MaxSignups    int64
+	MaxWaitlist   int64
+	PerPerson     int64
+	SlotStep      int64
+	Status        string
+	FestivalMapID sql.NullInt64
+	OccupantID    sql.NullInt64
+	CreatedAt     string
+}
+
+type GposeBoothType struct {
+	ID        int64
+	BoothID   int64
+	TypeID    int64
+	Price     int64
+	Minutes   int64
+	SortOrder int64
+}
+
+type GposeBoothWindow struct {
+	ID        int64
+	BoothID   int64
+	StartAt   string
+	EndAt     string
+	SortOrder int64
+}
+
+type GposeSignup struct {
+	ID            int64
+	BoothID       int64
+	TypeID        sql.NullInt64
+	TypeName      string
+	Price         int64
+	Minutes       int64
+	CharacterName string
+	World         string
+	Waitlisted    int64
+	SlotStart     *string
+	SlotEnd       *string
+	Status        string
+	Paid          int64
+	CalledAt      *string
+	CreatedAt     string
+}
+
+type GposeType struct {
+	ID        int64
+	Name      string
+	CreatedAt string
+}
+
 type Pattern struct {
 	ID          int64
 	Name        string

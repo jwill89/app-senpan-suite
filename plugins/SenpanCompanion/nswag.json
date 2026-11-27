@@ -50,7 +50,11 @@
         "update-stamp-rally-stamp",
         "list-stamp-rally-logs",
         "list-tea-rooms",
-        "change-tea-room"
+        "change-tea-room",
+        "list-gpose-booths",
+        "list-gpose-signups",
+        "change-gpose-signup",
+        "call-gpose-signup"
       ],
       "operationGenerationMode": "SingleClientFromOperationId",
       "injectHttpClient": true,

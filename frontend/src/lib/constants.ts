@@ -359,6 +359,7 @@ export const ADMIN_PERMISSIONS: AdminPermission[] = [
   { key: 'festival-garapon', label: 'Garapon', section: 'Festival' },
   { key: 'festival-stamp-rally', label: 'Stamp Rally', section: 'Festival' },
   { key: 'festival-ema', label: 'Ema Plaques', section: 'Festival' },
+  { key: 'festival-gpose', label: 'Gpose Booth', section: 'Festival' },
   // Raffles sit under Festival; the permission/route id is `teahouse-raffles`.
   { key: 'teahouse-raffles', label: 'Raffles', section: 'Festival' },
   { key: 'atelier-fonts', label: 'Font Upload', section: 'Atelier Yao' },

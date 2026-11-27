@@ -17,6 +17,7 @@ internal static class Perms
     public const string TeahouseRaffles = "teahouse-raffles";
     public const string FestivalGarapon = "festival-garapon";
     public const string FestivalStampRally = "festival-stamp-rally";
+    public const string FestivalGpose = "festival-gpose";
 }
 
 /// <summary>

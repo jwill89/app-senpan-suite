@@ -1143,7 +1143,7 @@ export interface paths {
     }
     /**
      * Every festival map
-     * @description Also open to the staff of the Ema page, whose board editor picks its festival from this list.
+     * @description Also open to the staff of the Ema and Gpose Booth pages, whose editors pick a festival from this list.
      */
     get: operations['list-festival-maps']
     put?: never
@@ -1202,7 +1202,10 @@ export interface paths {
       path?: never
       cookie?: never
     }
-    /** One festival map with its pitches */
+    /**
+     * One festival map with its pitches
+     * @description Also open to the staff of the Gpose Booth page, whose booth editor picks a stall from it.
+     */
     get: operations['get-festival-map']
     /**
      * Replace a festival map's editable fields
@@ -1212,7 +1215,7 @@ export interface paths {
     post?: never
     /**
      * Delete a festival map
-     * @description Its pitches go with it. The stamp rallies and raffles filed under it stay, unlinked, and the stamps that named its occupants fall back to their affiliates. Its plaque board is deleted with the plaques still waiting for review.
+     * @description Its pitches go with it. The stamp rallies, raffles and gpose booths filed under it stay, unlinked, and the stamps that named its occupants fall back to their affiliates. Its plaque board is deleted with the plaques still waiting for review.
      */
     delete: operations['delete-festival-map']
     options?: never
@@ -1729,6 +1732,275 @@ export interface paths {
     put?: never
     post?: never
     delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Every gpose booth */
+    get: operations['list-gpose-booths']
+    put?: never
+    /**
+     * Make a gpose booth
+     * @description It starts open.
+     */
+    post: operations['create-gpose-booth']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/public': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The open gpose booths */
+    get: operations['list-public-gpose-booths']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** One gpose booth with its types and open times */
+    get: operations['get-gpose-booth']
+    /**
+     * Replace a gpose booth's editable fields
+     * @description Its status is kept. A booth that has sign-ups can't change between basic and timeslot (409). Sign-ups keep the type, price and time they were made with.
+     */
+    put: operations['update-gpose-booth']
+    post?: never
+    /**
+     * Delete a gpose booth
+     * @description Its sign-ups go with it.
+     */
+    delete: operations['delete-gpose-booth']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/{id}/close': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Close a gpose booth
+     * @description It takes no sign-ups and leaves the public pages; its sign-ups stay workable.
+     */
+    post: operations['close-gpose-booth']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/{id}/lookup': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * A visitor's own sign-ups at a booth
+     * @description On the whole name and world, ignoring case. A POST so the name stays out of the access log. The pages read it every half minute while a sign-up waits, so a staff call reaches them. 150 reads from one address in ten minutes (429, with Retry-After). Only for an open booth.
+     */
+    post: operations['look-up-gpose-signups']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/{id}/public': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * One open gpose booth
+     * @description With the times each type can be booked now. A closed booth is not found.
+     */
+    get: operations['get-public-gpose-booth']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/{id}/reopen': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Open a closed gpose booth again */
+    post: operations['reopen-gpose-booth']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/{id}/sign-up': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Sign up at a gpose booth
+     * @description Anyone may, at an open booth. A basic booth puts them in the next place, or on its waitlist once the places are taken; a timeslot booth books the start time sent, or the waitlist. A booth that is full, a time just taken, or a character already holding the most sign-ups the booth allows is a 409. Fifteen tries from one address in ten minutes, made or not (429, with Retry-After).
+     */
+    post: operations['sign-up-gpose-booth']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/{id}/signups': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * A gpose booth's sign-ups
+     * @description In the order they were made, with each one's place in line and, for the waitlist of a timeslot booth, the times their shoot could be fitted in now.
+     */
+    get: operations['list-gpose-signups']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-booths/{id}/signups/{signupId}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /**
+     * Delete a sign-up
+     * @description For one made in error. At a basic booth, the place it held goes to the waitlist, as a cancellation does.
+     */
+    delete: operations['delete-gpose-signup']
+    options?: never
+    head?: never
+    /**
+     * Mark a sign-up completed, a no-show or canceled, record it paid, or give it a slot
+     * @description At a basic booth, a sign-up that gives up its place (a no-show or canceled) moves the longest-waiting person on the waitlist into it. At a timeslot booth, slotStart books someone into a slot, the waitlist's way into one a no-show freed.
+     */
+    patch: operations['change-gpose-signup']
+    trace?: never
+  }
+  '/gpose-booths/{id}/signups/{signupId}/call': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Call a person up
+     * @description Their festival dashboard and booth page alert them (a sound, a vibration, the tab's title) until they dismiss it; calling again alerts them again. Only someone waiting can be called (409).
+     */
+    post: operations['call-gpose-signup']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-types': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** The site's gpose types */
+    get: operations['list-gpose-types']
+    put?: never
+    /**
+     * Add a gpose type
+     * @description A name another type has, ignoring case, is a 409.
+     */
+    post: operations['create-gpose-type']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-types/{id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    /**
+     * Rename a gpose type
+     * @description Sign-ups already made keep the name they were made under.
+     */
+    put: operations['update-gpose-type']
+    post?: never
+    /**
+     * Delete a gpose type
+     * @description One a booth still offers is a 409 naming how many.
+     */
+    delete: operations['delete-gpose-type']
     options?: never
     head?: never
     patch?: never
@@ -4203,6 +4475,8 @@ export interface components {
       ema: components['schemas']['FestivalEma'] | null
       /** @description The garapon serving the rally; null when there is none. */
       garapon: components['schemas']['FestivalDashboardGarapon'] | null
+      /** @description The festival's open gpose booths, oldest first, each with the visitor's own sign-ups. */
+      gposeBooths: components['schemas']['FestivalGposeBooth'][]
       /** @description Who the visitor is: the card's participant, else the drawing link's, else the name they sent. */
       participantName: string
       /** @description The festival's raffles a visitor may see, newest first. */
@@ -4290,6 +4564,12 @@ export interface components {
       title: string
       /** @description Its days in order. */
       windows: components['schemas']['PublicEmaWindow'][]
+    }
+    FestivalGposeBooth: {
+      /** @description The booth. */
+      booth: components['schemas']['PublicGposeBooth']
+      /** @description The visitor's own sign-ups, on their whole name and world; empty when they have none or sent no name. */
+      signups: components['schemas']['PublicGposeSignup'][]
     }
     FestivalMap: {
       /** @description When it was made, RFC 3339 in UTC. */
@@ -4997,6 +5277,338 @@ export interface components {
       /** @description The family names, most popular first. Empty when no API key is set or Google can't be reached. */
       families: string[]
     }
+    GposeBooth: {
+      /**
+       * Format: int64
+       * @description Sign-ups holding a place or slot: waiting or completed, off the waitlist.
+       */
+      bookedCount: number
+      /**
+       * Format: date-time
+       * @description When it was made, RFC 3339 in UTC.
+       */
+      createdAt: string
+      /** @description What it is about and how to pay (Markdown). */
+      description: string
+      /**
+       * Format: int64
+       * @description The festival it belongs to; null for none.
+       */
+      festivalMapId: number | null
+      /** @description The festival's title; empty for none. */
+      festivalMapName: string
+      /**
+       * Format: int64
+       * @description The booth's id.
+       */
+      id: number
+      /**
+       * Format: int64
+       * @description The most sign-ups a basic booth takes; 0 at a timeslot booth.
+       */
+      maxSignups: number
+      /**
+       * Format: int64
+       * @description The most people its waitlist holds; 0 for no waitlist.
+       */
+      maxWaitlist: number
+      /**
+       * @description basic takes sign-ups in order up to maxSignups, then a waitlist. timeslot books start times inside its open times, with a waitlist beside them.
+       * @enum {string}
+       */
+      mode: 'basic' | 'timeslot'
+      /**
+       * Format: int64
+       * @description The stall on that festival's plan it is pinned to; null for none.
+       */
+      occupantId: number | null
+      /**
+       * Format: int64
+       * @description The most sign-ups one character may have waiting at once.
+       */
+      perPerson: number
+      /**
+       * Format: int64
+       * @description Minutes between the start times a timeslot booth offers.
+       */
+      slotStep: number
+      /** @description The stall's title; empty for none. */
+      stallName: string
+      /**
+       * @description An open booth takes sign-ups and is on the public pages; a closed one is neither, and its sign-ups stay workable.
+       * @enum {string}
+       */
+      status: 'open' | 'closed'
+      /** @description The booth's title. */
+      title: string
+      /** @description The types it offers, in order. Empty in a list. */
+      types: components['schemas']['GposeBoothType'][]
+      /**
+       * Format: int64
+       * @description Sign-ups not yet completed, a no-show or canceled, the waitlist included.
+       */
+      waitingCount: number
+      /**
+       * Format: int64
+       * @description People waiting on the waitlist.
+       */
+      waitlistCount: number
+      /** @description When a timeslot booth is open, in order. Empty in a list and at a basic booth. */
+      windows: components['schemas']['GposeWindow'][]
+    }
+    GposeBoothInput: {
+      /** @description What it is about and how to pay (Markdown); empty for none. */
+      description: string
+      /**
+       * Format: int64
+       * @description The festival to file it under; null or left out for none. One that doesn't exist is refused.
+       */
+      festivalMapId?: number | null
+      /**
+       * Format: int64
+       * @description The most sign-ups a basic booth takes, at least 1; ignored at a timeslot booth.
+       */
+      maxSignups: number
+      /**
+       * Format: int64
+       * @description The most people its waitlist holds; 0 for no waitlist.
+       */
+      maxWaitlist: number
+      /**
+       * @description basic or timeslot. A booth that has sign-ups can't change it.
+       * @enum {string}
+       */
+      mode: 'basic' | 'timeslot'
+      /**
+       * Format: int64
+       * @description The stall on that festival's plan to pin it to; null or left out for none. A stall that isn't on the festival is dropped.
+       */
+      occupantId?: number | null
+      /**
+       * Format: int64
+       * @description The most sign-ups one character may have waiting at once.
+       */
+      perPerson: number
+      /**
+       * Format: int64
+       * @description Minutes between the start times a timeslot booth offers, 5 to 240; ignored at a basic booth.
+       */
+      slotStep: number
+      /** @description The booth's title. */
+      title: string
+      /** @description The types it offers, in order, each once. */
+      types: components['schemas']['GposeBoothTypeInput'][]
+      /** @description When a timeslot booth is open, at least one; ignored at a basic booth. Sign-ups already booked keep their times when these change. */
+      windows: components['schemas']['GposeWindowInput'][]
+    }
+    GposeBoothList: {
+      /** @description Newest first, with their counts and without their types or open times. */
+      booths: components['schemas']['GposeBooth'][]
+    }
+    GposeBoothType: {
+      /**
+       * Format: int64
+       * @description How long one takes at a timeslot booth; 0 at a basic booth.
+       */
+      minutes: number
+      /** @description The type's name. */
+      name: string
+      /**
+       * Format: int64
+       * @description What it costs in gil; 0 for no price.
+       */
+      price: number
+      /**
+       * Format: int64
+       * @description The type's id.
+       */
+      typeId: number
+    }
+    GposeBoothTypeInput: {
+      /**
+       * Format: int64
+       * @description How long one takes, 1 to 600 minutes at a timeslot booth; ignored at a basic booth.
+       */
+      minutes?: number
+      /**
+       * Format: int64
+       * @description What it costs in gil; 0 or left out for no price.
+       */
+      price?: number
+      /**
+       * Format: int64
+       * @description The type's id. One that doesn't exist is refused.
+       */
+      typeId: number
+    }
+    GposeLookup: {
+      /** @description Theirs, oldest first; empty when they have none. */
+      signups: components['schemas']['PublicGposeSignup'][]
+    }
+    GposeLookupInput: {
+      /** @description Their character, the whole name they signed up with (case doesn't matter). */
+      characterName: string
+      /** @description Their home world. */
+      world: string
+    }
+    GposeSignUpInput: {
+      /** @description Their character. */
+      characterName: string
+      /**
+       * Format: date-time
+       * @description At a timeslot booth, the start time to book, one of the type's offered starts. Left out with waitlist set, it joins the waitlist.
+       */
+      slotStart?: string
+      /** @description The Cloudflare Turnstile response; needed only when the bot check is on. */
+      turnstileToken?: string
+      /**
+       * Format: int64
+       * @description The type of gpose, one the booth offers.
+       */
+      typeId: number
+      /** @description At a timeslot booth, join the waitlist instead of booking a time. A basic booth puts them on its waitlist by itself once its places are taken. */
+      waitlist?: boolean
+      /** @description Their home world. */
+      world: string
+    }
+    GposeSignup: {
+      /** @description For someone waiting on a timeslot booth's waitlist, the start times their shoot fits now, one under way included; empty for anyone else. */
+      assignableStarts: string[]
+      /**
+       * Format: int64
+       * @description The booth it is at.
+       */
+      boothId: number
+      /**
+       * Format: date-time
+       * @description When staff last called them up, RFC 3339 in UTC; null when never.
+       */
+      calledAt: string | null
+      /** @description The character. */
+      characterName: string
+      /**
+       * Format: date-time
+       * @description When they signed up, RFC 3339 in UTC.
+       */
+      createdAt: string
+      /**
+       * Format: int64
+       * @description The sign-up's id.
+       */
+      id: number
+      /**
+       * Format: int64
+       * @description How long it takes, as it was when they signed up; 0 at a basic booth.
+       */
+      minutes: number
+      /** @description Whether staff recorded the price as paid. */
+      paid: boolean
+      /**
+       * Format: int64
+       * @description Where they stand while waiting: their place in line at a basic booth, or on the waitlist; 0 for a booked slot or once they are no longer waiting.
+       */
+      position: number
+      /**
+       * Format: int64
+       * @description Its price in gil, as it was when they signed up; 0 for none.
+       */
+      price: number
+      /**
+       * Format: date-time
+       * @description When their slot ends, RFC 3339 in UTC; null with no slot.
+       */
+      slotEnd: string | null
+      /**
+       * Format: date-time
+       * @description When their slot starts, RFC 3339 in UTC; null at a basic booth and on the waitlist.
+       */
+      slotStart: string | null
+      /**
+       * @description waiting holds their place or slot, and so does completed; no_show and canceled give it up.
+       * @enum {string}
+       */
+      status: 'waiting' | 'completed' | 'no_show' | 'canceled'
+      /**
+       * Format: int64
+       * @description The type signed up for; null once that type is deleted.
+       */
+      typeId: number | null
+      /** @description The type's name, as it was when they signed up. */
+      typeName: string
+      /** @description Whether they are on the waitlist rather than in a place or a slot. */
+      waitlisted: boolean
+      /** @description Their home world. */
+      world: string
+    }
+    GposeSignupChange: {
+      /** @description Whether the price is paid. */
+      paid?: boolean
+      /**
+       * Format: date-time
+       * @description Books it into the slot starting then, taking it off the waitlist: a timeslot booth's only. The shoot must fit inside an open time without overlapping another booking; it may start between the offered times, or have started already.
+       */
+      slotStart?: string
+      /**
+       * @description Where it stands now. Waiting again undoes a mistake; at a timeslot booth, a slot another booking has taken since is a 409.
+       * @enum {string}
+       */
+      status?: 'waiting' | 'completed' | 'no_show' | 'canceled'
+    }
+    GposeSignupList: {
+      /** @description Every sign-up in the order they were made. */
+      signups: components['schemas']['GposeSignup'][]
+    }
+    GposeType: {
+      /**
+       * Format: int64
+       * @description How many booths offer it; one that any booth offers can't be deleted.
+       */
+      boothCount: number
+      /**
+       * Format: date-time
+       * @description When it was made, RFC 3339 in UTC.
+       */
+      createdAt: string
+      /**
+       * Format: int64
+       * @description The type's id.
+       */
+      id: number
+      /** @description What it is called, such as Solo or Couple. */
+      name: string
+    }
+    GposeTypeInput: {
+      /** @description What it is called. Two types can't share a name, ignoring case. */
+      name: string
+    }
+    GposeTypeList: {
+      /** @description Every type, oldest first. */
+      types: components['schemas']['GposeType'][]
+    }
+    GposeWindow: {
+      /**
+       * Format: date-time
+       * @description When it closes, RFC 3339 in UTC; a shoot must end by then.
+       */
+      endAt: string
+      /**
+       * Format: date-time
+       * @description When it opens, RFC 3339 in UTC.
+       */
+      startAt: string
+    }
+    GposeWindowInput: {
+      /**
+       * Format: date-time
+       * @description When it closes, RFC 3339; after it opens. Open times can't overlap.
+       */
+      endAt: string
+      /**
+       * Format: date-time
+       * @description When it opens, RFC 3339.
+       */
+      startAt: string
+    }
     Halftime: {
       /** @description Whether the automatic draws were paused for the prompt, so declining the mini-game starts them again. */
       autoPaused: boolean
@@ -5674,6 +6286,140 @@ export interface components {
       /** @description The prize. */
       name: string
     }
+    PublicGposeBooth: {
+      /** @description What it is about and how to pay (Markdown). */
+      description: string
+      /** @description The festival it belongs to; empty for none. */
+      festivalName: string
+      /** @description The festival's shortcode or id for its page, when that festival is published; empty otherwise. */
+      festivalPath: string
+      /**
+       * Format: int64
+       * @description The booth's id.
+       */
+      id: number
+      /**
+       * Format: int64
+       * @description The most sign-ups a basic booth takes; 0 at a timeslot booth.
+       */
+      maxSignups: number
+      /**
+       * Format: int64
+       * @description The most people its waitlist holds; 0 for no waitlist.
+       */
+      maxWaitlist: number
+      /**
+       * @description basic or timeslot.
+       * @enum {string}
+       */
+      mode: 'basic' | 'timeslot'
+      /**
+       * Format: int64
+       * @description The most sign-ups one character may have waiting at once.
+       */
+      perPerson: number
+      /**
+       * Format: int64
+       * @description The places a basic booth has left; 0 when full and at a timeslot booth.
+       */
+      placesLeft: number
+      /** @description The stall it is at; empty for none. */
+      stallName: string
+      /** @description The booth's title. */
+      title: string
+      /** @description The types it offers, in order. */
+      types: components['schemas']['PublicGposeType'][]
+      /**
+       * Format: int64
+       * @description The room left on the waitlist.
+       */
+      waitlistLeft: number
+      /** @description When a timeslot booth is open, in order; empty at a basic booth. */
+      windows: components['schemas']['GposeWindow'][]
+    }
+    PublicGposeBoothList: {
+      /** @description The open booths, newest first, without their start times. */
+      booths: components['schemas']['PublicGposeBooth'][]
+    }
+    PublicGposeSignup: {
+      /**
+       * Format: int64
+       * @description The booth it is at.
+       */
+      boothId: number
+      /**
+       * Format: date-time
+       * @description When staff last called them up, RFC 3339 in UTC; null when never.
+       */
+      calledAt: string | null
+      /**
+       * Format: date-time
+       * @description When they signed up, RFC 3339 in UTC.
+       */
+      createdAt: string
+      /**
+       * Format: int64
+       * @description The sign-up's id.
+       */
+      id: number
+      /**
+       * Format: int64
+       * @description How long it takes; 0 at a basic booth.
+       */
+      minutes: number
+      /** @description Whether the price is recorded as paid. */
+      paid: boolean
+      /**
+       * Format: int64
+       * @description Their place in line at a basic booth, or on the waitlist, while waiting; 0 otherwise.
+       */
+      position: number
+      /**
+       * Format: int64
+       * @description Its price in gil; 0 for none.
+       */
+      price: number
+      /**
+       * Format: date-time
+       * @description When it ends; null with no slot.
+       */
+      slotEnd: string | null
+      /**
+       * Format: date-time
+       * @description When their slot starts, RFC 3339 in UTC; null with no slot.
+       */
+      slotStart: string | null
+      /**
+       * @description Where it stands.
+       * @enum {string}
+       */
+      status: 'waiting' | 'completed' | 'no_show' | 'canceled'
+      /** @description The type signed up for. */
+      typeName: string
+      /** @description Whether they are on the waitlist. */
+      waitlisted: boolean
+    }
+    PublicGposeType: {
+      /**
+       * Format: int64
+       * @description How long one takes; 0 at a basic booth.
+       */
+      minutes: number
+      /** @description The type's name. */
+      name: string
+      /**
+       * Format: int64
+       * @description What it costs in gil; 0 for no price.
+       */
+      price: number
+      /** @description At a timeslot booth, the times it can be booked now, RFC 3339 in UTC, in order; empty at a basic booth and in a list. */
+      starts: string[]
+      /**
+       * Format: int64
+       * @description The type's id.
+       */
+      typeId: number
+    }
     PublicPrize: {
       /**
        * Format: int64
@@ -5701,6 +6447,15 @@ export interface components {
       /** @description Its tagline. */
       subtitle: string
     }
+    PublicStallGpose: {
+      /**
+       * Format: int64
+       * @description The booth's id.
+       */
+      id: number
+      /** @description The booth's title. */
+      title: string
+    }
     PublicStallOccupant: {
       /** @description The affiliate it belongs to; null for the venue itself. */
       affiliate: components['schemas']['PublicStallAffiliate'] | null
@@ -5708,6 +6463,8 @@ export interface components {
       description: string
       /** @description A link to its page for the event; empty for none. */
       eventCarrd: string
+      /** @description An open gpose booth at this stall; null when none. */
+      gposeBooth: components['schemas']['PublicStallGpose'] | null
       /**
        * Format: int64
        * @description The occupant's id.
@@ -15676,6 +16433,1257 @@ export interface operations {
       }
       /** @description Not Found */
       404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'list-gpose-booths': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeBoothList']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'create-gpose-booth': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GposeBoothInput']
+      }
+    }
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeBooth']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'list-public-gpose-booths': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PublicGposeBoothList']
+        }
+      }
+      /** @description Error */
+      default: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'get-gpose-booth': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeBooth']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'update-gpose-booth': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GposeBoothInput']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeBooth']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'delete-gpose-booth': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'close-gpose-booth': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeBooth']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'look-up-gpose-signups': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GposeLookupInput']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeLookup']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'get-public-gpose-booth': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PublicGposeBooth']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'reopen-gpose-booth': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeBooth']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'sign-up-gpose-booth': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GposeSignUpInput']
+      }
+    }
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['PublicGposeSignup']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'list-gpose-signups': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeSignupList']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'delete-gpose-signup': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+        /** @description The sign-up's id. */
+        signupId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'change-gpose-signup': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+        /** @description The sign-up's id. */
+        signupId: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GposeSignupChange']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeSignup']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'call-gpose-signup': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+        /** @description The sign-up's id. */
+        signupId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeSignup']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'list-gpose-types': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeTypeList']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'create-gpose-type': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GposeTypeInput']
+      }
+    }
+    responses: {
+      /** @description Created */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeType']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'update-gpose-type': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The type's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['GposeTypeInput']
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeType']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'delete-gpose-type': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The type's id. */
+        id: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Conflict */
+      409: {
         headers: {
           [name: string]: unknown
         }

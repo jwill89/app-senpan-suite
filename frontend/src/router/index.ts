@@ -19,6 +19,9 @@
  *   /admin/teahouse/raffles          -> Admin: Raffles (current cards + closed table; detail/form sub-pages)
  *   /admin/teahouse/bookclub/:slug   -> Admin: a book club (Yaoi, Yuri, ...)
  *   /admin/festival/map              -> Admin: Festival Map (plan + stalls)
+ *   /admin/festival/gpose            -> Admin: Gpose Booth (booths, their sign-ups, the site's types)
+ *   /gpose-booths             -> Public list of the open gpose booths
+ *   /gpose-booths/:id         -> One gpose booth: sign up, see where you stand
  *   /embed/festival-maps/:id  -> One festival map, bare, for embedding in an iframe
  *   /admin/atelier/fonts      -> Admin: Font Upload
  *   /admin/atelier/carrd      -> Admin: Carrd Upload
@@ -146,6 +149,13 @@ const adminChildren: RouteRecordRaw[] = [
     component: () => import('@/components/admin/EmaPlaquesTab.vue'),
     meta: { tab: 'festival-ema' },
   },
+  // Festival -> Gpose Booth: the booths, each one's sign-ups, and the site's types.
+  {
+    path: 'festival/gpose',
+    name: 'admin-festival-gpose',
+    component: () => import('@/components/admin/GposeBoothsTab.vue'),
+    meta: { tab: 'festival-gpose' },
+  },
   {
     path: 'system/settings',
     name: 'admin-system-settings',
@@ -230,6 +240,18 @@ const routes: RouteRecordRaw[] = [
     path: '/festival-maps/:id',
     name: 'festival-map',
     component: () => import('@/views/FestivalMapView.vue'),
+    props: true,
+  },
+  // Public gpose booths: the open ones, and one booth's sign-up page.
+  {
+    path: '/gpose-booths',
+    name: 'gpose-booths',
+    component: () => import('@/views/GposeBoothsView.vue'),
+  },
+  {
+    path: '/gpose-booths/:id',
+    name: 'gpose-booth',
+    component: () => import('@/views/GposeBoothView.vue'),
     props: true,
   },
   // The festival dashboard: the map, the stamp rally, the garapon and the raffles

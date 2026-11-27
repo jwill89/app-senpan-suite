@@ -220,6 +220,7 @@ var resources = map[string][]string{
 	"festival-maps": {permissions.FestivalMap, permissions.FestivalEma},
 	"fonts":         {permissions.AtelierFonts},
 	"garapons":      {permissions.FestivalGarapon},
+	"gpose-booths":  {permissions.FestivalGpose},
 	"images":        permissions.ImageBrowsers(),
 	"integrations":  nil,
 	"presets":       {permissions.BingoPresets},

@@ -273,6 +273,20 @@ export function playUnlockChime(): void {
 }
 
 /**
+ * Plays the gpose booth's "you're up" alert: a bright rising C5 -> E5 -> G5 -> C6,
+ * unlike the game's chimes, since it calls one person away from whatever they are
+ * doing in the game.
+ */
+export function playGposeCallChime(): void {
+  playChime([
+    { freq: 523.25, at: 0, peak: 0.25, dur: 0.18, type: 'triangle' }, // C5
+    { freq: 659.25, at: 0.14, peak: 0.25, dur: 0.18, type: 'triangle' }, // E5
+    { freq: 783.99, at: 0.28, peak: 0.25, dur: 0.18, type: 'triangle' }, // G5
+    { freq: 1046.5, at: 0.42, peak: 0.28, dur: 0.4, type: 'triangle' }, // C6
+  ])
+}
+
+/**
  * Plays a short, metallic "pon" - the clink a Garapon ball makes as it drops out
  * of the drum and lands in the tray. A handful of inharmonic partials (not integer
  * multiples, so the timbre reads as metallic rather than tonal) with a fast,

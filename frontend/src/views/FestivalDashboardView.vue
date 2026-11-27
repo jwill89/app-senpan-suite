@@ -2,7 +2,12 @@
 /**
  * The festival dashboard (/festival/:id): one page where a visitor follows and
  * takes part in everything filed under a festival - the plan, the stamp rally,
- * the garapon and the raffles - without being sent off to a page for each.
+ * the garapon, the raffles, the plaque board and the gpose booths - without being
+ * sent off to a page for each.
+ *
+ * A gpose sign-up alerts the visitor here until they dismiss it (useGposeAlerts):
+ * when staff call them up, and as a timeslot booking's time comes. While one waits,
+ * the page reads the sign-ups every half minute so a call reaches them.
  *
  * A wide screen shows every section at once, one under another at the page's full
  * width - the stamp card and the drum need the room to be read - and each folds
@@ -24,6 +29,8 @@ import WorldPicker from '@/components/common/ui/WorldPicker.vue'
 import FestivalDashSection from '@/components/player/FestivalDashSection.vue'
 import FestivalEmaSection from '@/components/player/FestivalEmaSection.vue'
 import FestivalRaffleCard from '@/components/player/FestivalRaffleCard.vue'
+import GposeBoothPanel from '@/components/player/GposeBoothPanel.vue'
+import { useGposeAlerts } from '@/composables/useGposeAlerts'
 import GaraponPanel from '@/components/player/GaraponPanel.vue'
 import StampCardPanel from '@/components/player/StampCardPanel.vue'
 import { useFestivalDashboardStore } from '@/stores/festivalDashboard'
@@ -37,7 +44,7 @@ import { participantLabel } from '@/lib/participant'
 // resolves either, so it is passed through as typed.
 const props = defineProps<{ id: string }>()
 
-type Section = 'map' | 'stamps' | 'garapon' | 'raffles' | 'ema'
+type Section = 'map' | 'stamps' | 'garapon' | 'raffles' | 'ema' | 'gpose'
 
 const router = useRouter()
 const store = useFestivalDashboardStore()
@@ -90,6 +97,31 @@ function onVisible(): void {
 }
 onMounted(() => document.addEventListener('visibilitychange', onVisible))
 onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible))
+
+// -- Gpose booths: keeping the sign-ups fresh, and the alerts ------------------------
+
+const GPOSE_POLL_MS = 30_000
+let gposePoll: ReturnType<typeof setInterval> | null = null
+onMounted(() => {
+  gposePoll = setInterval(() => {
+    if (store.gposeWaiting) {
+      void store.refreshGpose()
+    }
+  }, GPOSE_POLL_MS)
+})
+onBeforeUnmount(() => {
+  if (gposePoll !== null) {
+    clearInterval(gposePoll)
+  }
+})
+useGposeAlerts(
+  () => store.gposeBooths.map((b) => ({ boothTitle: b.booth.title, signups: b.signups })),
+  { slotAlerts: true },
+)
+
+function onGposeSignedUp(_signup: unknown, name: string, world: string): void {
+  void store.afterGposeSignup(name, world)
+}
 
 const data = computed(() => store.dashboard)
 const rally = computed(() => data.value?.rally ?? null)
@@ -162,6 +194,18 @@ const emaTally = computed(() => {
   return e.currentWindowId ? 'Open today' : 'Not today'
 })
 
+const gposeTally = computed(() => {
+  const waiting = store.gposeBooths.flatMap((b) => b.signups).filter((s) => s.status === 'waiting')
+  const next = waiting.find((s) => !s.waitlisted)
+  if (next) {
+    return next.slotStart ? 'Booked' : `#${next.position} in line`
+  }
+  if (waiting.length) {
+    return 'On the waitlist'
+  }
+  return store.gposeBooths.length === 1 ? 'Open' : `${store.gposeBooths.length} open`
+})
+
 const tiles = computed(() => {
   const list: { key: Section; label: string; icon: string; value: string }[] = [
     {
@@ -182,6 +226,9 @@ const tiles = computed(() => {
   }
   if (data.value?.ema) {
     list.push({ key: 'ema', label: 'Ema Plaques', icon: 'torii-gate', value: emaTally.value })
+  }
+  if (store.gposeBooths.length) {
+    list.push({ key: 'gpose', label: 'Gpose Booth', icon: 'camera-retro', value: gposeTally.value })
   }
   return list
 })
@@ -445,6 +492,16 @@ function goBack(): void {
                   See the raffle
                 </button>
               </template>
+              <template #gpose-action="{ occupant }">
+                <button
+                  v-if="occupant.gposeBooth"
+                  type="button"
+                  class="link-btn"
+                  @click="goTo('gpose', `gpose-booth-${occupant.gposeBooth.id}`)"
+                >
+                  Sign up for a gpose
+                </button>
+              </template>
             </FestivalMapWidget>
           </FestivalDashSection>
 
@@ -605,6 +662,38 @@ function goBack(): void {
             @toggle="toggle('ema')"
           >
             <FestivalEmaSection :ema="data.ema" :turnstile-site-key="turnstileSiteKey" />
+          </FestivalDashSection>
+
+          <!-- Gpose booths -->
+          <FestivalDashSection
+            v-if="store.gposeBooths.length"
+            id="gpose"
+            :title="
+              store.gposeBooths.length === 1 ? store.gposeBooths[0]!.booth.title : 'Gpose Booths'
+            "
+            icon="camera-retro"
+            :summary="tally.gpose"
+            :collapsed="collapsed.has('gpose')"
+            :current="current === 'gpose'"
+            @toggle="toggle('gpose')"
+          >
+            <p class="text-sm text-muted m-0">
+              Keep this page open: when it's your turn it rings, vibrates and flashes its tab until
+              you dismiss it.
+            </p>
+            <div class="festival-raffle-grid">
+              <GposeBoothPanel
+                v-for="b in store.gposeBooths"
+                :key="b.booth.id"
+                :booth="b.booth"
+                :signups="b.signups"
+                :visitor-name="store.visitorName"
+                :visitor-world="store.visitorWorld"
+                :fixed-visitor="!!store.visitorName"
+                :turnstile-site-key="turnstileSiteKey"
+                @signed-up="onGposeSignedUp"
+              />
+            </div>
           </FestivalDashSection>
         </div>
       </template>

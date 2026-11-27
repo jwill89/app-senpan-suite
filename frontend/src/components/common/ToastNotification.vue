@@ -28,7 +28,10 @@ function follow(a: UiAlert): void {
       role="alert"
     >
       <div class="toast-notification__head">
-        <font-awesome-icon :icon="['fas', 'lock-open']" class="toast-notification__icon" />
+        <font-awesome-icon
+          :icon="['fas', a.icon ?? 'lock-open']"
+          class="toast-notification__icon"
+        />
         <strong class="toast-notification__title">{{ a.title }}</strong>
         <button
           type="button"

@@ -15,6 +15,7 @@ import { usePlayerStore } from '@/stores/player'
 import { useRafflesStore } from '@/stores/raffles'
 import { useStampRalliesStore } from '@/stores/stampRallies'
 import { useFestivalMapsStore } from '@/stores/festivalMaps'
+import { useGposeStore } from '@/stores/gpose'
 
 const router = useRouter()
 const app = useAppStore()
@@ -22,6 +23,7 @@ const player = usePlayerStore()
 const raffles = useRafflesStore()
 const stampRallies = useStampRalliesStore()
 const festivalMaps = useFestivalMapsStore()
+const gpose = useGposeStore()
 const game = useGameStore()
 const { ready: markdownReady } = useMarkdown()
 
@@ -85,7 +87,8 @@ const nothingOn = computed(
     !showBingo.value &&
     raffles.homeRaffles.length === 0 &&
     stampRallies.signupRallies.length === 0 &&
-    festivalMaps.publicMaps.length === 0,
+    festivalMaps.publicMaps.length === 0 &&
+    gpose.publicBooths.length === 0,
 )
 
 // Focus the board-ID field on load so players can type their code immediately.
@@ -98,6 +101,8 @@ onMounted(() => {
   // returns published maps only.
   void stampRallies.loadSignupRallies()
   void festivalMaps.loadPublicMaps()
+  // Open gpose booths only, so an empty list means no card.
+  void gpose.loadPublicBooths()
 })
 
 // The logo (and the other brand images) are served at runtime from the data
@@ -189,6 +194,16 @@ const logoUrl = '/images/logo.png'
           <p>Sign up for a stamp card and collect stamps from every stall!</p>
         </div>
         <button type="button" class="btn-view" @click="viewStampRallies">View Stamp Rallies</button>
+      </div>
+      <!-- Gpose Booths (only when one is open) -->
+      <div v-if="gpose.publicBooths.length" class="home-card home-card--dest">
+        <div class="home-dest-body">
+          <h2><font-awesome-icon :icon="['fad', 'camera-retro']" /> Gpose Booth</h2>
+          <p>Sign up for a gpose and get your picture taken!</p>
+        </div>
+        <button type="button" class="btn-view" @click="router.push({ name: 'gpose-booths' })">
+          View Gpose Booths
+        </button>
       </div>
       <p v-if="nothingOn" class="text-muted ta-center">
         Nothing is running just now - check back soon!

@@ -21,6 +21,7 @@ import {
   api,
   unwrap,
   type FestivalDashboard,
+  type FestivalGposeBooth,
   type PublicEmaPlaque,
   type PublicFestivalMap,
   type RaffleEnterResult,
@@ -35,6 +36,7 @@ import {
   savedRallySignup,
 } from '@/lib/signups'
 import { useGaraponsStore } from './garapons'
+import { useGposeStore } from './gpose'
 import { useStampRalliesStore } from './stampRallies'
 import { useUiStore } from './ui'
 
@@ -109,6 +111,12 @@ export const useFestivalDashboardStore = defineStore('festivalDashboard', () => 
     }
     return ids
   })
+
+  const gposeBooths = computed<FestivalGposeBooth[]>(() => dashboard.value?.gposeBooths ?? [])
+  /** Whether one of the visitor's gpose sign-ups is still waiting, so a staff call can come. */
+  const gposeWaiting = computed(() =>
+    gposeBooths.value.some((b) => b.signups.some((s) => s.status === 'waiting')),
+  )
 
   const runningRaffles = computed(() => dashboard.value?.raffles.filter((r) => r.running) ?? [])
   /** Raffles the visitor holds tickets in, running or not. */
@@ -294,6 +302,9 @@ export const useFestivalDashboardStore = defineStore('festivalDashboard', () => 
     for (const r of dashboard.value?.raffles ?? []) {
       forgetSignup('raffle', r.raffle.id)
     }
+    for (const b of gposeBooths.value) {
+      forgetSignup('gpose', b.booth.id)
+    }
     forgetSignup('festival', m.id)
     entered.value = {}
     await refresh()
@@ -404,6 +415,41 @@ export const useFestivalDashboardStore = defineStore('festivalDashboard', () => 
     }
   }
 
+  /**
+   * Reads the visitor's gpose sign-ups again, booth by booth: the light read the page
+   * makes every half minute while one waits, so a staff call or a slot staff gave
+   * them reaches them without the whole dashboard being read.
+   */
+  async function refreshGpose(): Promise<void> {
+    const d = dashboard.value
+    if (!d || !visitorName.value) {
+      return
+    }
+    const gpose = useGposeStore()
+    const fresh = await Promise.all(
+      d.gposeBooths.map(async (b) => ({
+        ...b,
+        signups:
+          (await gpose.lookUp(b.booth.id, visitorName.value, visitorWorld.value)) ?? b.signups,
+      })),
+    )
+    if (dashboard.value === d) {
+      dashboard.value = { ...d, gposeBooths: fresh }
+    }
+  }
+
+  /**
+   * After a gpose sign-up made on the dashboard: a visitor nobody knew yet becomes who
+   * the page visits as, and the booths (their places and free times) are read again.
+   */
+  async function afterGposeSignup(name: string, world: string): Promise<void> {
+    if (!visitorName.value) {
+      await setVisitor(name, world)
+      return
+    }
+    await refresh()
+  }
+
   /** Loads the designer's Google Fonts list once; it is empty without a server key. */
   async function loadGoogleFonts(): Promise<void> {
     if (googleFonts.value.length) {
@@ -509,6 +555,10 @@ export const useFestivalDashboardStore = defineStore('festivalDashboard', () => 
     collectedOccupantIds,
     runningRaffles,
     enteredRaffles,
+    gposeBooths,
+    gposeWaiting,
+    refreshGpose,
+    afterGposeSignup,
     open,
     refresh,
     setVisitor,
