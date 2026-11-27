@@ -122,9 +122,10 @@ func run() error {
 	}
 
 	// Signing in with Discord: the Discord application's id and OAuth client secret,
-	// from the env file. Off unless both are set.
-	discordClientID := strings.TrimSpace(os.Getenv("DISCORD_APPLICATION_ID"))
-	discordClientSecret := strings.TrimSpace(os.Getenv("DISCORD_CLIENT_SECRET"))
+	// from the env file, under the APPSUITE_ prefix every other variable carries. Off
+	// unless both are set.
+	discordClientID := strings.TrimSpace(os.Getenv("APPSUITE_DISCORD_APPLICATION_ID"))
+	discordClientSecret := strings.TrimSpace(os.Getenv("APPSUITE_DISCORD_CLIENT_SECRET"))
 
 	// The SPA, from the build embedded at compile time. A binary built without it
 	// stops here rather than serving a site with no pages.
@@ -196,7 +197,7 @@ func run() error {
 	if discordClientID != "" && discordClientSecret != "" {
 		slog.Info("Discord sign-in enabled")
 	} else {
-		slog.Warn("Discord sign-in not configured (DISCORD_APPLICATION_ID, DISCORD_CLIENT_SECRET); it is off")
+		slog.Warn("Discord sign-in not configured (APPSUITE_DISCORD_APPLICATION_ID, APPSUITE_DISCORD_CLIENT_SECRET); it is off")
 	}
 
 	httpServer := &http.Server{

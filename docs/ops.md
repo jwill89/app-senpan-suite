@@ -104,13 +104,13 @@ install -d -o root -g root -m 755 "$(dirname "$ENV_FILE")"
 if [ ! -e "$ENV_FILE" ]; then
   ( umask 077
     { printf 'APPSUITE_SESSION_SECRET=%s\n' "$(openssl rand -hex 32)"
-      printf '%s=\n' APPSUITE_OWNERS APPSUITE_TURNSTILE_SECRET APPSUITE_TURNSTILE_SITEKEY DISCORD_APPLICATION_ID DISCORD_CLIENT_SECRET
+      printf '%s=\n' APPSUITE_OWNERS APPSUITE_TURNSTILE_SECRET APPSUITE_TURNSTILE_SITEKEY APPSUITE_DISCORD_APPLICATION_ID APPSUITE_DISCORD_CLIENT_SECRET
     } > "$ENV_FILE" )
   echo "Made $ENV_FILE."
 fi
 chown root:root "$ENV_FILE"
 chmod 600 "$ENV_FILE"
-for name in APPSUITE_OWNERS APPSUITE_TURNSTILE_SECRET APPSUITE_TURNSTILE_SITEKEY DISCORD_APPLICATION_ID DISCORD_CLIENT_SECRET; do
+for name in APPSUITE_OWNERS APPSUITE_TURNSTILE_SECRET APPSUITE_TURNSTILE_SITEKEY APPSUITE_DISCORD_APPLICATION_ID APPSUITE_DISCORD_CLIENT_SECRET; do
   grep -q "^$name=." "$ENV_FILE" || note "fill in $name in $ENV_FILE (docs/ops.md, The env file)"
 done
 
@@ -173,11 +173,11 @@ APPSUITE_SESSION_SECRET=<a long random string>
 APPSUITE_OWNERS=<the owner accounts' usernames, comma-separated>
 APPSUITE_TURNSTILE_SECRET=<Cloudflare Turnstile secret key>
 APPSUITE_TURNSTILE_SITEKEY=<Cloudflare Turnstile public site key>
-DISCORD_APPLICATION_ID=<the Discord application's id, its OAuth client id>
-DISCORD_CLIENT_SECRET=<the Discord application's OAuth client secret>
+APPSUITE_DISCORD_APPLICATION_ID=<the Discord application's id, its OAuth client id>
+APPSUITE_DISCORD_CLIENT_SECRET=<the Discord application's OAuth client secret>
 ```
 
-Signing in with Discord is on when both `DISCORD_*` variables are set, and the startup log says which (`Discord sign-in enabled`, or a warning that it is off). The application must list the sign-in's redirect URL, `https://apps.senpan.cafe/api/v1/auth/discord/callback`, under OAuth2 -> Redirects in the Discord Developer Portal, exactly; a dev server behind Vite's proxy needs `http://localhost:8080/api/v1/auth/discord/callback` there too. The file may also hold the application's `DISCORD_PUBLIC_KEY` and the bot's `DISCORD_BOT_TOKEN`, which nothing reads yet.
+Every variable the app reads carries the `APPSUITE_` prefix, the Discord ones included; a name without it is not read. Signing in with Discord is on when both `APPSUITE_DISCORD_*` variables are set, and the startup log says which (`Discord sign-in enabled`, or a warning that it is off). The application must list the sign-in's redirect URL, `https://apps.senpan.cafe/api/v1/auth/discord/callback`, under OAuth2 -> Redirects in the Discord Developer Portal, exactly; a dev server behind Vite's proxy needs `http://localhost:8080/api/v1/auth/discord/callback` there too. The file may also hold the application's `APPSUITE_DISCORD_PUBLIC_KEY` and the bot's `APPSUITE_DISCORD_BOT_TOKEN`, which nothing reads yet.
 
 `APPSUITE_OWNERS` names the owner accounts (the `-owners` flag is the same), exactly as they are spelled: nobody deactivates, demotes, renames or deletes one, or sets its password from the Users page, itself included, and only an owner makes a Discord link to itself. It is a name, not a secret, but it lives here with the rest of the service's settings. The startup log names the owners, or warns that none are named.
 
@@ -340,6 +340,10 @@ What only the live site can show, checked after every deploy in a fresh browser 
 
 It is a logging hint, never a security decision: like any header, a client that reaches the origin without going through Cloudflare can send it.
 
+## Upgrading to 5.7.1
+
+5.7.1 reads Discord sign-in's settings as `APPSUITE_DISCORD_APPLICATION_ID` and `APPSUITE_DISCORD_CLIENT_SECRET`, like every other variable in [the env file](#the-env-file), and no longer reads `DISCORD_APPLICATION_ID` or `DISCORD_CLIENT_SECRET`. Before the deploy, check the env file holds the prefixed names (`grep -c '^APPSUITE_DISCORD_APPLICATION_ID=.' <env file>` and the same for the secret, each 1), and rename any line still without the prefix. **The live env file already holds them:** they were renamed there before 5.7.0, which read the old names and so started with Discord sign-in off. After the deploy, `journalctl -u <service> -b | grep "Discord sign-in"` says it is enabled, and the sign-in page shows **Sign in with Discord** again.
+
 ## Upgrading to 5.5.0
 
 5.5.0 sends HSTS and restores the visitor's address in Apache, enforces a Content-Security-Policy with a nonce, caps the service's memory, backs up the uploads, takes its port from the deploy config alone, and names its owner accounts in the env file in place of the protected `admin` account. In order:
@@ -352,7 +356,7 @@ It is a logging hint, never a security decision: like any header, a client that 
 
 ## Upgrading to 5.4.0
 
-5.4.0 adds signing in with Discord, which reads `DISCORD_APPLICATION_ID` and `DISCORD_CLIENT_SECRET` from [the env file](#the-env-file) (on the live droplet since 2026-11-13). Before the deploy, in the Discord Developer Portal, add `https://apps.senpan.cafe/api/v1/auth/discord/callback` to the application's OAuth2 -> Redirects. Without it Discord refuses every sign-in with an invalid `redirect_uri`. The migration (v76) adds two tables and changes no row. After the deploy, `journalctl -u <service> | grep "Discord sign-in"` says it is enabled, and the sign-in page shows **Sign in with Discord**.
+5.4.0 adds signing in with Discord, which reads `DISCORD_APPLICATION_ID` and `DISCORD_CLIENT_SECRET` from [the env file](#the-env-file) (on the live droplet since 2026-11-13; prefixed with `APPSUITE_` since 5.7.1). Before the deploy, in the Discord Developer Portal, add `https://apps.senpan.cafe/api/v1/auth/discord/callback` to the application's OAuth2 -> Redirects. Without it Discord refuses every sign-in with an invalid `redirect_uri`. The migration (v76) adds two tables and changes no row. After the deploy, `journalctl -u <service> | grep "Discord sign-in"` says it is enabled, and the sign-in page shows **Sign in with Discord**.
 
 ## Upgrading to 5.3.0
 

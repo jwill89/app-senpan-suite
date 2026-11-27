@@ -10,6 +10,12 @@ The app's major version rises for a breaking change to the JSON API or the live 
 
 ## [Unreleased]
 
+## [5.7.1] - 2026-11-27
+
+### Fixed
+
+- Sign in with Discord is back: the server reads its settings as `APPSUITE_DISCORD_APPLICATION_ID` and `APPSUITE_DISCORD_CLIENT_SECRET`, with the same `APPSUITE_` prefix as every other setting in the env file, and no longer reads the names without it.
+
 ## [5.7.0] - 2026-11-27
 
 ### Added
@@ -680,7 +686,8 @@ Needs a one-time step at deploy (docs/ops.md, Upgrading to 5.2.0).
 
 - The CodeMirror free-form CSS theme editor; themes are now structured tokens.
 
-[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/v5.7.0...HEAD
+[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/v5.7.1...HEAD
+[5.7.1]: https://github.com/jwill89/app-senpan-suite/compare/v5.7.0...v5.7.1
 [5.7.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.6.0...v5.7.0
 [5.6.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.5.0...v5.6.0
 [5.5.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.4.0...v5.5.0
