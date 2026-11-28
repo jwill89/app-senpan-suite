@@ -63,6 +63,8 @@ var (
 	// the scheduler decides - unlock and announce, or leave the lock alone - can be
 	// exercised without waiting on its ticker.
 	ExpireDueTeaRoomLocksForTest = (*Server).expireDueTeaRoomLocks
+	// ExpireGposePhotosForTest runs the gpose photo sweep as at the time given.
+	ExpireGposePhotosForTest = (*Server).expireGposePhotos
 )
 
 // DataDirForTest exposes the server's dataDir so external tests can seed

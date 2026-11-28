@@ -1961,6 +1961,50 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/gpose-booths/{id}/signups/{signupId}/photo': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /**
+     * Upload the gpose for a completed sign-up
+     * @description For the visitor to view and download on their festival dashboard and the booth's page. Only a completed sign-up takes one (409), and an upload replaces the one before. It is kept a day from its upload, then deleted.
+     */
+    post: operations['upload-gpose-photo']
+    /**
+     * Delete a sign-up's gpose
+     * @description Before its day is over, for one uploaded in error.
+     */
+    delete: operations['delete-gpose-photo']
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/gpose-photos/{token}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * A gpose
+     * @description Its bytes, for the token in its sign-up's photoUrl, named for download after the character. Only for a day from its upload: after that, like a token that isn't one, a 404. Kept private, and never past that day. Ranges and conditional requests are answered.
+     */
+    get: operations['get-gpose-photo']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/gpose-types': {
     parameters: {
       query?: never
@@ -4568,6 +4612,8 @@ export interface components {
     FestivalGposeBooth: {
       /** @description The booth. */
       booth: components['schemas']['PublicGposeBooth']
+      /** @description Whether it takes sign-ups. A closed booth is listed only while the visitor has a gpose there to download, and without its start times. */
+      open: boolean
       /** @description The visitor's own sign-ups, on their whole name and world; empty when they have none or sent no name. */
       signups: components['schemas']['PublicGposeSignup'][]
     }
@@ -5504,6 +5550,13 @@ export interface components {
       /** @description Whether staff recorded the price as paid. */
       paid: boolean
       /**
+       * Format: date-time
+       * @description When that gpose is deleted, RFC 3339 in UTC: a day after it was uploaded; null with none.
+       */
+      photoExpiresAt: string | null
+      /** @description The gpose uploaded for them to download; empty when none was, or once its day is over. */
+      photoUrl: string
+      /**
        * Format: int64
        * @description Where they stand while waiting: their place in line at a basic booth, or on the waitlist; 0 for a booked slot or once they are no longer waiting.
        */
@@ -6369,6 +6422,13 @@ export interface components {
       minutes: number
       /** @description Whether the price is recorded as paid. */
       paid: boolean
+      /**
+       * Format: date-time
+       * @description When it is deleted, RFC 3339 in UTC: a day after it was uploaded; null with none.
+       */
+      photoExpiresAt: string | null
+      /** @description Their gpose, which staff uploaded once the shoot was done, to view and download; empty when there is none, or once its day is over. */
+      photoUrl: string
       /**
        * Format: int64
        * @description Their place in line at a basic booth, or on the waitlist, while waiting; 0 otherwise.
@@ -17412,6 +17472,242 @@ export interface operations {
       }
       /** @description Conflict */
       409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'upload-gpose-photo': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+        /** @description The sign-up's id. */
+        signupId: number
+      }
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        'multipart/form-data': {
+          /**
+           * Format: binary
+           * @description The gpose: a PNG, JPEG or WebP of at most 32 MB, 40 megapixels and 16384 pixels a side, judged from its bytes. A PNG or JPEG is saved again without its metadata.
+           */
+          image: string
+        }
+      }
+    }
+    responses: {
+      /** @description OK */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['GposeSignup']
+        }
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Request Entity Too Large */
+      413: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'delete-gpose-photo': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The booth's id. */
+        id: number
+        /** @description The sign-up's id. */
+        signupId: number
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description No Content */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Unprocessable Entity */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+      /** @description Internal Server Error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/problem+json': components['schemas']['ErrorModel']
+        }
+      }
+    }
+  }
+  'get-gpose-photo': {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description The gpose's token, from its sign-up's photoUrl. */
+        token: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description The gpose. */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'image/jpeg': string
+          'image/png': string
+          'image/webp': string
+        }
+      }
+      /** @description The part of the gpose a Range header asked for. */
+      206: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'image/jpeg': string
+          'image/png': string
+          'image/webp': string
+        }
+      }
+      /** @description The gpose is unchanged since the If-None-Match tag or If-Modified-Since date. */
+      304: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Not Found */
+      404: {
         headers: {
           [name: string]: unknown
         }

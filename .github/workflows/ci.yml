@@ -21,7 +21,7 @@ jobs:
   # docs always, and every job when CI's own files, shared/ or the Taskfile change
   # (changes.yml). `task shared:ci:changes` shows what a push would run.
   changes:
-    uses: jwill89/shared-tooling/.github/workflows/changes.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/changes.yml@v2.19.4
     permissions:
       contents: read
       actions: read
@@ -38,7 +38,7 @@ jobs:
   frontend:
     needs: changes
     if: fromJSON(needs.changes.outputs.areas).app
-    uses: jwill89/shared-tooling/.github/workflows/web.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/web.yml@v2.19.4
     with:
       dir: frontend
       fontawesome: true
@@ -130,7 +130,7 @@ jobs:
   backend:
     needs: [changes, frontend]
     if: fromJSON(needs.changes.outputs.areas).app
-    uses: jwill89/shared-tooling/.github/workflows/go.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/go.yml@v2.19.4
     with:
       dir: backend
       download-artifact: web-dist
@@ -150,7 +150,7 @@ jobs:
   plugin:
     needs: changes
     if: fromJSON(needs.changes.outputs.areas).plugin
-    uses: jwill89/shared-tooling/.github/workflows/dotnet.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/dotnet.yml@v2.19.4
     with:
       projects: plugins/SenpanCompanion
       test-project: plugins/SenpanCompanion.Tests
@@ -164,7 +164,7 @@ jobs:
   e2e:
     needs: [changes, frontend, backend]
     if: fromJSON(needs.changes.outputs.areas).app
-    uses: jwill89/shared-tooling/.github/workflows/e2e.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/e2e.yml@v2.19.4
     with:
       dir: frontend
       go-version-file: backend/go.mod
@@ -176,11 +176,11 @@ jobs:
   scripts:
     needs: changes
     if: fromJSON(needs.changes.outputs.areas).scripts
-    uses: jwill89/shared-tooling/.github/workflows/pwsh.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/pwsh.yml@v2.19.4
 
   # The app's, the plugin's and the backend's closed CHANGELOG, each with its compare links.
   docs:
-    uses: jwill89/shared-tooling/.github/workflows/docs.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/docs.yml@v2.19.4
     with:
       changelogs: CHANGELOG.md plugins/CHANGELOG.md backend/CHANGELOG.md
 
@@ -189,7 +189,7 @@ jobs:
   osv:
     needs: changes
     if: fromJSON(needs.changes.outputs.areas).lockfiles
-    uses: jwill89/shared-tooling/.github/workflows/osv.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/osv.yml@v2.19.4
 
   # On a push to main, AFTER the whole gate passes, tag + release a version with no
   # release yet: the app as v<version> (which the deploy ships) and the plugin as
@@ -219,7 +219,7 @@ jobs:
   report:
     needs: [changes, frontend, generated, backend, plugin, e2e, scripts, docs, osv, release]
     if: failure()
-    uses: jwill89/shared-tooling/.github/workflows/report.yml@v2.19.3
+    uses: jwill89/shared-tooling/.github/workflows/report.yml@v2.19.4
     permissions:
       contents: read
       actions: read

@@ -38,6 +38,8 @@ function signup(over: Partial<PublicGposeSignup> = {}): PublicGposeSignup {
     paid: false,
     calledAt: null,
     createdAt: '2026-08-01T12:00:00Z',
+    photoUrl: '',
+    photoExpiresAt: null,
     ...over,
   }
 }

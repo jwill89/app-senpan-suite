@@ -242,6 +242,14 @@ func run() error {
 		srv.RunTeaRoomLockScheduler(ctx)
 	}()
 
+	// Gpose photo sweeper: deletes the gposes staff uploaded once their day is over.
+	// Same shared context, so it stops sweeping before the database closes.
+	gposePhotoDone := make(chan struct{})
+	go func() {
+		defer close(gposePhotoDone)
+		srv.RunGposePhotoScheduler(ctx)
+	}()
+
 	// A failed ListenAndServe (e.g. the port is already in use) must run the SAME
 	// graceful-shutdown path below rather than exiting on the spot - otherwise the
 	// deferred cleanup (db.Close, scheduler cancel) is skipped and in-flight state
@@ -296,6 +304,13 @@ func run() error {
 	case <-roomLockDone:
 	case <-shutdownCtx.Done():
 		slog.Warn("tea-room lock scheduler did not stop within the shutdown deadline")
+	}
+
+	// And the gpose photo sweeper, so a photo it has cleared has its file deleted too.
+	select {
+	case <-gposePhotoDone:
+	case <-shutdownCtx.Done():
+		slog.Warn("gpose photo scheduler did not stop within the shutdown deadline")
 	}
 
 	// End every event stream before shutting the HTTP server down: an open stream is

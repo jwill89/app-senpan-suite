@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import type { FestivalDashboard, PublicFestivalMap, PublicStampCard } from '@/api/client'
+import type {
+  FestivalDashboard,
+  FestivalGposeBooth,
+  PublicFestivalMap,
+  PublicGposeBooth,
+  PublicGposeSignup,
+  PublicStampCard,
+} from '@/api/client'
 
 // The store calls the API client; only its calls are faked (unwrap is the real one).
 // The festival's map and dashboard answers are faked as plain values (or a refusal),
@@ -9,6 +16,7 @@ const ep = vi.hoisted(() => {
   const publicDetail = vi.fn()
   const dashboard = vi.fn()
   const enter = vi.fn()
+  const lookup = vi.fn()
   const reply = async (fn: () => unknown) => {
     try {
       return { data: await fn(), response: new Response(null, { status: 200 }) }
@@ -20,19 +28,24 @@ const ep = vi.hoisted(() => {
     }
   }
   interface Init {
-    params: { path: { idOrSlug: string } }
+    params: { path: { idOrSlug: string; id?: number } }
     body: unknown
   }
   return {
     publicDetail,
     dashboard,
     enter,
+    lookup,
     GET: vi.fn((_path: string, init: Init) => reply(() => publicDetail(init.params.path.idOrSlug))),
-    POST: vi.fn((path: string, init: Init) =>
-      path === '/raffles/{id}/enter'
-        ? enter(path, init)
-        : reply(() => dashboard(init.params.path.idOrSlug, init.body)),
-    ),
+    POST: vi.fn((path: string, init: Init) => {
+      if (path === '/raffles/{id}/enter') {
+        return enter(path, init)
+      }
+      if (path === '/gpose-booths/{id}/lookup') {
+        return reply(() => lookup(init.params.path.id, init.body))
+      }
+      return reply(() => dashboard(init.params.path.idOrSlug, init.body))
+    }),
   }
 })
 vi.mock('@/api/client', async (importOriginal) => ({
@@ -290,5 +303,56 @@ describe('entering a raffle', () => {
     })
     expect(store.entered[9]?.amountDue).toBe(50000)
     expect(savedRaffleSignup(9)).toMatchObject({ name: 'Aria', world: 'Gilgamesh' })
+  })
+})
+
+describe('the gpose booths', () => {
+  const signup = (over: Partial<PublicGposeSignup> = {}): PublicGposeSignup => ({
+    id: 1,
+    boothId: 4,
+    typeName: 'Solo',
+    price: 0,
+    minutes: 0,
+    waitlisted: false,
+    position: 0,
+    slotStart: null,
+    slotEnd: null,
+    status: 'completed',
+    paid: false,
+    calledAt: null,
+    createdAt: '2026-08-01T12:00:00Z',
+    photoUrl: '',
+    photoExpiresAt: null,
+    ...over,
+  })
+  const booth = (id: number, open: boolean, signups: PublicGposeSignup[]): FestivalGposeBooth => ({
+    booth: { id, title: `Booth ${id}` } as PublicGposeBooth,
+    open,
+    signups,
+  })
+
+  it('reads the open booths again while a gpose may come, and keeps a closed one as it was', async () => {
+    const shot = '/api/v1/gpose-photos/0123456789abcdef0123456789abcdef'
+    ep.dashboard.mockResolvedValue(
+      dashboard({
+        participantName: 'Aria',
+        world: 'Gilgamesh',
+        gposeBooths: [
+          booth(4, true, [signup()]),
+          booth(5, false, [signup({ id: 2, boothId: 5, photoUrl: shot })]),
+        ],
+      }),
+    )
+    const store = useFestivalDashboardStore()
+    await store.open('obon')
+    expect(store.gposeWaiting).toBe(false)
+    expect(store.gposeAwaitingPhoto).toBe(true)
+
+    ep.lookup.mockResolvedValueOnce({ signups: [signup({ photoUrl: shot })] })
+    await store.refreshGpose()
+    expect(ep.lookup).toHaveBeenCalledTimes(1)
+    expect(ep.lookup.mock.calls[0]?.[0]).toBe(4)
+    expect(store.gposeBooths.map((b) => b.signups[0]?.photoUrl)).toEqual([shot, shot])
+    expect(store.gposeAwaitingPhoto).toBe(false)
   })
 })

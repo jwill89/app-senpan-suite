@@ -54,6 +54,8 @@ function signup(over: Partial<PublicGposeSignup> = {}): PublicGposeSignup {
     paid: false,
     calledAt: null,
     createdAt: '2026-08-01T12:00:00Z',
+    photoUrl: '',
+    photoExpiresAt: null,
     ...over,
   }
 }
@@ -146,6 +148,51 @@ describe('GposeBoothPanel', () => {
       }),
     })
     expect(wrapper.text()).toContain('This booth is full right now.')
+    wrapper.unmount()
+  })
+
+  it('offers a finished shoot its gpose to view and download, until it is deleted', async () => {
+    const url = 'https://apps.example/api/v1/gpose-photos/0123456789abcdef0123456789abcdef'
+    const wrapper = mountPanel({
+      signups: [
+        signup({ status: 'completed', photoUrl: url, photoExpiresAt: '2026-08-02T18:00:00Z' }),
+      ],
+    })
+    expect(wrapper.text()).toContain('Your gpose is ready')
+    expect(wrapper.get('img').attributes('src')).toBe(url)
+    expect(wrapper.get('img').attributes('alt')).toBe('Your Solo gpose from Lantern Gpose')
+    const download = wrapper.get('a[download]')
+    expect(download.attributes('href')).toBe(url)
+    expect(download.text()).toContain('Download')
+    expect(wrapper.text()).toContain("it's deleted after that")
+    expect(await axeFindings(wrapper.element)).toEqual([])
+    wrapper.unmount()
+  })
+
+  it('shows a finished shoot without a gpose as done, with nothing to download', () => {
+    const wrapper = mountPanel({ signups: [signup({ status: 'completed' })] })
+    expect(wrapper.text()).toContain('Done')
+    expect(wrapper.find('figure').exists()).toBe(false)
+    expect(wrapper.find('a[download]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('takes no sign-up at a closed booth, keeping the gpose there', async () => {
+    const url = 'https://apps.example/api/v1/gpose-photos/0123456789abcdef0123456789abcdef'
+    const wrapper = mountPanel({
+      closed: true,
+      visitorName: 'Aya',
+      visitorWorld: 'Gilgamesh',
+      fixedVisitor: true,
+      signups: [
+        signup({ status: 'completed', photoUrl: url, photoExpiresAt: '2026-08-02T18:00:00Z' }),
+      ],
+    })
+    expect(wrapper.text()).toContain('This booth is closed.')
+    expect(wrapper.text()).not.toContain('Book a time below')
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.get('a[download]').attributes('href')).toBe(url)
+    expect(await axeFindings(wrapper.element)).toEqual([])
     wrapper.unmount()
   })
 })

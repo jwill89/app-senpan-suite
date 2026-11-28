@@ -8097,6 +8097,12 @@ namespace SenpanCompanion.Api
         public PublicGposeBooth Booth { get; set; } = new PublicGposeBooth();
 
         /// <summary>
+        /// Whether it takes sign-ups. A closed booth is listed only while the visitor has a gpose there to download, and without its start times.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("open", Required = Newtonsoft.Json.Required.Always)]
+        public bool Open { get; set; } = default!;
+
+        /// <summary>
         /// The visitor's own sign-ups, on their whole name and world; empty when they have none or sent no name.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("signups", Required = Newtonsoft.Json.Required.Always)]
@@ -9971,6 +9977,18 @@ namespace SenpanCompanion.Api
         public bool Paid { get; set; } = default!;
 
         /// <summary>
+        /// When that gpose is deleted, RFC 3339 in UTC: a day after it was uploaded; null with none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("photoExpiresAt", Required = Newtonsoft.Json.Required.AllowNull)]
+        public System.DateTimeOffset? PhotoExpiresAt { get; set; } = default!;
+
+        /// <summary>
+        /// The gpose uploaded for them to download; empty when none was, or once its day is over.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("photoUrl", Required = Newtonsoft.Json.Required.Always)]
+        public string PhotoUrl { get; set; } = default!;
+
+        /// <summary>
         /// Where they stand while waiting: their place in line at a basic booth, or on the waitlist; 0 for a booked slot or once they are no longer waiting.
         /// </summary>
         [Newtonsoft.Json.JsonProperty("position", Required = Newtonsoft.Json.Required.Always)]
@@ -11679,6 +11697,18 @@ namespace SenpanCompanion.Api
         /// </summary>
         [Newtonsoft.Json.JsonProperty("paid", Required = Newtonsoft.Json.Required.Always)]
         public bool Paid { get; set; } = default!;
+
+        /// <summary>
+        /// When it is deleted, RFC 3339 in UTC: a day after it was uploaded; null with none.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("photoExpiresAt", Required = Newtonsoft.Json.Required.AllowNull)]
+        public System.DateTimeOffset? PhotoExpiresAt { get; set; } = default!;
+
+        /// <summary>
+        /// Their gpose, which staff uploaded once the shoot was done, to view and download; empty when there is none, or once its day is over.
+        /// </summary>
+        [Newtonsoft.Json.JsonProperty("photoUrl", Required = Newtonsoft.Json.Required.Always)]
+        public string PhotoUrl { get; set; } = default!;
 
         /// <summary>
         /// Their place in line at a basic booth, or on the waitlist, while waiting; 0 otherwise.

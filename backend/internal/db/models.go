@@ -280,21 +280,24 @@ type GposeBoothWindow struct {
 }
 
 type GposeSignup struct {
-	ID            int64
-	BoothID       int64
-	TypeID        sql.NullInt64
-	TypeName      string
-	Price         int64
-	Minutes       int64
-	CharacterName string
-	World         string
-	Waitlisted    int64
-	SlotStart     *string
-	SlotEnd       *string
-	Status        string
-	Paid          int64
-	CalledAt      *string
-	CreatedAt     string
+	ID             int64
+	BoothID        int64
+	TypeID         sql.NullInt64
+	TypeName       string
+	Price          int64
+	Minutes        int64
+	CharacterName  string
+	World          string
+	Waitlisted     int64
+	SlotStart      *string
+	SlotEnd        *string
+	Status         string
+	Paid           int64
+	CalledAt       *string
+	CreatedAt      string
+	PhotoToken     string
+	PhotoType      string
+	PhotoExpiresAt *string
 }
 
 type GposeType struct {

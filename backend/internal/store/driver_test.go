@@ -305,6 +305,34 @@ func TestTimestampsInTheStoredForm(t *testing.T) {
 		t.Errorf("rally card = %+v, want completed_at and created_at %q", c, stored)
 	}
 
+	// A gpose's expiry, which the visitor's page parses to say until when it lasts.
+	booth, err := must(exec(`INSERT INTO gpose_booths (title, mode) VALUES ('Booth', 'basic')`)).LastInsertId()
+	if err != nil {
+		t.Fatal(err)
+	}
+	signup, err := must(exec(`INSERT INTO gpose_signups (booth_id, type_name, character_name, world, status)
+		VALUES (?, 'Solo', 'Aya', 'Gilgamesh', 'completed')`, booth)).LastInsertId()
+	if err != nil {
+		t.Fatal(err)
+	}
+	expires := stored
+	if n, err := q.SetGposeSignupPhoto(ctx, db.SetGposeSignupPhotoParams{
+		PhotoToken: "0123456789abcdef0123456789abcdef", PhotoType: "image/png", PhotoExpiresAt: &expires, ID: signup,
+	}); err != nil || n != 1 {
+		t.Fatalf("set a gpose = %d, %v", n, err)
+	}
+	gs, err := q.GetGposeSignup(ctx, signup)
+	if err != nil {
+		t.Fatal(err)
+	}
+	photo, err := q.GetGposePhoto(ctx, "0123456789abcdef0123456789abcdef")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gs.PhotoExpiresAt == nil || *gs.PhotoExpiresAt != stored || photo.PhotoExpiresAt != stored {
+		t.Errorf("gpose expiry %v and %q, want %q", gs.PhotoExpiresAt, photo.PhotoExpiresAt, stored)
+	}
+
 	// A new game's start time, as SQL writes "now".
 	created, err := q.CreateGame(ctx)
 	if err != nil {

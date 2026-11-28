@@ -5,24 +5,32 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
+	"mime"
 	"net/http"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/danielgtaylor/huma/v2/adapters/humago"
 
 	"app-suite/internal/db"
 	"app-suite/internal/festival"
 	"app-suite/internal/gpose"
+	"app-suite/internal/media"
 	"app-suite/internal/permissions"
+	"app-suite/internal/uploads"
 )
 
 // Gpose booths: a photographer's booth people sign up at, for a type of shoot from the
 // site's list. A basic booth takes sign-ups in order up to its limit, then a waitlist;
 // a timeslot booth books start times inside its open hours, with a waitlist for when
 // someone doesn't show. The Gpose Booth page's staff set the booths up and work their
-// sign-ups; visitors sign up on the booth's page or the festival dashboard.
+// sign-ups; visitors sign up on the booth's page or the festival dashboard. Once a
+// shoot is done, staff may upload its gpose, which the visitor downloads from the same
+// pages for a day (media.GposePhotos keeps the files).
 
 var gposeTags = []string{"Gpose Booths"}
 
@@ -134,6 +142,8 @@ type GposeSignup struct {
 	CalledAt         *string  `json:"calledAt" nullable:"true" format:"date-time" doc:"When staff last called them up, RFC 3339 in UTC; null when never."`
 	CreatedAt        string   `json:"createdAt" format:"date-time" doc:"When they signed up, RFC 3339 in UTC."`
 	AssignableStarts []string `json:"assignableStarts" nullable:"false" doc:"For someone waiting on a timeslot booth's waitlist, the start times their shoot fits now, one under way included; empty for anyone else."`
+	PhotoURL         string   `json:"photoUrl" doc:"The gpose uploaded for them to download; empty when none was, or once its day is over."`
+	PhotoExpiresAt   *string  `json:"photoExpiresAt" nullable:"true" format:"date-time" doc:"When that gpose is deleted, RFC 3339 in UTC: a day after it was uploaded; null with none."`
 }
 
 // GposeSignupList is a booth's sign-ups.
@@ -182,19 +192,26 @@ type PublicGposeBoothList struct {
 
 // PublicGposeSignup is a sign-up as the person who made it sees it.
 type PublicGposeSignup struct {
-	ID         int64   `json:"id" doc:"The sign-up's id."`
-	BoothID    int64   `json:"boothId" doc:"The booth it is at."`
-	TypeName   string  `json:"typeName" doc:"The type signed up for."`
-	Price      int64   `json:"price" doc:"Its price in gil; 0 for none."`
-	Minutes    int64   `json:"minutes" doc:"How long it takes; 0 at a basic booth."`
-	Waitlisted bool    `json:"waitlisted" doc:"Whether they are on the waitlist."`
-	Position   int64   `json:"position" doc:"Their place in line at a basic booth, or on the waitlist, while waiting; 0 otherwise."`
-	SlotStart  *string `json:"slotStart" nullable:"true" format:"date-time" doc:"When their slot starts, RFC 3339 in UTC; null with no slot."`
-	SlotEnd    *string `json:"slotEnd" nullable:"true" format:"date-time" doc:"When it ends; null with no slot."`
-	Status     string  `json:"status" enum:"waiting,completed,no_show,canceled" doc:"Where it stands."`
-	Paid       bool    `json:"paid" doc:"Whether the price is recorded as paid."`
-	CalledAt   *string `json:"calledAt" nullable:"true" format:"date-time" doc:"When staff last called them up, RFC 3339 in UTC; null when never."`
-	CreatedAt  string  `json:"createdAt" format:"date-time" doc:"When they signed up, RFC 3339 in UTC."`
+	ID             int64   `json:"id" doc:"The sign-up's id."`
+	BoothID        int64   `json:"boothId" doc:"The booth it is at."`
+	TypeName       string  `json:"typeName" doc:"The type signed up for."`
+	Price          int64   `json:"price" doc:"Its price in gil; 0 for none."`
+	Minutes        int64   `json:"minutes" doc:"How long it takes; 0 at a basic booth."`
+	Waitlisted     bool    `json:"waitlisted" doc:"Whether they are on the waitlist."`
+	Position       int64   `json:"position" doc:"Their place in line at a basic booth, or on the waitlist, while waiting; 0 otherwise."`
+	SlotStart      *string `json:"slotStart" nullable:"true" format:"date-time" doc:"When their slot starts, RFC 3339 in UTC; null with no slot."`
+	SlotEnd        *string `json:"slotEnd" nullable:"true" format:"date-time" doc:"When it ends; null with no slot."`
+	Status         string  `json:"status" enum:"waiting,completed,no_show,canceled" doc:"Where it stands."`
+	Paid           bool    `json:"paid" doc:"Whether the price is recorded as paid."`
+	CalledAt       *string `json:"calledAt" nullable:"true" format:"date-time" doc:"When staff last called them up, RFC 3339 in UTC; null when never."`
+	CreatedAt      string  `json:"createdAt" format:"date-time" doc:"When they signed up, RFC 3339 in UTC."`
+	PhotoURL       string  `json:"photoUrl" doc:"Their gpose, which staff uploaded once the shoot was done, to view and download; empty when there is none, or once its day is over."`
+	PhotoExpiresAt *string `json:"photoExpiresAt" nullable:"true" format:"date-time" doc:"When it is deleted, RFC 3339 in UTC: a day after it was uploaded; null with none."`
+}
+
+// GposePhotoForm is the gpose staff upload for a completed sign-up.
+type GposePhotoForm struct {
+	Image huma.FormFile `form:"image" contentType:"image/*" required:"true" doc:"The gpose: a PNG, JPEG or WebP of at most 32 MB, 40 megapixels and 16384 pixels a side, judged from its bytes. A PNG or JPEG is saved again without its metadata."`
 }
 
 // GposeSignUpInput is a visitor's sign-up.
@@ -249,6 +266,16 @@ type gposeSignupChangeInput struct {
 	ID       int64 `path:"id" doc:"The booth's id."`
 	SignupID int64 `path:"signupId" doc:"The sign-up's id."`
 	Body     GposeSignupChange
+}
+
+type gposePhotoUploadInput struct {
+	ID       int64 `path:"id" doc:"The booth's id."`
+	SignupID int64 `path:"signupId" doc:"The sign-up's id."`
+	RawBody  huma.MultipartFormFiles[GposePhotoForm]
+}
+
+type gposePhotoInput struct {
+	Token string `path:"token" maxLength:"64" doc:"The gpose's token, from its sign-up's photoUrl."`
 }
 
 type gposeSignUpRequest struct {
@@ -396,6 +423,35 @@ func (h handlers) registerGpose(api huma.API) {
 		Description: "For one made in error. At a basic booth, the place it held goes to the waitlist, as a cancellation does.",
 		Tags:        gposeTags, DefaultStatus: http.StatusNoContent, Security: secured, Middlewares: page, Errors: notFound,
 	}, h.deleteGposeSignup)
+	huma.Register(api, huma.Operation{
+		OperationID: "upload-gpose-photo", Method: http.MethodPost, Path: "/gpose-booths/{id}/signups/{signupId}/photo",
+		Summary: "Upload the gpose for a completed sign-up",
+		Description: "For the visitor to view and download on their festival dashboard and the booth's page. Only a " +
+			"completed sign-up takes one (409), and an upload replaces the one before. It is kept a day from its " +
+			"upload, then deleted.",
+		Tags: gposeTags, Security: secured, Middlewares: page, MaxBodyBytes: gpose.MaxPhotoBytes + multipartOverhead,
+		Errors: slices.Concat(notFound, []int{
+			http.StatusConflict, http.StatusRequestEntityTooLarge, http.StatusUnprocessableEntity,
+		}),
+	}, h.uploadGposePhoto)
+	huma.Register(api, huma.Operation{
+		OperationID: "delete-gpose-photo", Method: http.MethodDelete, Path: "/gpose-booths/{id}/signups/{signupId}/photo",
+		Summary: "Delete a sign-up's gpose", Description: "Before its day is over, for one uploaded in error.",
+		Tags: gposeTags, DefaultStatus: http.StatusNoContent, Security: secured, Middlewares: page, Errors: notFound,
+	}, h.deleteGposePhoto)
+	huma.Register(api, huma.Operation{
+		OperationID: "get-gpose-photo", Method: http.MethodGet, Path: "/gpose-photos/{token}",
+		Summary: "A gpose",
+		Description: "Its bytes, for the token in its sign-up's photoUrl, named for download after the character. " +
+			"Only for a day from its upload: after that, like a token that isn't one, a 404. Kept private, and never " +
+			"past that day. Ranges and conditional requests are answered.",
+		Tags: gposeTags, Middlewares: huma.Middlewares{public}, Errors: []int{http.StatusNotFound},
+		Responses: map[string]*huma.Response{
+			"200": {Description: "The gpose.", Content: gposePhotoContent()},
+			"206": {Description: "The part of the gpose a Range header asked for.", Content: gposePhotoContent()},
+			"304": {Description: "The gpose is unchanged since the If-None-Match tag or If-Modified-Since date."},
+		},
+	}, h.getGposePhoto)
 	huma.Register(api, huma.Operation{
 		OperationID: "sign-up-gpose-booth", Method: http.MethodPost, Path: "/gpose-booths/{id}/sign-up",
 		Summary: "Sign up at a gpose booth",
@@ -759,12 +815,25 @@ func (h handlers) reopenGposeBooth(ctx context.Context, in *gposeBoothIDInput) (
 }
 
 func (h handlers) deleteGposeBooth(ctx context.Context, in *gposeBoothIDInput) (*struct{}, error) {
-	n, err := h.write().DeleteGposeBooth(context.WithoutCancel(ctx), in.ID)
+	ctx = context.WithoutCancel(ctx)
+	var photos []string
+	err := h.transact(ctx, func(q *db.Queries) error {
+		var err error
+		if photos, err = q.ListGposeBoothPhotoTokens(ctx, in.ID); err != nil {
+			return err
+		}
+		n, err := q.DeleteGposeBooth(ctx, in.ID)
+		if err == nil && n == 0 {
+			return noSuchGposeBooth()
+		}
+		return err
+	})
 	if err != nil {
-		return nil, h.fail("delete a gpose booth", err)
+		return nil, h.problemOr(err, "delete a gpose booth")
 	}
-	if n == 0 {
-		return nil, noSuchGposeBooth()
+	// Its sign-ups went with it, so their gposes go too.
+	for _, token := range photos {
+		h.GposePhotos.Remove(token)
 	}
 	return nil, nil
 }
@@ -834,21 +903,39 @@ func gposePositions(signups []*db.GposeSignup, mode string) map[int64]int64 {
 	return out
 }
 
-func toGposeSignup(s *db.GposeSignup, position int64) GposeSignup {
-	return GposeSignup{
+// gposePhotoView is a sign-up's gpose as the API shows it: its address, on the site the
+// request was made to, and when it goes; nothing when it has none or its day is over
+// at now.
+func gposePhotoView(site string, s *db.GposeSignup, now time.Time) (string, *string) {
+	if s.PhotoToken == "" || s.PhotoExpiresAt == nil {
+		return "", nil
+	}
+	until, err := time.Parse(time.RFC3339, *s.PhotoExpiresAt)
+	if err != nil || !now.Before(until) {
+		return "", nil
+	}
+	return site + Prefix + "/gpose-photos/" + s.PhotoToken, s.PhotoExpiresAt
+}
+
+func toGposeSignup(s *db.GposeSignup, position int64, site string, now time.Time) GposeSignup {
+	out := GposeSignup{
 		ID: s.ID, BoothID: s.BoothID, TypeID: intPtr(s.TypeID), TypeName: s.TypeName, Price: s.Price, Minutes: s.Minutes,
 		CharacterName: s.CharacterName, World: s.World, Waitlisted: boolOf(s.Waitlisted), Position: position,
 		SlotStart: s.SlotStart, SlotEnd: s.SlotEnd, Status: s.Status, Paid: boolOf(s.Paid), CalledAt: s.CalledAt,
 		CreatedAt: s.CreatedAt, AssignableStarts: []string{},
 	}
+	out.PhotoURL, out.PhotoExpiresAt = gposePhotoView(site, s, now)
+	return out
 }
 
-func toPublicGposeSignup(s *db.GposeSignup, position int64) PublicGposeSignup {
-	return PublicGposeSignup{
+func toPublicGposeSignup(s *db.GposeSignup, position int64, site string, now time.Time) PublicGposeSignup {
+	out := PublicGposeSignup{
 		ID: s.ID, BoothID: s.BoothID, TypeName: s.TypeName, Price: s.Price, Minutes: s.Minutes,
 		Waitlisted: boolOf(s.Waitlisted), Position: position, SlotStart: s.SlotStart, SlotEnd: s.SlotEnd,
 		Status: s.Status, Paid: boolOf(s.Paid), CalledAt: s.CalledAt, CreatedAt: s.CreatedAt,
 	}
+	out.PhotoURL, out.PhotoExpiresAt = gposePhotoView(site, s, now)
+	return out
 }
 
 // staffSignups is a booth's sign-ups as staff see them, each waitlisted one at a
@@ -867,10 +954,11 @@ func (h handlers) staffSignups(ctx context.Context, q *db.Queries, b GposeBooth)
 		}
 	}
 	now := time.Now().UTC()
+	site := requestOf(ctx).Site
 	byLength := map[int64][]string{}
 	out := make([]GposeSignup, 0, len(rows))
 	for _, s := range rows {
-		v := toGposeSignup(s, positions[s.ID])
+		v := toGposeSignup(s, positions[s.ID], site, now)
 		if b.Mode == gpose.ModeTimeslot && s.Waitlisted != 0 && s.Status == gpose.StatusWaiting && s.Minutes > 0 {
 			starts, ok := byLength[s.Minutes]
 			if !ok {
@@ -1083,6 +1171,7 @@ func (h handlers) callGposeSignup(ctx context.Context, in *gposeSignupIDInput) (
 
 func (h handlers) deleteGposeSignup(ctx context.Context, in *gposeSignupIDInput) (*struct{}, error) {
 	ctx = context.WithoutCancel(ctx)
+	var photo string
 	err := h.transact(ctx, func(q *db.Queries) error {
 		b, err := h.loadGposeBooth(ctx, q, in.ID)
 		if err != nil {
@@ -1095,6 +1184,7 @@ func (h handlers) deleteGposeSignup(ctx context.Context, in *gposeSignupIDInput)
 		if _, err := q.DeleteGposeSignup(ctx, s.ID); err != nil {
 			return err
 		}
+		photo = s.PhotoToken
 		if gpose.Holds(s.Status) && s.Waitlisted == 0 {
 			return promoteWaitlist(ctx, q, b.GposeBooth)
 		}
@@ -1103,7 +1193,172 @@ func (h handlers) deleteGposeSignup(ctx context.Context, in *gposeSignupIDInput)
 	if err != nil {
 		return nil, h.problemOr(err, "delete a gpose sign-up")
 	}
+	if photo != "" {
+		h.GposePhotos.Remove(photo)
+	}
 	return nil, nil
+}
+
+// -- Gposes --------------------------------------------------------------------------
+
+// gposePhotoOutput is a gpose the handler writes itself, so it can set its own cache
+// headers and answer ranges and conditional requests.
+type gposePhotoOutput struct {
+	Body func(ctx huma.Context)
+}
+
+// gposePhotoContent declares the content types a gpose is served as.
+func gposePhotoContent() map[string]*huma.MediaType {
+	content := map[string]*huma.MediaType{}
+	for _, ct := range gpose.PhotoTypes {
+		content[ct] = &huma.MediaType{Schema: &huma.Schema{Type: "string", Format: "binary"}}
+	}
+	return content
+}
+
+func notCompleted() error {
+	return huma.Error409Conflict("Mark the sign-up completed before uploading its gpose.")
+}
+
+func (h handlers) uploadGposePhoto(ctx context.Context, in *gposePhotoUploadInput) (*gposeSignupOutput, error) {
+	form := in.RawBody.Data()
+	defer func() { _ = form.Image.Close() }() // read in full below; nothing to report on close
+
+	q := h.read()
+	if _, err := h.loadGposeBooth(ctx, q, in.ID); err != nil {
+		return nil, err
+	}
+	s, err := loadGposeSignup(ctx, q, in.ID, in.SignupID)
+	if err != nil {
+		return nil, h.problemOr(err, "read a gpose sign-up")
+	}
+	if s.Status != gpose.StatusCompleted {
+		return nil, notCompleted()
+	}
+	data, err := io.ReadAll(io.LimitReader(form.Image, gpose.MaxPhotoBytes+1))
+	if err != nil {
+		return nil, h.fail("read a gpose", err)
+	}
+	if len(data) > gpose.MaxPhotoBytes {
+		return nil, huma.Error413RequestEntityTooLarge("That gpose is over 32 MB.")
+	}
+	// Judged from its bytes, never the type the browser sent, and saved again without
+	// its metadata when it is a PNG or JPEG.
+	checked, err := uploads.CheckImage(data, uploads.ImageRule{Types: gpose.PhotoTypes})
+	switch {
+	case errors.Is(err, uploads.ErrTooLarge):
+		return nil, fieldProblem("body.image", nil, "That gpose is too large: over 40 megapixels or 16384 pixels on a side.")
+	case errors.Is(err, uploads.ErrNotImage):
+		return nil, fieldProblem("body.image", nil, "The gpose must be a PNG, JPEG or WebP image.")
+	case err != nil:
+		return nil, h.fail("check a gpose", err)
+	}
+	token, err := h.GposePhotos.Save(checked.Data)
+	if err != nil {
+		return nil, h.fail("save a gpose", err)
+	}
+	// Detached: the file is on disk now, and its sign-up must name it or the file go.
+	ctx = context.WithoutCancel(ctx)
+	until := time.Now().UTC().Add(gpose.PhotoLifetime).Format(time.RFC3339)
+	var replaced string
+	err = h.transact(ctx, func(q *db.Queries) error {
+		cur, err := loadGposeSignup(ctx, q, in.ID, in.SignupID)
+		if err != nil {
+			return err
+		}
+		n, err := q.SetGposeSignupPhoto(ctx, db.SetGposeSignupPhotoParams{
+			PhotoToken: token, PhotoType: checked.Type, PhotoExpiresAt: &until, ID: cur.ID,
+		})
+		if err != nil {
+			return err
+		}
+		// Undone by other staff since it was read.
+		if n == 0 {
+			return notCompleted()
+		}
+		replaced = cur.PhotoToken
+		return nil
+	})
+	if err != nil {
+		h.GposePhotos.Remove(token)
+		return nil, h.problemOr(err, "record a gpose")
+	}
+	if replaced != "" {
+		h.GposePhotos.Remove(replaced)
+	}
+	by := ""
+	if u := Who(ctx); u != nil {
+		by = u.Username
+	}
+	h.Logger.Info("gpose photo uploaded", "boothId", in.ID, "signupId", in.SignupID, "replaced", replaced != "",
+		"bytes", len(checked.Data), "by", by)
+	return h.staffSignup(ctx, in.ID, in.SignupID)
+}
+
+func (h handlers) deleteGposePhoto(ctx context.Context, in *gposeSignupIDInput) (*struct{}, error) {
+	q := h.read()
+	if _, err := h.loadGposeBooth(ctx, q, in.ID); err != nil {
+		return nil, err
+	}
+	s, err := loadGposeSignup(ctx, q, in.ID, in.SignupID)
+	if err != nil {
+		return nil, h.problemOr(err, "read a gpose sign-up")
+	}
+	if s.PhotoToken == "" {
+		return nil, nil
+	}
+	// Only the one read: a replacement uploaded since stays.
+	n, err := h.write().ClearGposeSignupPhoto(context.WithoutCancel(ctx), db.ClearGposeSignupPhotoParams{
+		ID: s.ID, PhotoToken: s.PhotoToken,
+	})
+	if err != nil {
+		return nil, h.fail("delete a gpose", err)
+	}
+	if n > 0 {
+		h.GposePhotos.Remove(s.PhotoToken)
+	}
+	return nil, nil
+}
+
+func (h handlers) getGposePhoto(ctx context.Context, in *gposePhotoInput) (*gposePhotoOutput, error) {
+	missing := huma.Error404NotFound("There is no such gpose, or its day is over.")
+	if !media.ValidGposePhotoToken(in.Token) {
+		return nil, missing
+	}
+	p, err := h.read().GetGposePhoto(ctx, in.Token)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, missing
+	}
+	if err != nil {
+		return nil, h.fail("read a gpose", err)
+	}
+	// Judged to the moment, whether or not the sweep has deleted it yet.
+	until, err := time.Parse(time.RFC3339, p.PhotoExpiresAt)
+	left := time.Until(until)
+	if err != nil || left <= 0 {
+		return nil, missing
+	}
+	f, info, err := h.GposePhotos.Open(in.Token)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, missing
+	}
+	if err != nil {
+		return nil, h.fail("open a gpose", err)
+	}
+	disposition := mime.FormatMediaType("inline", map[string]string{"filename": gpose.PhotoName(p.CharacterName, p.PhotoType)})
+	return &gposePhotoOutput{Body: func(c huma.Context) {
+		defer func() { _ = f.Close() }() // read only
+		r, w := humago.Unwrap(c)
+		hdr := w.Header()
+		hdr.Set("Content-Type", p.PhotoType)
+		hdr.Set("X-Content-Type-Options", "nosniff")
+		hdr.Set("Content-Disposition", disposition)
+		// Private, and never kept past the gpose's day. A token names one upload, so
+		// its bytes don't change while it lasts.
+		hdr.Set("Cache-Control", fmt.Sprintf("private, max-age=%d", int64(left/time.Second)))
+		hdr.Set("ETag", fileTag(info))
+		http.ServeContent(w, r, "", info.ModTime(), f)
+	}}, nil
 }
 
 // -- The public side -----------------------------------------------------------------
@@ -1191,8 +1446,9 @@ func (h handlers) getPublicGposeBooth(ctx context.Context, in *gposeBoothIDInput
 	return &publicGposeBoothOutput{Body: pb}, nil
 }
 
-// visitorGposeSignups is a character's own sign-ups at a booth, each with where it stands.
-func visitorGposeSignups(ctx context.Context, q *db.Queries, b GposeBooth, name, world string) ([]PublicGposeSignup, error) {
+// visitorGposeSignups is a character's own sign-ups at a booth, each with where it stands
+// and its gpose while that lasts at now.
+func visitorGposeSignups(ctx context.Context, q *db.Queries, b GposeBooth, name, world string, now time.Time) ([]PublicGposeSignup, error) {
 	mine, err := q.ListGposeSignupsFor(ctx, db.ListGposeSignupsForParams{BoothID: b.ID, Name: name, World: world})
 	if err != nil || len(mine) == 0 {
 		return []PublicGposeSignup{}, err
@@ -1202,9 +1458,10 @@ func visitorGposeSignups(ctx context.Context, q *db.Queries, b GposeBooth, name,
 		return nil, err
 	}
 	positions := gposePositions(all, b.Mode)
+	site := requestOf(ctx).Site
 	out := make([]PublicGposeSignup, 0, len(mine))
 	for _, s := range mine {
-		out = append(out, toPublicGposeSignup(s, positions[s.ID]))
+		out = append(out, toPublicGposeSignup(s, positions[s.ID], site, now))
 	}
 	return out, nil
 }
@@ -1281,7 +1538,7 @@ func (h handlers) signUpGposeBooth(ctx context.Context, in *gposeSignUpRequest) 
 	if err != nil {
 		return nil, h.problemOr(err, "record a gpose sign-up")
 	}
-	signups, err := visitorGposeSignups(ctx, h.read(), b.GposeBooth, name, world)
+	signups, err := visitorGposeSignups(ctx, h.read(), b.GposeBooth, name, world, time.Now().UTC())
 	if err != nil {
 		return nil, h.fail("reload a gpose sign-up", err)
 	}
@@ -1357,7 +1614,7 @@ func (h handlers) lookUpGposeSignups(ctx context.Context, in *gposeLookupRequest
 	if err != nil {
 		return nil, err
 	}
-	mine, err := visitorGposeSignups(ctx, q, b.GposeBooth, name, world)
+	mine, err := visitorGposeSignups(ctx, q, b.GposeBooth, name, world, time.Now().UTC())
 	if err != nil {
 		return nil, h.fail("look up gpose sign-ups", err)
 	}
@@ -1366,36 +1623,46 @@ func (h handlers) lookUpGposeSignups(ctx context.Context, in *gposeLookupRequest
 
 // -- The festival --------------------------------------------------------------------
 
-// FestivalGposeBooth is an open booth filed under the festival, with the visitor's own
+// FestivalGposeBooth is a booth filed under the festival, with the visitor's own
 // sign-ups at it.
 type FestivalGposeBooth struct {
 	Booth   PublicGposeBooth    `json:"booth" doc:"The booth."`
+	Open    bool                `json:"open" doc:"Whether it takes sign-ups. A closed booth is listed only while the visitor has a gpose there to download, and without its start times."`
 	Signups []PublicGposeSignup `json:"signups" nullable:"false" doc:"The visitor's own sign-ups, on their whole name and world; empty when they have none or sent no name."`
 }
 
-// dashboardGpose is the festival's open booths with the visitor's sign-ups at each.
+// dashboardGpose is the festival's open booths, and the closed ones where the visitor
+// still has a gpose to download, with the visitor's sign-ups at each.
 func (h handlers) dashboardGpose(ctx context.Context, q *db.Queries, mapID int64, name, world string, now time.Time) ([]FestivalGposeBooth, error) {
 	rows, err := q.ListFestivalGposeBooths(ctx, sql.NullInt64{Int64: mapID, Valid: true})
 	if err != nil {
 		return nil, h.fail("list a festival's gpose booths", err)
 	}
+	known := name != "" && world != ""
 	out := make([]FestivalGposeBooth, 0, len(rows))
 	for _, r := range rows {
+		open := r.Status == gpose.BoothOpen
+		if !open && !known {
+			continue
+		}
+		signups := []PublicGposeSignup{}
+		if known {
+			if signups, err = visitorGposeSignups(ctx, q, toGposeBooth((*db.GetGposeBoothRow)(r)), name, world, now); err != nil {
+				return nil, h.fail("read a visitor's gpose sign-ups", err)
+			}
+		}
+		if !open && !slices.ContainsFunc(signups, func(s PublicGposeSignup) bool { return s.PhotoURL != "" }) {
+			continue
+		}
 		b, err := h.withDetail(ctx, q, (*db.GetGposeBoothRow)(r))
 		if err != nil {
 			return nil, err
 		}
-		pb, err := h.publicGposeBooth(ctx, q, b, true, now)
+		pb, err := h.publicGposeBooth(ctx, q, b, open, now)
 		if err != nil {
 			return nil, err
 		}
-		fb := FestivalGposeBooth{Booth: pb, Signups: []PublicGposeSignup{}}
-		if name != "" && world != "" {
-			if fb.Signups, err = visitorGposeSignups(ctx, q, b.GposeBooth, name, world); err != nil {
-				return nil, h.fail("read a visitor's gpose sign-ups", err)
-			}
-		}
-		out = append(out, fb)
+		out = append(out, FestivalGposeBooth{Booth: pb, Open: open, Signups: signups})
 	}
 	return out, nil
 }

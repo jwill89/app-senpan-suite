@@ -5,7 +5,9 @@
  *
  * The visitor is whoever this device signed up as (lib/signups). While one of their
  * sign-ups waits, the page reads them every half minute, so a staff call reaches
- * them, and alerts them (useGposeAlerts) until they dismiss it. A booth filed under
+ * them, and alerts them (useGposeAlerts) until they dismiss it; it reads them too
+ * while a finished shoot's gpose may still come, so the gpose shows when staff
+ * upload it. A booth filed under
  * a published festival links to that festival's dashboard, which also alerts a
  * timeslot booking as its time comes.
  */
@@ -55,9 +57,11 @@ async function load(): Promise<void> {
 let poll: ReturnType<typeof setInterval> | null = null
 onMounted(async () => {
   void load()
-  // Only while something waits: nothing else here changes on its own.
+  // Only while something waits, or a gpose may come: nothing else here changes on its own.
   poll = setInterval(() => {
-    if (mine.value.some((s) => s.status === 'waiting')) {
+    if (
+      mine.value.some((s) => s.status === 'waiting' || (s.status === 'completed' && !s.photoUrl))
+    ) {
       void readMine()
     }
   }, POLL_MS)

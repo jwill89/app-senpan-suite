@@ -9,7 +9,8 @@ import (
 
 // Capability tokens travel in the URL path: /api/v1/garapon-players/{token},
 // /api/v1/stamp-cards/{token}, /api/v1/fonts/pub/f/{token}, an admin's Discord link
-// /api/v1/auth/discord/invite/{token}, and the SPA referer forms /garapon/{token},
+// /api/v1/auth/discord/invite/{token}, a visitor's gpose /api/v1/gpose-photos/{token},
+// and the SPA referer forms /garapon/{token},
 // /stamp-card/{token}. Those tokens are bearer
 // credentials, so the request logger must not write them verbatim to the rotating
 // file, the /api/v1/logs viewer, or the admins' live log events. The trailing
@@ -20,6 +21,7 @@ var tokenPathPrefixes = []string{
 	"/api/v1/stamp-cards/",
 	"/api/v1/fonts/pub/f/",
 	"/api/v1/auth/discord/invite/",
+	"/api/v1/gpose-photos/",
 	"/garapon/",
 	"/stamp-card/",
 }

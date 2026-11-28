@@ -10,6 +10,13 @@ The app's major version rises for a breaking change to the JSON API or the live 
 
 ## [Unreleased]
 
+## [5.8.0] - 2026-11-28
+
+### Added
+
+- Gpose Booth: once a sign-up is marked completed, staff can upload its gpose (a PNG, JPEG or WebP of up to 32 MB) from the booth's sign-ups, and replace or delete it.
+- The visitor sees their gpose under that sign-up on their festival dashboard and the booth's page, and can view or download it. It is kept for 24 hours from the upload, then deleted; the dashboard keeps showing a booth that has closed while a gpose there lasts.
+
 ## [5.7.1] - 2026-11-27
 
 ### Fixed
@@ -686,7 +693,8 @@ Needs a one-time step at deploy (docs/ops.md, Upgrading to 5.2.0).
 
 - The CodeMirror free-form CSS theme editor; themes are now structured tokens.
 
-[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/v5.7.1...HEAD
+[Unreleased]: https://github.com/jwill89/app-senpan-suite/compare/v5.8.0...HEAD
+[5.8.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.7.1...v5.8.0
 [5.7.1]: https://github.com/jwill89/app-senpan-suite/compare/v5.7.0...v5.7.1
 [5.7.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.6.0...v5.7.0
 [5.6.0]: https://github.com/jwill89/app-senpan-suite/compare/v5.5.0...v5.6.0

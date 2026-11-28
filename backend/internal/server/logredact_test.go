@@ -51,6 +51,7 @@ func TestRedactSensitivePath(t *testing.T) {
 		"/api/v1/stamp-cards/ABC/stamp",
 		"/api/v1/fonts/pub/f/XYZ",
 		"/api/v1/auth/discord/invite/JKL", // an admin's Discord link
+		"/api/v1/gpose-photos/MNO",        // a visitor's gpose
 		"/stamp-card/DEF",                 // SPA referer form
 		"/garapon/GHI",                    // SPA referer form
 	} {

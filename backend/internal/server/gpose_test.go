@@ -100,6 +100,8 @@ func TestGposeGuard(t *testing.T) {
 		{http.MethodPatch, gposeBoothPath(id, "/signups/1")},
 		{http.MethodPost, gposeBoothPath(id, "/signups/1/call")},
 		{http.MethodDelete, gposeBoothPath(id, "/signups/1")},
+		{http.MethodPost, gposeBoothPath(id, "/signups/1/photo")},
+		{http.MethodDelete, gposeBoothPath(id, "/signups/1/photo")},
 	}
 	for _, c := range staff {
 		if got := status(env.reqJSON(t, c.method, c.path, map[string]any{})); got != http.StatusUnauthorized {

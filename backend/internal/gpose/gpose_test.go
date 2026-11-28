@@ -228,3 +228,20 @@ func TestSpans(t *testing.T) {
 		t.Errorf("Spans = %v, want %v", got, want)
 	}
 }
+
+// A gpose downloads as gpose- and the character's name, made safe on every OS, with the
+// extension of its type.
+func TestPhotoName(t *testing.T) {
+	cases := []struct{ character, typ, want string }{
+		{"Aya Lantern", "image/png", "gpose-Aya-Lantern.png"},
+		{" Y'shtola  Rhul ", "image/jpeg", "gpose-Y-shtola-Rhul.jpg"},
+		{"Ésoterique", "image/webp", "gpose-Ésoterique.webp"},
+		{"../..", "image/png", "gpose.png"},
+		{"", "", "gpose.png"},
+	}
+	for _, c := range cases {
+		if got := PhotoName(c.character, c.typ); got != c.want {
+			t.Errorf("PhotoName(%q, %q) = %q, want %q", c.character, c.typ, got, c.want)
+		}
+	}
+}

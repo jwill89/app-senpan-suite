@@ -623,6 +623,14 @@
   gap: 8px;
 }
 
+/* A sign-up's gpose, on a line of its own under the sign-up's badges. */
+.gpose-booth-panel-photo {
+  flex-basis: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .gpose-booth-panel-check {
   display: flex;
   align-items: center;

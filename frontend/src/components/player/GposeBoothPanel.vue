@@ -8,6 +8,10 @@
  * a timeslot booth offers the start times the server says each type fits, and the
  * waitlist beside them. On the dashboard the visitor is already known, so the form
  * doesn't ask who they are.
+ *
+ * Once a shoot is done, staff may upload its gpose: it shows under that sign-up to view
+ * and download, for a day. The dashboard keeps a closed booth while one lasts, with no
+ * form.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
@@ -28,8 +32,10 @@ const props = withDefaults(
     fixedVisitor?: boolean
     /** Cloudflare Turnstile site key ('' = the check is off). */
     turnstileSiteKey: string
+    /** The booth takes no sign-ups: the dashboard shows it for a gpose still there. */
+    closed?: boolean
   }>(),
-  { visitorName: '', visitorWorld: '', fixedVisitor: false },
+  { visitorName: '', visitorWorld: '', fixedVisitor: false, closed: false },
 )
 
 const emit = defineEmits<{
@@ -151,7 +157,7 @@ async function submit(): Promise<void> {
     <ul class="gpose-booth-panel-types">
       <li v-for="t in booth.types" :key="t.typeId">{{ typeLabel(t) }}</li>
     </ul>
-    <p class="text-sm text-muted m-0">
+    <p v-if="!closed" class="text-sm text-muted m-0">
       <template v-if="!timeslot">
         {{ booth.placesLeft }} of {{ booth.maxSignups }}
         {{ booth.maxSignups === 1 ? 'place' : 'places' }} left
@@ -176,12 +182,27 @@ async function submit(): Promise<void> {
           <span v-if="s.status === 'waiting' && s.calledAt" class="badge badge--warning">
             <font-awesome-icon :icon="['fas', 'bell']" /> Called up
           </span>
+          <figure v-if="s.photoUrl" class="captioned-figure gpose-booth-panel-photo">
+            <figcaption>Your gpose is ready</figcaption>
+            <a :href="s.photoUrl" target="_blank" rel="noopener">
+              <img :src="s.photoUrl" :alt="`Your ${s.typeName} gpose from ${booth.title}`" />
+            </a>
+            <p class="text-sm text-muted m-0">
+              Save it by {{ formatGposeTime(s.photoExpiresAt) }}: it's deleted after that.
+            </p>
+            <div class="form-actions">
+              <a class="btn-action btn-sm" :href="s.photoUrl" download>
+                <font-awesome-icon :icon="['fas', 'download']" /> Download
+              </a>
+            </div>
+          </figure>
         </li>
       </ul>
     </section>
 
     <!-- Signing up. -->
-    <p v-if="atLimit" class="text-sm text-muted m-0">
+    <p v-if="closed" class="text-sm text-muted m-0">This booth is closed.</p>
+    <p v-else-if="atLimit" class="text-sm text-muted m-0">
       You have {{ waiting === 1 ? 'a sign-up' : `${waiting} sign-ups` }} waiting here, the most this
       booth allows at once.
     </p>

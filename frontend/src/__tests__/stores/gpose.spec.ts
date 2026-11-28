@@ -15,9 +15,14 @@ const api = vi.hoisted(() => ({
   PATCH: vi.fn(),
   DELETE: vi.fn(),
 }))
+const apiUpload = vi.hoisted(() => vi.fn())
 vi.mock('@/api/client', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   api,
+}))
+vi.mock('@/lib/api', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  apiUpload,
 }))
 
 import {
@@ -76,6 +81,8 @@ function signup(over: Partial<GposeSignup> = {}): GposeSignup {
     calledAt: null,
     createdAt: '2026-08-01T12:00:00Z',
     assignableStarts: [],
+    photoUrl: '',
+    photoExpiresAt: null,
     ...over,
   }
 }
@@ -163,6 +170,39 @@ describe('gpose store', () => {
     api.GET.mockResolvedValueOnce(ok({ signups: [] }))
     await store.deleteSignup(signup())
     expect(store.signups).toEqual([])
+  })
+
+  it("uploads a sign-up's gpose with its progress, and deletes it after asking", async () => {
+    const store = useGposeStore()
+    const done = signup({ status: 'completed' })
+    store.signups = [done]
+    const url = 'https://apps.example/api/v1/gpose-photos/0123456789abcdef0123456789abcdef'
+    const withPhoto = { ...done, photoUrl: url, photoExpiresAt: '2026-08-02T18:00:00Z' }
+    apiUpload.mockImplementationOnce(
+      (_: string, __: FormData, opts: { onProgress?: (p: number) => void }) => {
+        opts.onProgress?.(40)
+        expect(store.photoUploading).toBe(8)
+        expect(store.photoProgress).toBe(40)
+        return Promise.resolve(withPhoto)
+      },
+    )
+    const file = new File(['png'], 'shot.png', { type: 'image/png' })
+    expect(await store.uploadPhoto(done, file)).toBe(true)
+    expect(apiUpload.mock.calls[0]?.[0]).toBe('gpose-booths/3/signups/8/photo')
+    expect((apiUpload.mock.calls[0]?.[1] as FormData).get('image')).toBe(file)
+    expect(store.signups[0]?.photoUrl).toBe(url)
+    expect(store.photoUploading).toBeNull()
+
+    apiUpload.mockRejectedValueOnce(new Error('Mark the sign-up completed first.'))
+    const notify = vi.spyOn(useUiStore(), 'notify')
+    expect(await store.uploadPhoto(done, file)).toBe(false)
+    expect(notify).toHaveBeenCalledWith('Mark the sign-up completed first.', 'error')
+
+    api.DELETE.mockResolvedValueOnce(ok(null, 204))
+    await store.deletePhoto(withPhoto)
+    expect(api.DELETE.mock.calls[0]?.[0]).toBe('/gpose-booths/{id}/signups/{signupId}/photo')
+    expect(store.signups[0]?.photoUrl).toBe('')
+    expect(store.signups[0]?.photoExpiresAt).toBeNull()
   })
 
   it('signs a visitor up and remembers who it was', async () => {

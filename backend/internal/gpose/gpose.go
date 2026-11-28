@@ -10,6 +10,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode"
 )
 
 // A booth's modes.
@@ -46,6 +47,53 @@ const (
 	MaxTypes     = 20
 	MaxWindows   = 60
 )
+
+// The gpose staff upload for a completed sign-up, for the visitor to download.
+const (
+	// PhotoLifetime is how long one is kept from its upload: after it, the visitor's
+	// pages no longer offer it, its address answers 404 and its file is deleted.
+	PhotoLifetime = 24 * time.Hour
+	// MaxPhotoBytes bounds one upload: a 4K PNG gpose is well under it.
+	MaxPhotoBytes = 32 << 20
+)
+
+// PhotoTypes are the content types a gpose is accepted in, judged from its bytes.
+var PhotoTypes = []string{"image/png", "image/jpeg", "image/webp"}
+
+// PhotoExt is the file extension a download of a gpose in content type typ is named
+// with.
+func PhotoExt(typ string) string {
+	switch typ {
+	case "image/jpeg":
+		return ".jpg"
+	case "image/webp":
+		return ".webp"
+	}
+	return ".png"
+}
+
+// PhotoName is the file name a gpose downloads as: "gpose-" and the character's name,
+// with anything but letters, digits and dashes made a dash, so it is safe on every OS.
+func PhotoName(character, typ string) string {
+	var b strings.Builder
+	dash := false
+	for _, r := range strings.TrimSpace(character) {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			b.WriteRune(r)
+			dash = false
+			continue
+		}
+		if !dash && b.Len() > 0 {
+			b.WriteByte('-')
+			dash = true
+		}
+	}
+	name := strings.TrimSuffix(b.String(), "-")
+	if name == "" {
+		return "gpose" + PhotoExt(typ)
+	}
+	return "gpose-" + name + PhotoExt(typ)
+}
 
 // Holds reports whether a sign-up in status keeps its place or slot.
 func Holds(status string) bool { return status == StatusWaiting || status == StatusCompleted }

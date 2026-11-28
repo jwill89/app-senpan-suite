@@ -117,6 +117,12 @@ export const useFestivalDashboardStore = defineStore('festivalDashboard', () => 
   const gposeWaiting = computed(() =>
     gposeBooths.value.some((b) => b.signups.some((s) => s.status === 'waiting')),
   )
+  /** Whether a shoot of theirs at an open booth is done and its gpose may still come. */
+  const gposeAwaitingPhoto = computed(() =>
+    gposeBooths.value.some(
+      (b) => b.open && b.signups.some((s) => s.status === 'completed' && !s.photoUrl),
+    ),
+  )
 
   const runningRaffles = computed(() => dashboard.value?.raffles.filter((r) => r.running) ?? [])
   /** Raffles the visitor holds tickets in, running or not. */
@@ -417,8 +423,9 @@ export const useFestivalDashboardStore = defineStore('festivalDashboard', () => 
 
   /**
    * Reads the visitor's gpose sign-ups again, booth by booth: the light read the page
-   * makes every half minute while one waits, so a staff call or a slot staff gave
-   * them reaches them without the whole dashboard being read.
+   * makes every half minute while one waits or a gpose may still come, so a staff
+   * call, a slot staff gave them or their gpose reaches them without the whole
+   * dashboard being read. A closed booth answers no lookup, so it keeps what it had.
    */
   async function refreshGpose(): Promise<void> {
     const d = dashboard.value
@@ -429,8 +436,9 @@ export const useFestivalDashboardStore = defineStore('festivalDashboard', () => 
     const fresh = await Promise.all(
       d.gposeBooths.map(async (b) => ({
         ...b,
-        signups:
-          (await gpose.lookUp(b.booth.id, visitorName.value, visitorWorld.value)) ?? b.signups,
+        signups: b.open
+          ? ((await gpose.lookUp(b.booth.id, visitorName.value, visitorWorld.value)) ?? b.signups)
+          : b.signups,
       })),
     )
     if (dashboard.value === d) {
@@ -557,6 +565,7 @@ export const useFestivalDashboardStore = defineStore('festivalDashboard', () => 
     enteredRaffles,
     gposeBooths,
     gposeWaiting,
+    gposeAwaitingPhoto,
     refreshGpose,
     afterGposeSignup,
     open,

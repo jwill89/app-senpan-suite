@@ -3,8 +3,10 @@ package media
 import (
 	"context"
 	"errors"
+	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -230,5 +232,63 @@ func TestFontsAddNeverOverwrites(t *testing.T) {
 	}
 	if b, _ := os.ReadFile(filepath.Join(root, "fonts", "A.ttf")); string(b) != "first" {
 		t.Errorf("the file was overwritten: %q", b)
+	}
+}
+
+// A gpose's token is the 32 hex characters Save makes; anything else names no file.
+func TestGposePhotosTokens(t *testing.T) {
+	p := NewGposePhotos(t.TempDir())
+	token, err := p.Save([]byte("shot"))
+	if err != nil || !ValidGposePhotoToken(token) {
+		t.Fatalf("Save = %q, %v", token, err)
+	}
+	f, info, err := p.Open(token)
+	if err != nil || info.Size() != 4 {
+		t.Fatalf("Open = %v, %v", info, err)
+	}
+	_ = f.Close()
+	for _, bad := range []string{"", "../database.sqlite", strings.ToUpper(token), token[:31], token + "0", "0123456789abcdef0123456789abcdeg"} {
+		if ValidGposePhotoToken(bad) {
+			t.Errorf("ValidGposePhotoToken(%q) = true", bad)
+		}
+		if _, _, err := p.Open(bad); !errors.Is(err, fs.ErrNotExist) {
+			t.Errorf("Open(%q) = %v, want not found", bad, err)
+		}
+	}
+	p.Remove(token)
+	if _, _, err := p.Open(token); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("Open after Remove = %v", err)
+	}
+	p.Remove(token) // already gone: fine
+}
+
+// Prune deletes a file no sign-up holds once it is an hour old, and any file older than
+// the lifetime; a held file inside its lifetime stays.
+func TestGposePhotosPrune(t *testing.T) {
+	root := t.TempDir()
+	p := NewGposePhotos(root)
+	now := time.Now()
+	age := func(name string, d time.Duration) {
+		write(t, filepath.Join(root, "gpose-photos", name), "x")
+		if err := os.Chtimes(filepath.Join(root, "gpose-photos", name), now.Add(-d), now.Add(-d)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	age("held-fresh", 2*time.Hour)
+	age("held-old", 25*time.Hour)
+	age("orphan-new", 10*time.Minute)
+	age("orphan-old", 2*time.Hour)
+	held := map[string]bool{"held-fresh": true, "held-old": true}
+	n, err := p.Prune(held, 24*time.Hour, now)
+	if err != nil || n != 2 {
+		t.Fatalf("Prune = %d, %v; want 2", n, err)
+	}
+	for name, kept := range map[string]bool{"held-fresh": true, "held-old": false, "orphan-new": true, "orphan-old": false} {
+		if got := exists(filepath.Join(root, "gpose-photos", name)); got != kept {
+			t.Errorf("%s kept = %v, want %v", name, got, kept)
+		}
+	}
+	if n, err := NewGposePhotos(t.TempDir()).Prune(nil, time.Hour, now); n != 0 || err != nil {
+		t.Errorf("Prune with no folder = %d, %v", n, err)
 	}
 }

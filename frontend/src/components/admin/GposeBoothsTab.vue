@@ -7,13 +7,15 @@
  *     they signed up, with Call (alerts the person on their dashboard and booth page),
  *     Complete, No-Show and Cancel; a timeslot booth lists its bookings by time with
  *     Complete, No-Show and Cancel, and the waitlist with the times each one's shoot
- *     fits now - a no-show's freed slot among them. Finished ones can be undone.
+ *     fits now - a no-show's freed slot among them. Finished ones can be undone, and a
+ *     completed one takes its gpose: uploaded here, the visitor views and downloads it
+ *     on their festival dashboard and the booth page for a day, then it is deleted.
  *   - form: the create/edit form (GposeBoothFormTab).
  *   - types: the site's list of gpose types (Solo, Couple, Group...).
  *
  * All state and actions come from the gpose store.
  */
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, useTemplateRef } from 'vue'
 import LoadingSpinner from '@/components/common/LoadingSpinner.vue'
 import AdminPanel from '@/components/common/ui/AdminPanel.vue'
 import ManagerView from '@/components/common/ui/ManagerView.vue'
@@ -102,6 +104,7 @@ const finishedColumns = computed<DataColumn[]>(() => [
   { key: 'type', label: 'Type' },
   timeslot.value ? { key: 'time', label: 'Time' } : { key: 'created', label: 'Signed up' },
   { key: 'paid', label: 'Paid', align: 'center' },
+  { key: 'photo', label: 'Gpose' },
   { key: 'actions', label: '', align: 'right' },
 ])
 
@@ -129,6 +132,32 @@ function setStatus(s: GposeSignup, status: GposeSignup['status']): void {
 
 function togglePaid(s: GposeSignup): void {
   void gpose.changeSignup(s, { paid: !s.paid })
+}
+
+// -- Gposes ------------------------------------------------------------------------
+
+/** The pictures a gpose is taken in, as the server judges them. */
+const PHOTO_ACCEPT = 'image/png,image/jpeg,image/webp'
+
+/** Hidden <input type="file"> behind every Upload and Replace button, and the sign-up
+ *  the pick is for: a bare file input can't be themed (see BookClubTab). */
+const photoInput = useTemplateRef<HTMLInputElement>('photoInput')
+const photoFor = ref<GposeSignup | null>(null)
+
+function pickPhoto(s: GposeSignup): void {
+  photoFor.value = s
+  photoInput.value?.click()
+}
+
+async function onPhotoPicked(e: Event): Promise<void> {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  const s = photoFor.value
+  input.value = ''
+  photoFor.value = null
+  if (file && s) {
+    await gpose.uploadPhoto(s, file)
+  }
 }
 
 // -- Navigation --------------------------------------------------------------------
@@ -468,6 +497,58 @@ async function saveRename(): Promise<void> {
               </button>
               <span v-else class="text-muted">-</span>
             </template>
+            <template #cell-photo="{ row }">
+              <span v-if="row.status !== 'completed'" class="text-muted">-</span>
+              <LoadingSpinner
+                v-else-if="gpose.photoUploading === row.id"
+                :label="`Uploading... ${gpose.photoProgress}%`"
+              />
+              <div v-else-if="row.photoUrl" class="flex-toolbar flex-toolbar--tight">
+                <a
+                  class="btn-view btn-sm"
+                  :href="row.photoUrl"
+                  target="_blank"
+                  rel="noopener"
+                  :aria-label="`View ${row.characterName}'s gpose`"
+                  title="View"
+                >
+                  <font-awesome-icon :icon="['fas', 'eye']" />
+                </a>
+                <button
+                  type="button"
+                  class="btn-action btn-sm"
+                  :disabled="gpose.photoUploading !== null"
+                  :aria-label="`Replace ${row.characterName}'s gpose`"
+                  title="Replace"
+                  @click="pickPhoto(row)"
+                >
+                  <font-awesome-icon :icon="['fas', 'rotate']" />
+                </button>
+                <button
+                  type="button"
+                  class="btn-danger btn-sm"
+                  :aria-label="`Delete ${row.characterName}'s gpose`"
+                  title="Delete"
+                  @click="gpose.deletePhoto(row)"
+                >
+                  <font-awesome-icon :icon="['fas', 'trash']" />
+                </button>
+                <span class="text-sm text-muted nowrap">
+                  Until {{ formatGposeTime(row.photoExpiresAt) }}
+                </span>
+              </div>
+              <button
+                v-else
+                type="button"
+                class="btn-action btn-sm"
+                :disabled="gpose.photoUploading !== null"
+                :aria-label="`Upload ${row.characterName}'s gpose`"
+                title="They can download it for a day"
+                @click="pickPhoto(row)"
+              >
+                <font-awesome-icon :icon="['fas', 'upload']" /> Upload
+              </button>
+            </template>
             <template #cell-actions="{ row }">
               <div class="row-actions">
                 <button
@@ -491,6 +572,14 @@ async function saveRename(): Promise<void> {
               </div>
             </template>
           </DataTable>
+          <input
+            ref="photoInput"
+            type="file"
+            :accept="PHOTO_ACCEPT"
+            aria-label="Gpose image"
+            hidden
+            @change="onPhotoPicked"
+          />
         </template>
       </template>
     </AdminPanel>

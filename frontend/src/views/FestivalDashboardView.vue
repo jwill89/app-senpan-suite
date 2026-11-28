@@ -7,7 +7,8 @@
  *
  * A gpose sign-up alerts the visitor here until they dismiss it (useGposeAlerts):
  * when staff call them up, and as a timeslot booking's time comes. While one waits,
- * the page reads the sign-ups every half minute so a call reaches them.
+ * or a finished shoot's gpose may still come, the page reads the sign-ups every half
+ * minute so a call or the gpose reaches them.
  *
  * A wide screen shows every section at once, one under another at the page's full
  * width - the stamp card and the drum need the room to be read - and each folds
@@ -104,7 +105,7 @@ const GPOSE_POLL_MS = 30_000
 let gposePoll: ReturnType<typeof setInterval> | null = null
 onMounted(() => {
   gposePoll = setInterval(() => {
-    if (store.gposeWaiting) {
+    if (store.gposeWaiting || store.gposeAwaitingPhoto) {
       void store.refreshGpose()
     }
   }, GPOSE_POLL_MS)
@@ -195,7 +196,8 @@ const emaTally = computed(() => {
 })
 
 const gposeTally = computed(() => {
-  const waiting = store.gposeBooths.flatMap((b) => b.signups).filter((s) => s.status === 'waiting')
+  const mine = store.gposeBooths.flatMap((b) => b.signups)
+  const waiting = mine.filter((s) => s.status === 'waiting')
   const next = waiting.find((s) => !s.waitlisted)
   if (next) {
     return next.slotStart ? 'Booked' : `#${next.position} in line`
@@ -203,7 +205,11 @@ const gposeTally = computed(() => {
   if (waiting.length) {
     return 'On the waitlist'
   }
-  return store.gposeBooths.length === 1 ? 'Open' : `${store.gposeBooths.length} open`
+  if (mine.some((s) => s.photoUrl)) {
+    return 'Gpose ready'
+  }
+  const open = store.gposeBooths.filter((b) => b.open).length
+  return open === 1 ? 'Open' : `${open} open`
 })
 
 const tiles = computed(() => {
@@ -691,6 +697,7 @@ function goBack(): void {
                 :visitor-world="store.visitorWorld"
                 :fixed-visitor="!!store.visitorName"
                 :turnstile-site-key="turnstileSiteKey"
+                :closed="!b.open"
                 @signed-up="onGposeSignedUp"
               />
             </div>

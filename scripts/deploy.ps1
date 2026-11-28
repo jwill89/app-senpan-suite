@@ -534,12 +534,13 @@ try {
     # The uploads, archived whole outside the data folder. Left out: the live database
     # (its own timer copies it online), its backups and the deploy's snapshots, the plugin
     # repository the plugin deploy rebuilds, the WOFF2 copies the app rebuilds at start,
-    # and the Google Fonts it keeps, which it fetches again when they're gone.
+    # the Google Fonts it keeps, which it fetches again when they're gone, and the gpose
+    # photos, which are deleted a day after their upload and must not outlive it here.
     # Seven days, since pictures barely compress.
     Write-Step 'Checking the daily uploads backup...'
     try {
         Install-BackupTimer -Name "$backupName-uploads" -Folder $data -Directory "$optDir/uploads-backups" -Owner $serviceOwner -Keep 7 `
-            -Exclude 'database.sqlite*', 'backups', 'plugin', 'plugin.old', 'plugin.failed', 'fonts/.woff2', 'google-fonts' `
+            -Exclude 'database.sqlite*', 'backups', 'plugin', 'plugin.old', 'plugin.failed', 'fonts/.woff2', 'google-fonts', 'gpose-photos' `
             -Description 'Senpan App Suite daily uploads backup'
     } catch {
         throw "Senpan $version is deployed and live, but its daily uploads backup is not: $($_.Exception.Message)"

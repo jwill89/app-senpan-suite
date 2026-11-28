@@ -24,6 +24,7 @@ The host's details are settings of the git-ignored `scripts/deploy.config.ps1` (
 |   \-- .woff2/                <- the converted WOFF2 copies, rebuilt from the uploads at start
 +-- carrd/                     <- PERSISTENT: the Carrd projects, served at carrd.senpan.cafe (see Carrd image host)
 +-- google-fonts/              <- the Google Fonts picked for headings and the ema designer, kept by the app (css/, files/); a cache it refills
++-- gpose-photos/              <- the gposes staff upload for gpose booth sign-ups, each kept a day and then deleted by the app; never served as files
 +-- plugin/                    <- the Dalamud custom repo, replaced whole by each plugin publish (previous kept as plugin.old)
 \-- sounds/                    <- the game's sound effects, copied in by hand (see below); served at /sounds/
 ```
@@ -269,7 +270,7 @@ The data folder's `images/`, `fonts/` (less its `.woff2/` copies), `carrd/` and 
 Measured on 2026-11-15 (`du`): `images/` 203 MB (111 files), `fonts/` 7.6 MB without its 4 MB of WOFF2 copies (73 files with them), `carrd/` 16.6 MB (79 files), `sounds/` 0.2 MB (4 files): about 233 MB together, so they are archived on the host. Measure again as festivals add pictures; once they pass 250 MB, the deploy moves to `Sync-LiveFolder` for them.
 
 - **Units:** `<service>-uploads-backup.service` and `<service>-uploads-backup.timer`, with the job `/usr/local/libexec/shared-deploy/<service>-uploads-backup`, run as the service's account at the database backup's time.
-- **What:** one `.tar.gz` of the data folder, its top entry `data/`, leaving out the live database and its `-wal`, `-shm`, snapshots and pull (`database.sqlite*`), `backups/`, `plugin/` and `plugin.old/` (the plugin deploy rebuilds them) and `fonts/.woff2/` (the app rebuilds it at start) and `google-fonts/` (the app fetches a family again when it is missing). Checked with gzip and a full `tar` listing before it takes the day's name.
+- **What:** one `.tar.gz` of the data folder, its top entry `data/`, leaving out the live database and its `-wal`, `-shm`, snapshots and pull (`database.sqlite*`), `backups/`, `plugin/` and `plugin.old/` (the plugin deploy rebuilds them) and `fonts/.woff2/` (the app rebuilds it at start) and `google-fonts/` (the app fetches a family again when it is missing) and `gpose-photos/` (each is deleted a day after its upload, which a seven-day archive would outlive). Checked with gzip and a full `tar` listing before it takes the day's name.
 - **Where:** `<opt dir>/uploads-backups/` (`0700`, the service's account's), one archive per UTC day, `<service>-uploads-YYYY-MM-DD.tar.gz`. **7 days** are kept, not 28: pictures barely compress, so each archive is about the folders' size, and seven are about 1.6 GB of the droplet's disk.
 - **Off the droplet:** each app deploy (unless `-NoDbPull`) also pulls a fresh archive of each of the four folders into `devdata/uploads/<folder>/` on the dev machine, three of each kept (`Copy-LiveFolder`).
 

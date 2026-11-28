@@ -53,7 +53,7 @@ LEFT JOIN festival_stall_occupants fo ON fo.id = b.occupant_id
 WHERE b.id = ?;
 
 -- name: ListFestivalGposeBooths :many
--- The open booths filed under a festival, oldest first.
+-- The booths filed under a festival, open or closed, oldest first.
 SELECT b.id, b.title, b.description, b.mode, b.max_signups, b.max_waitlist, b.per_person, b.slot_step, b.status,
        b.festival_map_id, CAST(COALESCE(fm.title, '') AS TEXT) AS festival_map_name,
        CAST(COALESCE(fm.slug, '') AS TEXT) AS festival_map_slug, CAST(COALESCE(fm.status, '') AS TEXT) AS festival_map_status,
@@ -66,7 +66,7 @@ SELECT b.id, b.title, b.description, b.mode, b.max_signups, b.max_waitlist, b.pe
 FROM gpose_booths b
 LEFT JOIN festival_maps fm ON fm.id = b.festival_map_id
 LEFT JOIN festival_stall_occupants fo ON fo.id = b.occupant_id
-WHERE b.festival_map_id = ? AND b.status = 'open'
+WHERE b.festival_map_id = ?
 ORDER BY b.created_at ASC, b.id ASC;
 
 -- name: CreateGposeBooth :one
@@ -134,20 +134,20 @@ UPDATE gpose_booths SET occupant_id = NULL WHERE occupant_id = ?;
 
 -- name: ListGposeSignups :many
 SELECT id, booth_id, type_id, type_name, price, minutes, character_name, world, waitlisted, slot_start, slot_end,
-       status, paid, called_at, created_at
+       status, paid, called_at, created_at, photo_token, photo_type, photo_expires_at
 FROM gpose_signups WHERE booth_id = ? ORDER BY created_at, id;
 
 -- name: ListGposeSignupsFor :many
 -- A character's sign-ups at a booth, on the whole name and world, ignoring case.
 SELECT id, booth_id, type_id, type_name, price, minutes, character_name, world, waitlisted, slot_start, slot_end,
-       status, paid, called_at, created_at
+       status, paid, called_at, created_at, photo_token, photo_type, photo_expires_at
 FROM gpose_signups
 WHERE booth_id = sqlc.arg(booth_id) AND LOWER(character_name) = LOWER(sqlc.arg(name)) AND LOWER(world) = LOWER(sqlc.arg(world))
 ORDER BY created_at, id;
 
 -- name: GetGposeSignup :one
 SELECT id, booth_id, type_id, type_name, price, minutes, character_name, world, waitlisted, slot_start, slot_end,
-       status, paid, called_at, created_at
+       status, paid, called_at, created_at, photo_token, photo_type, photo_expires_at
 FROM gpose_signups WHERE id = ?;
 
 -- name: InsertGposeSignup :one
@@ -197,3 +197,32 @@ UPDATE gpose_signups SET called_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE
 
 -- name: DeleteGposeSignup :execrows
 DELETE FROM gpose_signups WHERE id = ?;
+
+-- name: SetGposeSignupPhoto :execrows
+-- Gives a completed sign-up its gpose, replacing one it had.
+UPDATE gpose_signups SET photo_token = ?, photo_type = ?, photo_expires_at = ?
+WHERE id = ? AND status = 'completed';
+
+-- name: ClearGposeSignupPhoto :execrows
+-- Takes a sign-up's gpose off it, when it is still the one named: a sweep that read
+-- it before staff replaced it leaves the new one alone.
+UPDATE gpose_signups SET photo_token = '', photo_type = '', photo_expires_at = NULL
+WHERE id = ? AND photo_token = ? AND photo_token != '';
+
+-- name: GetGposePhoto :one
+-- A gpose by its token, with the character its download is named after.
+SELECT photo_type, CAST(photo_expires_at AS TEXT) AS photo_expires_at, character_name
+FROM gpose_signups WHERE photo_token = ? AND photo_expires_at IS NOT NULL;
+
+-- name: ListExpiredGposePhotos :many
+-- The gposes whose day is over at sqlc.arg(now), an RFC 3339 time in UTC.
+SELECT id, photo_token FROM gpose_signups
+WHERE photo_token != '' AND photo_expires_at IS NOT NULL AND photo_expires_at <= CAST(sqlc.arg(now) AS TEXT);
+
+-- name: ListGposePhotoTokens :many
+-- Every gpose still held, for the sweep of files no sign-up names.
+SELECT photo_token FROM gpose_signups WHERE photo_token != '';
+
+-- name: ListGposeBoothPhotoTokens :many
+-- A booth's gposes, whose files go when it does.
+SELECT photo_token FROM gpose_signups WHERE booth_id = ? AND photo_token != '';

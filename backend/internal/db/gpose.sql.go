@@ -23,6 +23,26 @@ func (q *Queries) CallGposeSignup(ctx context.Context, id int64) (int64, error) 
 	return result.RowsAffected()
 }
 
+const clearGposeSignupPhoto = `-- name: ClearGposeSignupPhoto :execrows
+UPDATE gpose_signups SET photo_token = '', photo_type = '', photo_expires_at = NULL
+WHERE id = ? AND photo_token = ? AND photo_token != ''
+`
+
+type ClearGposeSignupPhotoParams struct {
+	ID         int64
+	PhotoToken string
+}
+
+// Takes a sign-up's gpose off it, when it is still the one named: a sweep that read
+// it before staff replaced it leaves the new one alone.
+func (q *Queries) ClearGposeSignupPhoto(ctx context.Context, arg ClearGposeSignupPhotoParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, clearGposeSignupPhoto, arg.ID, arg.PhotoToken)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const clearMapGposeBooths = `-- name: ClearMapGposeBooths :exec
 UPDATE gpose_booths SET festival_map_id = NULL, occupant_id = NULL WHERE festival_map_id = ?
 `
@@ -295,9 +315,28 @@ func (q *Queries) GetGposeBooth(ctx context.Context, id int64) (*GetGposeBoothRo
 	return &i, err
 }
 
+const getGposePhoto = `-- name: GetGposePhoto :one
+SELECT photo_type, CAST(photo_expires_at AS TEXT) AS photo_expires_at, character_name
+FROM gpose_signups WHERE photo_token = ? AND photo_expires_at IS NOT NULL
+`
+
+type GetGposePhotoRow struct {
+	PhotoType      string
+	PhotoExpiresAt string
+	CharacterName  string
+}
+
+// A gpose by its token, with the character its download is named after.
+func (q *Queries) GetGposePhoto(ctx context.Context, photoToken string) (*GetGposePhotoRow, error) {
+	row := q.db.QueryRowContext(ctx, getGposePhoto, photoToken)
+	var i GetGposePhotoRow
+	err := row.Scan(&i.PhotoType, &i.PhotoExpiresAt, &i.CharacterName)
+	return &i, err
+}
+
 const getGposeSignup = `-- name: GetGposeSignup :one
 SELECT id, booth_id, type_id, type_name, price, minutes, character_name, world, waitlisted, slot_start, slot_end,
-       status, paid, called_at, created_at
+       status, paid, called_at, created_at, photo_token, photo_type, photo_expires_at
 FROM gpose_signups WHERE id = ?
 `
 
@@ -320,6 +359,9 @@ func (q *Queries) GetGposeSignup(ctx context.Context, id int64) (*GposeSignup, e
 		&i.Paid,
 		&i.CalledAt,
 		&i.CreatedAt,
+		&i.PhotoToken,
+		&i.PhotoType,
+		&i.PhotoExpiresAt,
 	)
 	return &i, err
 }
@@ -417,6 +459,40 @@ func (q *Queries) InsertGposeSignup(ctx context.Context, arg InsertGposeSignupPa
 	return id, err
 }
 
+const listExpiredGposePhotos = `-- name: ListExpiredGposePhotos :many
+SELECT id, photo_token FROM gpose_signups
+WHERE photo_token != '' AND photo_expires_at IS NOT NULL AND photo_expires_at <= CAST(?1 AS TEXT)
+`
+
+type ListExpiredGposePhotosRow struct {
+	ID         int64
+	PhotoToken string
+}
+
+// The gposes whose day is over at sqlc.arg(now), an RFC 3339 time in UTC.
+func (q *Queries) ListExpiredGposePhotos(ctx context.Context, now string) ([]*ListExpiredGposePhotosRow, error) {
+	rows, err := q.db.QueryContext(ctx, listExpiredGposePhotos, now)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*ListExpiredGposePhotosRow{}
+	for rows.Next() {
+		var i ListExpiredGposePhotosRow
+		if err := rows.Scan(&i.ID, &i.PhotoToken); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listFestivalGposeBooths = `-- name: ListFestivalGposeBooths :many
 SELECT b.id, b.title, b.description, b.mode, b.max_signups, b.max_waitlist, b.per_person, b.slot_step, b.status,
        b.festival_map_id, CAST(COALESCE(fm.title, '') AS TEXT) AS festival_map_name,
@@ -430,7 +506,7 @@ SELECT b.id, b.title, b.description, b.mode, b.max_signups, b.max_waitlist, b.pe
 FROM gpose_booths b
 LEFT JOIN festival_maps fm ON fm.id = b.festival_map_id
 LEFT JOIN festival_stall_occupants fo ON fo.id = b.occupant_id
-WHERE b.festival_map_id = ? AND b.status = 'open'
+WHERE b.festival_map_id = ?
 ORDER BY b.created_at ASC, b.id ASC
 `
 
@@ -456,7 +532,7 @@ type ListFestivalGposeBoothsRow struct {
 	WaitingCount      int64
 }
 
-// The open booths filed under a festival, oldest first.
+// The booths filed under a festival, open or closed, oldest first.
 func (q *Queries) ListFestivalGposeBooths(ctx context.Context, festivalMapID sql.NullInt64) ([]*ListFestivalGposeBoothsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listFestivalGposeBooths, festivalMapID)
 	if err != nil {
@@ -490,6 +566,34 @@ func (q *Queries) ListFestivalGposeBooths(ctx context.Context, festivalMapID sql
 			return nil, err
 		}
 		items = append(items, &i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listGposeBoothPhotoTokens = `-- name: ListGposeBoothPhotoTokens :many
+SELECT photo_token FROM gpose_signups WHERE booth_id = ? AND photo_token != ''
+`
+
+// A booth's gposes, whose files go when it does.
+func (q *Queries) ListGposeBoothPhotoTokens(ctx context.Context, boothID int64) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listGposeBoothPhotoTokens, boothID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var photo_token string
+		if err := rows.Scan(&photo_token); err != nil {
+			return nil, err
+		}
+		items = append(items, photo_token)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -689,9 +793,37 @@ func (q *Queries) ListGposeHeldSlots(ctx context.Context, boothID int64) ([]*Lis
 	return items, nil
 }
 
+const listGposePhotoTokens = `-- name: ListGposePhotoTokens :many
+SELECT photo_token FROM gpose_signups WHERE photo_token != ''
+`
+
+// Every gpose still held, for the sweep of files no sign-up names.
+func (q *Queries) ListGposePhotoTokens(ctx context.Context) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listGposePhotoTokens)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var photo_token string
+		if err := rows.Scan(&photo_token); err != nil {
+			return nil, err
+		}
+		items = append(items, photo_token)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listGposeSignups = `-- name: ListGposeSignups :many
 SELECT id, booth_id, type_id, type_name, price, minutes, character_name, world, waitlisted, slot_start, slot_end,
-       status, paid, called_at, created_at
+       status, paid, called_at, created_at, photo_token, photo_type, photo_expires_at
 FROM gpose_signups WHERE booth_id = ? ORDER BY created_at, id
 `
 
@@ -720,6 +852,9 @@ func (q *Queries) ListGposeSignups(ctx context.Context, boothID int64) ([]*Gpose
 			&i.Paid,
 			&i.CalledAt,
 			&i.CreatedAt,
+			&i.PhotoToken,
+			&i.PhotoType,
+			&i.PhotoExpiresAt,
 		); err != nil {
 			return nil, err
 		}
@@ -736,7 +871,7 @@ func (q *Queries) ListGposeSignups(ctx context.Context, boothID int64) ([]*Gpose
 
 const listGposeSignupsFor = `-- name: ListGposeSignupsFor :many
 SELECT id, booth_id, type_id, type_name, price, minutes, character_name, world, waitlisted, slot_start, slot_end,
-       status, paid, called_at, created_at
+       status, paid, called_at, created_at, photo_token, photo_type, photo_expires_at
 FROM gpose_signups
 WHERE booth_id = ?1 AND LOWER(character_name) = LOWER(?2) AND LOWER(world) = LOWER(?3)
 ORDER BY created_at, id
@@ -774,6 +909,9 @@ func (q *Queries) ListGposeSignupsFor(ctx context.Context, arg ListGposeSignupsF
 			&i.Paid,
 			&i.CalledAt,
 			&i.CreatedAt,
+			&i.PhotoToken,
+			&i.PhotoType,
+			&i.PhotoExpiresAt,
 		); err != nil {
 			return nil, err
 		}
@@ -901,6 +1039,32 @@ type SetGposeSignupPaidParams struct {
 
 func (q *Queries) SetGposeSignupPaid(ctx context.Context, arg SetGposeSignupPaidParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, setGposeSignupPaid, arg.Paid, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const setGposeSignupPhoto = `-- name: SetGposeSignupPhoto :execrows
+UPDATE gpose_signups SET photo_token = ?, photo_type = ?, photo_expires_at = ?
+WHERE id = ? AND status = 'completed'
+`
+
+type SetGposeSignupPhotoParams struct {
+	PhotoToken     string
+	PhotoType      string
+	PhotoExpiresAt *string
+	ID             int64
+}
+
+// Gives a completed sign-up its gpose, replacing one it had.
+func (q *Queries) SetGposeSignupPhoto(ctx context.Context, arg SetGposeSignupPhotoParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, setGposeSignupPhoto,
+		arg.PhotoToken,
+		arg.PhotoType,
+		arg.PhotoExpiresAt,
+		arg.ID,
+	)
 	if err != nil {
 		return 0, err
 	}

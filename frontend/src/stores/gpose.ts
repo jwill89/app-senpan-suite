@@ -1,7 +1,8 @@
 /**
  * Gpose booths store: the Gpose Booth page's booths, their sign-ups and the site's
  * gpose types, and the public side - one booth as a visitor sees it, signing up, and
- * a visitor's own sign-ups.
+ * a visitor's own sign-ups. Staff upload a completed sign-up's gpose, which the visitor
+ * downloads for a day.
  *
  * A basic booth takes sign-ups in order up to its limit, then a waitlist; a timeslot
  * booth books start times inside its open times. The server decides where every
@@ -22,6 +23,7 @@ import {
   type PublicGposeBooth,
   type PublicGposeSignup,
 } from '@/api/client'
+import { apiUpload } from '@/lib/api'
 import { datetimeLocalToUtc, utcToDatetimeLocal } from '@/lib/datetime'
 import { saveGposeSignup } from '@/lib/signups'
 import { useUiStore } from './ui'
@@ -524,6 +526,63 @@ export const useGposeStore = defineStore('gpose', () => {
     }
   }
 
+  // -- Gposes ------------------------------------------------------------------------
+
+  /** The sign-up a gpose is being uploaded for, and how much of it is sent (0-100). */
+  const photoUploading = ref<number | null>(null)
+  const photoProgress = ref(0)
+
+  /**
+   * Uploads the gpose for a completed sign-up, replacing one it had: the visitor can
+   * view and download it for a day. True once it is saved.
+   */
+  async function uploadPhoto(s: GposeSignup, file: File): Promise<boolean> {
+    if (photoUploading.value !== null) {
+      return false
+    }
+    photoUploading.value = s.id
+    photoProgress.value = 0
+    try {
+      const form = new FormData()
+      form.append('image', file)
+      replaceSignup(
+        await apiUpload<GposeSignup>(`gpose-booths/${s.boothId}/signups/${s.id}/photo`, form, {
+          onProgress: (p) => (photoProgress.value = p),
+        }),
+      )
+      ui.notify(`Gpose sent to ${s.characterName}`, 'success')
+      return true
+    } catch (e) {
+      ui.notify((e as Error).message, 'error')
+      return false
+    } finally {
+      photoUploading.value = null
+    }
+  }
+
+  /** Deletes a sign-up's gpose after asking, before its day is over. */
+  async function deletePhoto(s: GposeSignup): Promise<void> {
+    if (
+      !(await ui.confirm(`Delete ${s.characterName}'s gpose? They won't be able to download it.`, {
+        title: 'Delete gpose',
+        confirmText: 'Delete',
+      }))
+    ) {
+      return
+    }
+    try {
+      await unwrap(
+        api.DELETE('/gpose-booths/{id}/signups/{signupId}/photo', {
+          params: { path: { id: s.boothId, signupId: s.id } },
+        }),
+      )
+      replaceSignup({ ...s, photoUrl: '', photoExpiresAt: null })
+      ui.notify('Gpose deleted', 'info')
+    } catch (e) {
+      ui.notify((e as Error).message, 'error')
+    }
+  }
+
   // -- The public side -------------------------------------------------------------
 
   const publicBooths = ref<PublicGposeBooth[]>([])
@@ -665,6 +724,10 @@ export const useGposeStore = defineStore('gpose', () => {
     changeSignup,
     callSignup,
     deleteSignup,
+    photoUploading,
+    photoProgress,
+    uploadPhoto,
+    deletePhoto,
     publicBooths,
     publicBooth,
     publicLoading,

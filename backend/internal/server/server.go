@@ -123,6 +123,9 @@ type Server struct {
 	// googleFonts is the Google Fonts families kept under dataDir, which the API
 	// serves in Google's place.
 	googleFonts *media.GoogleFonts
+	// gposePhotos is the gposes staff upload for completed gpose booth sign-ups, each
+	// kept a day under dataDir; the API serves them and the sweep deletes them.
+	gposePhotos *media.GposePhotos
 
 	// Consecutive failed Discord posts per announcement id, used to stop the
 	// scheduler retrying a permanently-broken webhook every 30 seconds forever (see
@@ -232,6 +235,7 @@ func New(ctx context.Context, st *store.Store, hub *live.Hub, dataDir string, al
 		plugin:         media.NewPlugin(dataDir),
 		sounds:         media.NewSounds(dataDir),
 		googleFonts:    media.NewGoogleFonts(dataDir, api.Prefix+"/google-fonts/files/"),
+		gposePhotos:    media.NewGposePhotos(dataDir),
 		allowedOrigins: origins,
 		mux:            http.NewServeMux(),
 		limiter:        newRateLimiter(5, 15*time.Minute),  // 5 failed logins per 15 minutes
@@ -294,6 +298,7 @@ func New(ctx context.Context, st *store.Store, hub *live.Hub, dataDir string, al
 		Carrd:             s.carrd,
 		Fonts:             s.fonts,
 		GoogleFonts:       s.googleFonts,
+		GposePhotos:       s.gposePhotos,
 		GoogleFontLimit:   s.googleFontLimiter,
 		Turnstile: func(ctx context.Context, response, ip string) bool {
 			return !s.turnstileEnabled() || s.verifyTurnstile(ctx, response, ip)
